@@ -1,103 +1,319 @@
-import Image from "next/image";
+"use client";
 
-export default function Home() {
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
+
+const layananOptions = [
+  "Asesmen Tumbuh Kembang",
+  "Asesmen Terpadu",
+  "Konsultasi Dokter",
+  "Konsultasi Psikolog",
+  "Konsultasi Keluarga",
+  "Test Psikolog",
+  "Layanan Minat Bakat",
+  "Daycare",
+  "Home Care",
+  "Hydrotherapy",
+  "Baby Spa",
+  "Lainnya",
+];
+
+export default function Page() {
+  const [formData, setFormData] = useState({
+    namaLengkap: "",
+    tempatLahir: "",
+    tanggalLahir: "",
+    usia: "",
+    jenisKelamin: "",
+    sekolah: "",
+    alamat: "",
+    keluhan: "",
+    statusOrtu: "",
+    orangTua: "",
+    nomorTelepon: "",
+    email: "",
+    pilihanLayanan: [] as string[],
+  });
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const targetAsInput = e.target as HTMLInputElement;
+    const { name, value } = e.target;
+
+    if (targetAsInput.type === "checkbox") {
+      let updatedLayanan = [...formData.pilihanLayanan];
+      if (targetAsInput.checked) {
+        updatedLayanan.push(value);
+      } else {
+        updatedLayanan = updatedLayanan.filter((v) => v !== value);
+      }
+      setFormData((prev) => ({ ...prev, pilihanLayanan: updatedLayanan }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log(formData);
+    alert("Data berhasil dikirim!");
+  };
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-[#B8E8DB] pb-5">
+      <header className="bg-white flex items-center px-10 py-3 shadow-md mb-5 w-full">
+        <img src="/logo.png" alt="Logo Puspa" className="w-[150px] h-[51px]" />
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+      <motion.h2
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+        className="text-center font-extrabold text-4xl mb-2 text-[#36315B] "
+      >
+        Form Pendaftaran
+      </motion.h2>
+      <motion.p
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.15, duration: 0.6 }}
+        className="text-center mb-8 text-[#36315B] text-lg font-normal max-w-xl mx-auto "
+      >
+        Kami senang dapat mendukung setiap langkah tumbuh kembang anak Anda.
+        Mohon isi data lengkap di bawah ini agar permohonan Anda segera kami
+        proses.
+      </motion.p>
+
+      <div className="flex justify-center px-5 mt-3">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="w-[900px] bg-white rounded-lg p-8 shadow-[0_4px_20px_#ADADAD]"
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <form onSubmit={handleSubmit}>
+            <label className="block mb-4">
+              Nama Lengkap <span className="text-red-500">*</span>
+              <input
+                type="text"
+                name="namaLengkap"
+                value={formData.namaLengkap}
+                onChange={handleChange}
+                required
+                className="w-full p-2 border border-gray-300 rounded mt-1"
+              />
+            </label>
+
+            <div className="flex gap-3 mb-4">
+              <label className="flex-1">
+                Tempat Lahir <span className="text-red-500">*</span>
+                <input
+                  type="text"
+                  name="tempatLahir"
+                  value={formData.tempatLahir}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded mt-1"
+                />
+              </label>
+              <label className="flex-1">
+                Tanggal Lahir <span className="text-red-500">*</span>
+                <input
+                  type="date"
+                  name="tanggalLahir"
+                  value={formData.tanggalLahir}
+                  onChange={handleChange}
+                  required
+                  className="w-full p-2 border border-gray-300 rounded mt-1"
+                />
+              </label>
+              <label className="flex-[0.5]">
+                Usia <span className="text-red-500">*</span>
+                <input
+                  type="number"
+                  name="usia"
+                  value={formData.usia}
+                  onChange={handleChange}
+                  required
+                  min={0}
+                  className="w-full p-2 border border-gray-300 rounded mt-1"
+                />
+              </label>
+            </div>
+
+            <div className="mb-4">
+              Jenis Kelamin <span className="text-red-500">*</span> <br />
+              <label className="mr-5">
+                <input
+                  type="radio"
+                  name="jenisKelamin"
+                  value="Laki-laki"
+                  checked={formData.jenisKelamin === "Laki-laki"}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                Laki-laki
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="jenisKelamin"
+                  value="Perempuan"
+                  checked={formData.jenisKelamin === "Perempuan"}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                Perempuan
+              </label>
+            </div>
+
+            <label className="block mb-4">
+              Asal Sekolah / Kelas
+              <input
+                type="text"
+                name="sekolah"
+                value={formData.sekolah}
+                onChange={handleChange}
+                className="w-full p-2 border border-gray-300 rounded mt-1"
+              />
+            </label>
+
+            <label className="block mb-4">
+              Alamat <span className="text-red-500">*</span>
+              <textarea
+                name="alamat"
+                value={formData.alamat}
+                onChange={handleChange}
+                required
+                rows={3}
+                className="w-full p-2 border border-gray-300 rounded mt-1 resize-y"
+              />
+            </label>
+
+            <label className="block mb-4">
+              Keluhan <span className="text-red-500">*</span>
+              <textarea
+                name="keluhan"
+                value={formData.keluhan}
+                onChange={handleChange}
+                required
+                rows={3}
+                placeholder="Isi keluhan"
+                className="w-full p-2 border border-gray-300 rounded mt-1 resize-y"
+              />
+            </label>
+
+            <div className="mb-4">
+              <label className="mr-5">
+                <input
+                  type="radio"
+                  name="statusOrtu"
+                  value="Ayah"
+                  checked={formData.statusOrtu === "Ayah"}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                Ayah
+              </label>
+              <label className="mr-5">
+                <input
+                  type="radio"
+                  name="statusOrtu"
+                  value="Ibu"
+                  checked={formData.statusOrtu === "Ibu"}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                Ibu
+              </label>
+              <label>
+                <input
+                  type="radio"
+                  name="statusOrtu"
+                  value="Wali"
+                  checked={formData.statusOrtu === "Wali"}
+                  onChange={handleChange}
+                  className="mr-2"
+                />
+                Wali
+              </label>
+            </div>
+
+            <label className="block mb-4">
+              Nama Orang Tua / Wali <span className="text-red-500">*</span>
+              <input
+                type="text"
+                name="orangTua"
+                value={formData.orangTua}
+                onChange={handleChange}
+                required
+                className="w-full p-2 border border-gray-300 rounded mt-1"
+              />
+            </label>
+
+            <label className="block mb-4">
+              Nomor Telepon <span className="text-red-500">*</span>
+              <input
+                type="tel"
+                name="nomorTelepon"
+                value={formData.nomorTelepon}
+                onChange={handleChange}
+                required
+                className="w-full p-2 border border-gray-300 rounded mt-1"
+              />
+            </label>
+
+            <label className="block mb-4">
+              Email <span className="text-red-500">*</span>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="w-full p-2 border border-gray-300 rounded mt-1"
+              />
+            </label>
+
+            <fieldset className="mb-5">
+              <legend>
+                Pilih Layanan <span className="text-red-500">*</span>
+              </legend>
+              <div className="flex flex-wrap gap-2 mt-2">
+                {layananOptions.map((layanan) => (
+                  <label key={layanan} className="flex-[0_0_45%]">
+                    <input
+                      type="checkbox"
+                      name="pilihanLayanan"
+                      value={layanan}
+                      checked={formData.pilihanLayanan.includes(layanan)}
+                      onChange={handleChange}
+                      className="mr-2"
+                    />
+                    {layanan}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+
+            <Link href="/pendaftaran">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                type="button"
+                className="bg-[#7AA68D] text-white py-2 px-5 rounded-full cursor-pointer float-right"
+              >
+                Daftar
+              </motion.button>
+            </Link>
+          </form>
+        </motion.div>
+      </div>
     </div>
   );
 }
