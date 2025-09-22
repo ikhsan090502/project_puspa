@@ -28,7 +28,7 @@ export default function LoginPage() {
 
     loginMutation.mutate(payload, {
       onSuccess: () => {
-        router.push("/terapis/observasi"); // redirect setelah login
+        router.push("/terapis/observasi"); 
       },
       onError: (error) => {
         if (error instanceof Error) {
@@ -61,7 +61,6 @@ export default function LoginPage() {
           </p>
 
           <form onSubmit={handleLogin}>
-            {/* Username / Email */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-[#36315B] mb-2">
                 Username atau Email
@@ -76,7 +75,6 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Password */}
             <div className="mb-3">
               <label className="block text-sm font-medium text-[#36315B] mb-2">Password</label>
               <div className="relative">
@@ -98,7 +96,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* General error */}
             {fieldError.general && (
               <p className="text-[#AD3113] text-sm mb-3 text-left">{fieldError.general}</p>
             )}

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { registrationChild, RegistrationPayload } from "@/lib/api/registration";
 import { useMutation } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
 
 const layananOptions = [
   "Asesmen Tumbuh Kembang",
@@ -20,6 +21,8 @@ const layananOptions = [
 ];
 
 export default function Page() {
+  const router = useRouter();
+
   const [formData, setFormData] = useState({
     namaLengkap: "",
     tempatLahir: "",
@@ -52,7 +55,6 @@ export default function Page() {
   const mutation = useMutation({
     mutationFn: (payload: RegistrationPayload) => registrationChild(payload),
     onSuccess: () => {
-      alert("Pendaftaran berhasil!");
       setFormData({
         namaLengkap: "",
         tempatLahir: "",
@@ -68,6 +70,8 @@ export default function Page() {
         email: "",
         pilihanLayanan: [],
       });
+
+      router.push("/pendaftaran");
     },
     onError: (error: any) => {
       console.error(error);
@@ -99,7 +103,7 @@ export default function Page() {
     if (birthDate) {
       const date = new Date(birthDate);
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0"); 
+      const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
       birthDate = `${year}-${month}-${day}`;
     }
@@ -108,7 +112,7 @@ export default function Page() {
       child_name: formData.namaLengkap,
       child_gender: formData.jenisKelamin,
       child_birth_place: formData.tempatLahir,
-      child_birth_date: birthDate, 
+      child_birth_date: birthDate,
       child_school: formData.sekolah,
       child_address: formData.alamat,
       child_complaint: formData.keluhan,
@@ -143,8 +147,9 @@ export default function Page() {
         transition={{ delay: 0.15, duration: 0.6 }}
         className="text-center mb-8 text-[#36315B] text-lg font-normal max-w-xl mx-auto"
       >
-        Kami senang dapat mendukung setiap langkah tumbuh kembang anak Anda. Mohon isi
-        data lengkap di bawah ini agar permohonan Anda segera kami proses.
+        Kami senang dapat mendukung setiap langkah tumbuh kembang anak Anda.
+        Mohon isi data lengkap di bawah ini agar permohonan Anda segera kami
+        proses.
       </motion.p>
 
       <div className="flex justify-center px-5 mt-3">
@@ -362,11 +367,17 @@ export default function Page() {
               whileTap={{ scale: 0.95 }}
               type="submit"
               disabled={mutation.isPending}
-              className={`bg-[#7AA68D] text-white py-2 px-5 rounded-full cursor-pointer float-right ${
-                mutation.isPending ? "opacity-50 cursor-not-allowed" : ""
+              className={`w-[130px] h-[45px] bg-[#7AA68D] text-white rounded-full cursor-pointer float-right flex items-center justify-center font-medium shadow-md transition-colors duration-300 ${
+                mutation.isPending
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:bg-[#6a907c]"
               }`}
             >
-              {mutation.isPending ? "Mendaftarkan..." : "Daftar"}
+              {mutation.isPending ? (
+                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              ) : (
+                "Daftar"
+              )}
             </motion.button>
           </form>
         </motion.div>

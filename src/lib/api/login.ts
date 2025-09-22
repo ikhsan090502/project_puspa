@@ -1,9 +1,6 @@
 import axios from "axios";
 import { useMutation, UseMutationResult } from "@tanstack/react-query";
 
-// -------------------
-// Types
-// -------------------
 export interface LoginPayload {
   identifier: string;
   password: string;
@@ -25,14 +22,10 @@ export interface LoginResponse {
   };
 }
 
-// -------------------
-// Axios instance
-// -------------------
 export const authAxios = axios.create({
   baseURL: "https://50f0aeb59dfd.ngrok-free.app/api/v1",
 });
 
-// Interceptor untuk menambahkan token otomatis
 authAxios.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) {
@@ -42,9 +35,6 @@ authAxios.interceptors.request.use((config) => {
   return config;
 });
 
-// -------------------
-// Login function
-// -------------------
 export async function loginUser({ identifier, password }: LoginPayload): Promise<string> {
   try {
     const res = await axios.post<LoginResponse>(
@@ -66,12 +56,10 @@ export async function loginUser({ identifier, password }: LoginPayload): Promise
       const status = err.response?.status;
       const message = err.response?.data?.message || "";
 
-      // 401 Unauthorized → Username / Password salah
       if (status === 401) {
         throw new Error("Username atau Password salah. Coba lagi!");
       }
 
-      // Akun belum aktif
       if (message.toLowerCase().includes("belum aktif")) {
         throw new Error("Akun belum aktif. Silakan melakukan verifikasi!");
       }
@@ -87,9 +75,6 @@ export async function loginUser({ identifier, password }: LoginPayload): Promise
   }
 }
 
-// -------------------
-// React hook: useLogin
-// -------------------
 export function useLogin(): UseMutationResult<string, Error, LoginPayload> {
   return useMutation({
     mutationFn: loginUser,
