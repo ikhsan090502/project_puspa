@@ -5,17 +5,17 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye, EyeOff, CheckCircle2 } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { registerUser } from "@/lib/api/register";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const [emailError, setEmailError] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
-  const [apiError, setApiError] = useState<string | null>(null);
 
   const isFilled = email && username && password;
 
@@ -45,50 +45,27 @@ export default function RegisterPage() {
     }
     setUsername(value);
   };
+  
+  const mutation = useMutation({
+    mutationFn: registerUser,
+    onSuccess: () => {
+      window.location.href = "/auth/login";
+    },
+  });
 
-  const handleRegister = async (e: React.FormEvent) => {
+  const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!isFilled) return;
-    if (emailError || usernameError) return;
+    if (!isFilled || emailError || usernameError) return;
+    if (!validations.every((rule) => rule.valid)) return;
 
-    const isPasswordValid = validations.every((rule) => rule.valid);
-    if (!isPasswordValid) return;
-
-    setLoading(true);
-    setApiError(null);
-
-    try {
-      const res = await fetch("http://localhost:5000/api/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, username, password }),
-      });
-
-      const result = await res.json();
-
-      if (res.ok) {
-        window.location.href = "/auth/login";
-      } else {
-        setApiError(result.message || "Pendaftaran gagal");
-      }
-    } catch (err) {
-      setApiError("Terjadi kesalahan server. Coba lagi nanti.");
-    }
-
-    setLoading(false);
+    mutation.mutate({ username, email, password });
   };
 
   return (
     <main className="layout-main min-h-screen bg-[#B8E8DB] flex flex-col">
       <header className="w-full flex justify-start p-4">
-        <Image
-          src="/logo.png"
-          alt="Logo Puspa"
-          width={160}
-          height={50}
-          priority
-        />
+        <Image src="/logo.png" alt="Logo Puspa" width={160} height={50} priority />
       </header>
 
       <div className="flex flex-1 justify-center items-center px-4 mb-10">
@@ -119,9 +96,7 @@ export default function RegisterPage() {
                 value={email}
                 onChange={(e) => validateEmail(e.target.value)}
               />
-              {emailError && (
-                <p className="text-red-500 text-sm mt-1">{emailError}</p>
-              )}
+              {emailError && <p className="text-red-500 text-sm mt-1">{emailError}</p>}
             </div>
 
             <div className="mb-4">
@@ -137,9 +112,7 @@ export default function RegisterPage() {
                 value={username}
                 onChange={(e) => validateUsername(e.target.value)}
               />
-              {usernameError && (
-                <p className="text-red-500 text-sm mt-1">{usernameError}</p>
-              )}
+              {usernameError && <p className="text-red-500 text-sm mt-1">{usernameError}</p>}
             </div>
 
             <div className="mb-2">
@@ -164,6 +137,7 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* Password Rules */}
             <ul className="mb-4 space-y-1 text-sm">
               {validations.map((rule, index) => (
                 <li key={index} className="flex items-center gap-2">
@@ -171,31 +145,31 @@ export default function RegisterPage() {
                     size={16}
                     className={rule.valid ? "text-green-500" : "text-gray-300"}
                   />
-                  <span
-                    className={rule.valid ? "text-green-600" : "text-gray-500"}
-                  >
+                  <span className={rule.valid ? "text-green-600" : "text-gray-500"}>
                     {rule.text}
                   </span>
                 </li>
               ))}
             </ul>
 
-            {apiError && (
-              <p className="text-red-500 text-sm mb-3">{apiError}</p>
+            {mutation.isError && (
+              <p className="text-red-500 text-sm mb-3">
+                {(mutation.error as Error).message}
+              </p>
             )}
 
             <button
               type="submit"
               disabled={
                 !isFilled ||
-                loading ||
+                mutation.isPending ||
                 !!emailError ||
                 !!usernameError ||
                 !validations.every((rule) => rule.valid)
               }
               className={`w-full h-[45px] mb-4 rounded-lg font-medium text-white shadow-md transition-colors duration-300 flex items-center justify-center ${
                 isFilled &&
-                !loading &&
+                !mutation.isPending &&
                 !emailError &&
                 !usernameError &&
                 validations.every((rule) => rule.valid)
@@ -203,7 +177,7 @@ export default function RegisterPage() {
                   : "bg-[#C0DCD6] cursor-not-allowed"
               }`}
             >
-              {loading ? (
+              {mutation.isPending ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 "REGISTER"
@@ -212,9 +186,7 @@ export default function RegisterPage() {
           </form>
 
           <div className="text-center mt-4">
-            <p className="text-[#8D8D8D] text-[15px] mb-1">
-              Sudah Punya Akun ?
-            </p>
+            <p className="text-[#8D8D8D] text-[15px] mb-1">Sudah Punya Akun ?</p>
             <p className="text-[#EDB720] text-[16px] font-semibold">
               <Link href="/auth/login">Log in disini!</Link>
             </p>

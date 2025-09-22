@@ -1,6 +1,6 @@
-
 import "./globals.css";
 import { Playpen_Sans } from "next/font/google";
+import Providers from "./providers";
 
 const playpen = Playpen_Sans({
   subsets: ["latin"],
@@ -19,7 +19,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={playpen.className}>
-      <body>{children}</body>
+      <body>
+        <Providers>{children}</Providers>
+      </body>
     </html>
   );
 }
+

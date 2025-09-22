@@ -1,8 +1,8 @@
 "use client";
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import Link from "next/link";
+import { registrationChild, RegistrationPayload } from "@/lib/api/registration";
+import { useMutation } from "@tanstack/react-query";
 
 const layananOptions = [
   "Asesmen Tumbuh Kembang",
@@ -36,32 +36,90 @@ export default function Page() {
     pilihanLayanan: [] as string[],
   });
 
+  useEffect(() => {
+    if (formData.tanggalLahir) {
+      const today = new Date();
+      const birthDate = new Date(formData.tanggalLahir);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      setFormData((prev) => ({ ...prev, usia: String(age) }));
+    }
+  }, [formData.tanggalLahir]);
+
+  const mutation = useMutation({
+    mutationFn: (payload: RegistrationPayload) => registrationChild(payload),
+    onSuccess: () => {
+      alert("Pendaftaran berhasil!");
+      setFormData({
+        namaLengkap: "",
+        tempatLahir: "",
+        tanggalLahir: "",
+        usia: "",
+        jenisKelamin: "",
+        sekolah: "",
+        alamat: "",
+        keluhan: "",
+        statusOrtu: "",
+        orangTua: "",
+        nomorTelepon: "",
+        email: "",
+        pilihanLayanan: [],
+      });
+    },
+    onError: (error: any) => {
+      console.error(error);
+      alert("Terjadi kesalahan saat pendaftaran.");
+    },
+  });
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
-    const targetAsInput = e.target as HTMLInputElement;
-    const { name, value } = e.target;
+    const { name, value, type, checked } = e.target as HTMLInputElement;
 
-    if (targetAsInput.type === "checkbox") {
-      let updatedLayanan = [...formData.pilihanLayanan];
-      if (targetAsInput.checked) {
-        updatedLayanan.push(value);
-      } else {
-        updatedLayanan = updatedLayanan.filter((v) => v !== value);
-      }
-      setFormData((prev) => ({ ...prev, pilihanLayanan: updatedLayanan }));
+    if (type === "checkbox") {
+      setFormData((prev) => {
+        const updated = checked
+          ? [...prev.pilihanLayanan, value]
+          : prev.pilihanLayanan.filter((v) => v !== value);
+        return { ...prev, pilihanLayanan: updated };
+      });
     } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }));
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(formData);
-    alert("Data berhasil dikirim!");
+
+    let birthDate = formData.tanggalLahir;
+    if (birthDate) {
+      const date = new Date(birthDate);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0"); 
+      const day = String(date.getDate()).padStart(2, "0");
+      birthDate = `${year}-${month}-${day}`;
+    }
+
+    const payload: RegistrationPayload = {
+      child_name: formData.namaLengkap,
+      child_gender: formData.jenisKelamin,
+      child_birth_place: formData.tempatLahir,
+      child_birth_date: birthDate, 
+      child_school: formData.sekolah,
+      child_address: formData.alamat,
+      child_complaint: formData.keluhan,
+      child_service_choice: formData.pilihanLayanan.join(", "),
+      email: formData.email,
+      parent_name: formData.orangTua,
+      parent_phone: formData.nomorTelepon,
+      parent_type: formData.statusOrtu,
+    };
+
+    mutation.mutate(payload);
   };
 
   return (
@@ -74,19 +132,19 @@ export default function Page() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="text-center font-extrabold text-4xl mb-2 text-[#36315B] "
+        className="text-center font-extrabold text-4xl mb-2 text-[#36315B]"
       >
         Form Pendaftaran
       </motion.h2>
+
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.15, duration: 0.6 }}
-        className="text-center mb-8 text-[#36315B] text-lg font-normal max-w-xl mx-auto "
+        className="text-center mb-8 text-[#36315B] text-lg font-normal max-w-xl mx-auto"
       >
-        Kami senang dapat mendukung setiap langkah tumbuh kembang anak Anda.
-        Mohon isi data lengkap di bawah ini agar permohonan Anda segera kami
-        proses.
+        Kami senang dapat mendukung setiap langkah tumbuh kembang anak Anda. Mohon isi
+        data lengkap di bawah ini agar permohonan Anda segera kami proses.
       </motion.p>
 
       <div className="flex justify-center px-5 mt-3">
@@ -133,21 +191,20 @@ export default function Page() {
                 />
               </label>
               <label className="flex-[0.5]">
-                Usia <span className="text-red-500">*</span>
+                Usia
                 <input
                   type="number"
                   name="usia"
                   value={formData.usia}
-                  onChange={handleChange}
-                  required
-                  min={0}
-                  className="w-full p-2 border border-gray-300 rounded mt-1"
+                  readOnly
+                  className="w-full p-2 border border-gray-300 rounded mt-1 bg-gray-100"
                 />
               </label>
             </div>
 
             <div className="mb-4">
-              Jenis Kelamin <span className="text-red-500">*</span> <br />
+              Jenis Kelamin <span className="text-red-500">*</span>
+              <br />
               <label className="mr-5">
                 <input
                   type="radio"
@@ -203,7 +260,6 @@ export default function Page() {
                 onChange={handleChange}
                 required
                 rows={3}
-                placeholder="Isi keluhan"
                 className="w-full p-2 border border-gray-300 rounded mt-1 resize-y"
               />
             </label>
@@ -301,16 +357,17 @@ export default function Page() {
               </div>
             </fieldset>
 
-            <Link href="/pendaftaran">
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                type="button"
-                className="bg-[#7AA68D] text-white py-2 px-5 rounded-full cursor-pointer float-right"
-              >
-                Daftar
-              </motion.button>
-            </Link>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              type="submit"
+              disabled={mutation.isPending}
+              className={`bg-[#7AA68D] text-white py-2 px-5 rounded-full cursor-pointer float-right ${
+                mutation.isPending ? "opacity-50 cursor-not-allowed" : ""
+              }`}
+            >
+              {mutation.isPending ? "Mendaftarkan..." : "Daftar"}
+            </motion.button>
           </form>
         </motion.div>
       </div>
