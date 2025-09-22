@@ -137,7 +137,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Password Rules */}
             <ul className="mb-4 space-y-1 text-sm">
               {validations.map((rule, index) => (
                 <li key={index} className="flex items-center gap-2">

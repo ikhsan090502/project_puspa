@@ -7,11 +7,9 @@ import HeaderTerapis from "@/components/layout/header_terapis";
 
 interface Anak {
   nama: string;
+  observer: string;
   usia: string;
   sekolah: string;
-  keluhan: string;
-  orangtua: string;
-  telp: string;
   tglObservasi: string;
 }
 
@@ -22,57 +20,24 @@ interface Kategori {
 
 const data: Anak[] = [
   {
-    nama: "Nama",
+    nama: "Zam zam",
+    observer: "Annisa",
     usia: "2 Tahun 5 Bulan",
     sekolah: "-",
-    keluhan: "Sulit Bicara",
-    orangtua: "Ibu Sari",
-    telp: "081299999999",
     tglObservasi: "11/09/2025",
   },
   {
-    nama: "Nama",
+    nama: "Yusuf",
+    observer: "Habib",
     usia: "5 Tahun 11 Bulan",
     sekolah: "TK B",
-    keluhan: "Susah Fokus",
-    orangtua: "Ayah Dedi",
-    telp: "081299999999",
     tglObservasi: "11/09/2025",
   },
   {
-    nama: "Nama",
+    nama: "Furqon",
+    observer: "Annisa",
     usia: "7 Tahun 5 Bulan",
     sekolah: "SD Kelas 1",
-    keluhan: "Sulit Bicara",
-    orangtua: "Ibu Sari",
-    telp: "081299999999",
-    tglObservasi: "11/09/2025",
-  },
-  {
-    nama: "Nama",
-    usia: "9 Tahun 11 Bulan",
-    sekolah: "SD Kelas 3",
-    keluhan: "Susah Fokus",
-    orangtua: "Ayah Dedi",
-    telp: "081299999999",
-    tglObservasi: "11/09/2025",
-  },
-  {
-    nama: "Nama",
-    usia: "11 Tahun 5 Bulan",
-    sekolah: "SD Kelas 5",
-    keluhan: "Sulit Bicara",
-    orangtua: "Ibu Sari",
-    telp: "081299999999",
-    tglObservasi: "11/09/2025",
-  },
-  {
-    nama: "Nama",
-    usia: "15 Tahun 1 Bulan",
-    sekolah: "SD Kelas 5",
-    keluhan: "Susah Fokus",
-    orangtua: "Ayah Dedi",
-    telp: "081299999999",
     tglObservasi: "11/09/2025",
   },
 ];
@@ -124,18 +89,16 @@ export default function RiwayatObservasiPage() {
             return (
               <div
                 key={idx}
-                className="mb-6 bg-white shadow rounded-lg p-4 border  border-[#E4E4E4]"
+                className="mb-6 bg-white shadow rounded-lg p-4 border border-[#E4E4E4]"
               >
                 <h3 className="font-semibold mb-3">{kat.title}</h3>
                 <table className="w-full text-sm table-auto border-collapse">
                   <thead>
                     <tr className="border-b border-[#81B7A9] bg-gray-100">
                       <th className="text-center py-2 px-4">Nama</th>
+                      <th className="text-center py-2 px-4">Observer</th>
                       <th className="text-center py-2 px-4">Usia</th>
                       <th className="text-center py-2 px-4">Sekolah</th>
-                      <th className="text-center py-2 px-4">Keluhan</th>
-                      <th className="text-center py-2 px-4">Orangtua</th>
-                      <th className="text-center py-2 px-4">Telepon</th>
                       <th className="text-center py-2 px-4">
                         Tanggal Observasi
                       </th>
@@ -151,20 +114,10 @@ export default function RiwayatObservasiPage() {
                             className="border-b border-[#81B7A9] hover:bg-gray-50"
                           >
                             <td className="py-2 px-4 text-center">{d.nama}</td>
+                            <td className="py-2 px-4 text-center">{d.observer}</td>
                             <td className="py-2 px-4 text-center">{d.usia}</td>
-                            <td className="py-2 px-4 text-center">
-                              {d.sekolah}
-                            </td>
-                            <td className="py-2 px-4 text-center">
-                              {d.keluhan}
-                            </td>
-                            <td className="py-2 px-4 text-center">
-                              {d.orangtua}
-                            </td>
-                            <td className="py-2 px-4 text-center">{d.telp}</td>
-                            <td className="py-2 px-4 text-center">
-                              {d.tglObservasi}
-                            </td>
+                            <td className="py-2 px-4 text-center">{d.sekolah}</td>
+                            <td className="py-2 px-4 text-center">{d.tglObservasi}</td>
                             <td className="py-2 px-4 text-center">
                               <button
                                 className="border border-[#81B7A9] text-[#81B7A9] hover:bg-[#81B7A9] hover:text-white text-xs px-3 py-1 rounded transition"
@@ -179,7 +132,7 @@ export default function RiwayatObservasiPage() {
                     ) : (
                       <tr>
                         <td
-                          colSpan={8}
+                          colSpan={6}
                           className="text-center py-3 px-4 text-gray-500 text-sm"
                         >
                           Tidak ada data
@@ -192,39 +145,18 @@ export default function RiwayatObservasiPage() {
             );
           })}
 
-          {/* Modal detail pasien */}
           {selected && (
             <div className="fixed inset-0 bg-opacity-40 flex items-center justify-center z-50">
               <div className="bg-white rounded-lg shadow-lg w-[400px] p-6">
-                <h3 className="text-xl font-bold mb-4">Detail Pasien</h3>
-                <div className="space-y-2 text-sm">
-                  <p>
-                    <span className="font-semibold">Nama:</span> {selected.nama}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Usia:</span> {selected.usia}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Sekolah:</span>{" "}
-                    {selected.sekolah}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Keluhan:</span>{" "}
-                    {selected.keluhan}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Orangtua:</span>{" "}
-                    {selected.orangtua}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Telepon:</span>{" "}
-                    {selected.telp}
-                  </p>
-                  <p>
-                    <span className="font-semibold">Tanggal Observasi:</span>{" "}
-                    {selected.tglObservasi}
-                  </p>
-                </div>
+                <h3 className="text-xl font-bold mb-4">Hasil Observasi</h3>
+                <hr className="mb-4 border-[#81B7A9]" />
+                <ul className="list-disc ml-6 text-sm space-y-1">
+                  <li>Nama: {selected.nama}</li>
+                  <li>Observer: {selected.observer}</li>
+                  <li>Usia: {selected.usia}</li>
+                  <li>Sekolah: {selected.sekolah}</li>
+                  <li>Tanggal Observasi: {selected.tglObservasi}</li>
+                </ul>
                 <div className="mt-6 flex justify-end">
                   <button
                     className="px-4 py-2 bg-[#81B7A9] text-white rounded hover:bg-[#36315B]"
