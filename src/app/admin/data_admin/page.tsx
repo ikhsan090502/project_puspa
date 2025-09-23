@@ -5,9 +5,9 @@ import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import { Pencil, Trash2, Plus, Search, Eye } from "lucide-react";
 
-import FormTambahAdmin from "@/components/admin/FormTambahAdmin";
-import FormUbahAdmin from "@/components/admin/FormUbahAdmin";
-import FormHapusAdmin from "@/components/admin/FormHapusAdmin";
+import FormTambahAdmin from "@/components/form/FormTambahAdmin";
+import FormUbahAdmin from "@/components/form/FormUbahAdmin";
+import FormHapusAdmin from "@/components/form/FormHapusAdmin";
 
 interface Admin {
   id: number;

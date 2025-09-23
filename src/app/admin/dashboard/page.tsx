@@ -6,7 +6,7 @@ import Header from "@/components/layout/header";
 import CardInfo from "@/components/dashboard/card_info";
 import JadwalTable from "@/components/dashboard/jadwal_table";
 import PasienChart from "@/components/dashboard/pasien_chart";
-import FormTambahAdmin from "@/components/admin/FormTambahAdmin";
+import FormTambahAdmin from "@/components/form/FormTambahAdmin";
 
 export default function AdminDashboard() {
   const [openTambahAdmin, setOpenTambahAdmin] = useState(false);

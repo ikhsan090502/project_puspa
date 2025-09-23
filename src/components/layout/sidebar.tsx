@@ -27,9 +27,9 @@ export const menu = [
     section: "Manajemen Data",
     items: [
       { name: "Admin", href: "/admin/data_admin", icon: UserCog },
-      { name: "Terapis", href: "/data_terapis", icon: UserSquare2 },
-      { name: "Pasien / Anak", href: "/data_pasien", icon: Users },
-      { name: "Jadwal", href: "/jadwal", icon: CalendarDays },
+      { name: "Terapis", href: "/admin/data_terapis", icon: UserSquare2 },
+      { name: "Pasien / Anak", href:"/admin/data_pasien", icon: Users },
+      { name: "Jadwal", href: "/admin/jadwal", icon: CalendarDays },
     ],
   },
   {
