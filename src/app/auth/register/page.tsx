@@ -19,12 +19,13 @@ export default function RegisterPage() {
 
   const isFilled = email && username && password;
 
-  const validations = [
-    { text: "Minimal 8 karakter", valid: password.length >= 8 },
-    { text: "Diawali huruf kapital", valid: /^[A-Z]/.test(password) },
-    { text: "Terdapat angka", valid: /\d/.test(password) },
-    { text: "Terdapat simbol (!@#%&)", valid: /[!@#%&]/.test(password) },
-  ];
+ const validations = [
+  { text: "Minimal 8 karakter", valid: password.length >= 8 },
+  { text: "Terdapat huruf kapital", valid: /[A-Z]/.test(password) },
+  { text: "Terdapat angka", valid: /\d/.test(password) },
+  { text: "Terdapat simbol (!@#%&)", valid: /[!@#%&]/.test(password) },
+];
+
 
   const validateEmail = (value: string) => {
     if (!/\S+@\S+\.\S+/.test(value)) {
