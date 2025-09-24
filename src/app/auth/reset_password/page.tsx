@@ -13,11 +13,11 @@ export default function ResetPasswordPage() {
   const [showConfirm, setShowConfirm] = useState(false);
 
   const validations = [
-    { text: "Minimal 8 karakter", valid: password.length >= 8 },
-    { text: "Diawali huruf kapital", valid: /^[A-Z]/.test(password) },
-    { text: "Terdapat angka", valid: /\d/.test(password) },
-    { text: "Terdapat simbol (!@#%&)", valid: /[!@#%&]/.test(password) },
-  ];
+  { text: "Minimal 8 karakter", valid: password.length >= 8 },
+  { text: "Terdapat huruf kapital", valid: /[A-Z]/.test(password) },
+  { text: "Terdapat angka", valid: /\d/.test(password) },
+  { text: "Terdapat simbol (!@#%&)", valid: /[!@#%&]/.test(password) },
+];
 
   return (
     <main className="min-h-screen flex flex-col bg-[#C9EAE0]">
