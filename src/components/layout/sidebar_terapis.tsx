@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { X } from "lucide-react"; 
 import {
   LayoutGrid,
   Search,
@@ -14,7 +15,9 @@ import {
 } from "lucide-react";
 
 interface SidebarProps {
-  activePage?: string; 
+  activePage?: string;
+  isMobile?: boolean;
+  onClose?: () => void; 
 }
 
 export const menu = [
@@ -43,11 +46,20 @@ export const menu = [
   },
 ];
 
-export default function SidebarTerapis({ activePage }: SidebarProps) {
+export default function SidebarTerapis({ activePage, isMobile, onClose }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 h-screen bg-white shadow-md shadow-[#ADADAD] p-4 flex flex-col">
+    <aside className="w-64 h-screen bg-white shadow-md shadow-[#ADADAD] p-4 flex flex-col relative">
+      {isMobile && onClose && (
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-600 hover:text-[#36315B] sm:hidden"
+        >
+          <X size={24} />
+        </button>
+      )}
+
       <div className="flex justify-center mb-6">
         <Image src="/logo.png" alt="Logo Puspa" width={160} height={50} priority />
       </div>
@@ -65,7 +77,7 @@ export default function SidebarTerapis({ activePage }: SidebarProps) {
                 const isActive =
                   pathname === item.href ||
                   pathname.startsWith(item.href + "/") ||
-                  activePage === item.name.toLowerCase(); 
+                  activePage === item.name.toLowerCase();
 
                 return (
                   <Link
@@ -76,6 +88,7 @@ export default function SidebarTerapis({ activePage }: SidebarProps) {
                         ? "bg-[#C0DCD6] text-[#36315B] font-semibold"
                         : "text-[#36315B] hover:bg-[#81B7A9] hover:text-white"
                     }`}
+                    onClick={isMobile && onClose ? onClose : undefined} 
                   >
                     <item.icon size={20} />
                     <span>{item.name}</span>
