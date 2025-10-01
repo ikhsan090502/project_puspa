@@ -25,7 +25,7 @@ export default function FormHapusAdmin({ open, onClose, onConfirm }: FormHapusAd
       >
         <div className="flex justify-between items-center mb-4">
         </div>
-        <p className="mb-6">Apakah kamu yakin ingin menghapus admin ini?</p>
+        <p className="mb-6">Apakah kamu yakin ingin menghapus data ini?</p>
         <div className="flex justify-end gap-3">
           <button onClick={onClose} className="px-4 py-2 rounded-lg border hover:bg-gray-100">
             Batal

@@ -249,36 +249,68 @@ export default function ObservasiPage() {
           </AnimatePresence>
 
           {selected && (
-            <div className="fixed inset-0 bg-opacity-40 flex items-center justify-center z-50 px-4">
-              <motion.div
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="bg-white rounded-lg shadow-lg w-[90%] max-w-md p-6"
-              >
-                <h3 className="text-lg sm:text-xl font-bold mb-4">
-                  Detail Observasi
-                </h3>
-                <hr className="mb-6 border-[#81B7A9]" />
-                <ul className="list-disc ml-6 text-xs sm:text-sm space-y-1">
-                  <li>Nama Lengkap: {selected.nama}</li>
-                  <li>Jenis Kelamin: {selected.jenisKelamin}</li>
-                  <li>Usia: {selected.usia}</li>
-                  <li>Sekolah: {selected.sekolah}</li>
-                  <li>Tanggal Observasi: {selected.tglObservasi}</li>
-                </ul>
-                <div className="mt-6 flex justify-end">
-                  <button
-                    className="px-3 sm:px-4 py-2 bg-[#81B7A9] text-white rounded hover:bg-[#36315B] text-sm sm:text-base"
-                    onClick={() => setSelected(null)}
-                  >
-                    Tutup
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
+  <div className="fixed inset-0 bg-opacity-40 flex items-center justify-center z-50 px-4">
+    <motion.div
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      exit={{ scale: 0.8, opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      className="bg-white rounded-lg shadow-lg w-[90%] max-w-md p-6 relative"
+    >
+      <button
+        className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+        onClick={() => setSelected(null)}
+      >
+        ✕
+      </button>
+
+      <h3 className="text-lg sm:text-xl font-bold text-[#36315B] mb-4">
+        Detail Observasi
+      </h3>
+      <hr className="mb-4 border-[#81B7A9]" />
+
+      <h4 className="font-semibold mb-1">Informasi Anak</h4>
+      <ul className="list-disc ml-6 text-xs sm:text-sm space-y-1 mb-3">
+        <li>Nama Lengkap : {selected.nama}</li>
+        <li>Tanggal Lahir : 10 Februari 2021</li>
+        <li>Usia : {selected.usia}</li>
+        <li>Jenis Kelamin : {selected.jenisKelamin}</li>
+        <li>Sekolah : {selected.sekolah}</li>
+        <li>Alamat : JL Mawar No. 12, Solo</li>
+        <li>Tanggal Observasi : {selected.tglObservasi}</li>
+      </ul>
+
+      <h4 className="font-semibold mb-1">Informasi Orangtua / Wali</h4>
+      <ul className="list-disc ml-6 text-xs sm:text-sm space-y-1 mb-3">
+        <li>Nama Orangtua : Ibu Eny</li>
+        <li>Hubungan : Ibu</li>
+        <li>Nomor WhatsApp : 0812-xxxx-xxxx</li>
+      </ul>
+
+      <h4 className="font-semibold mb-1">Keluhan</h4>
+      <p className="text-xs sm:text-sm mb-3">
+        Anak saya sudah 3 tahun tapi belum bisa jalan dengan lancar
+      </p>
+
+      <h4 className="font-semibold mb-1">Jenis Layanan</h4>
+      <ul className="list-disc ml-6 text-xs sm:text-sm space-y-1 mb-6">
+        <li>Daycare</li>
+        <li>Homecare</li>
+        <li>Konsultasi Dokter</li>
+      </ul>
+
+      <div className="flex justify-end">
+        <button
+          className="px-3 sm:px-4 py-2 bg-[#81B7A9] text-white rounded hover:bg-[#36315B] text-sm sm:text-base"
+          onClick={() => setSelected(null)}
+        >
+          Tutup
+        </button>
+      </div>
+    </motion.div>
+  </div>
+)}
+
         </main>
       </div>
     </div>

@@ -113,19 +113,41 @@ export default function FormObservasiPage() {
           {step === "observasi" && (
             <>
               <div className="flex justify-between items-center mb-6">
-                <div className="flex gap-4">
-                  {kategoriList.map((k) => (
-                    <button
-                      key={k}
-                      onClick={() => setActiveTab(k)}
-                      className={`px-4 py-2 rounded-full text-white ${
-                        activeTab === k ? "bg-[#5F52BF]" : "bg-[#81B7A9]"
-                      }`}
-                    >
-                      {k}
-                    </button>
-                  ))}
-                </div>
+     <div className="flex items-center justify-center gap-x-12 mb-10">
+  {kategoriList.map((k, i) => {
+    const pertanyaanKategori = questions[k];
+    const sudahDiisi = pertanyaanKategori.every(
+      (q) => answers[q.id]?.jawaban !== undefined
+    );
+
+    let circleClass =
+      "w-10 h-10 flex items-center justify-center rounded-full font-bold";
+    let bgColor = "bg-gray-300 text-black"; 
+
+    if (activeTab === k) {
+      bgColor = "bg-[#5F52BF] text-white"; 
+    } else if (sudahDiisi) {
+      bgColor = "bg-[#C0DCD6] text-[#36315B]"; 
+    }
+
+    return (
+      <div key={k} className="flex flex-col items-center relative">
+        {i < kategoriList.length - 1 && (
+          <div className="absolute top-5 left-1/2 w-[170px] h-[2px] bg-gray-300 z-0"></div>
+        )}
+
+        <button
+          onClick={() => setActiveTab(k)}
+          className={`${circleClass} ${bgColor} z-10`}
+        >
+          {i + 1}
+        </button>
+        <span className="mt-2 text-sm text-center">{k}</span>
+      </div>
+    );
+  })}
+</div>
+
                 <div className="font-bold text-lg">
                   Total Skor: {totalScore}
                 </div>
