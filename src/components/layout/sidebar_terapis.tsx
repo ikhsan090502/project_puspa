@@ -29,7 +29,7 @@ export const menu = [
     section: "PENDATAAN",
     items: [
       { name: "Observasi", href: "/terapis/observasi", icon: Search },
-      { name: "Asesmen", href: "/terapis/asesmen", icon: ClipboardList },
+      { name: "Asessment", href: "/terapis/asessment", icon: ClipboardList },
     ],
   },
   {

@@ -6,38 +6,47 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { useLogin, LoginPayload } from "@/lib/api/login";
+import { useMutation } from "@tanstack/react-query";
+import { login, LoginPayload, LoginErrorResponse } from "@/lib/api/login";
 
 export default function LoginPage() {
   const router = useRouter();
-
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [fieldError, setFieldError] = useState<{ general?: string }>({});
-
-  const loginMutation = useLogin();
+  const [fieldError, setFieldError] = useState<LoginErrorResponse>({});
 
   const isFilled = identifier.trim() !== "" && password.trim() !== "";
+
+  const loginMutation = useMutation({
+    mutationFn: (payload: LoginPayload) => login(payload),
+
+    onSuccess: (data) => {
+      switch (data.role) {
+        case "admin":
+          router.push("/admin/dashboard");
+          break;
+        case "terapis":
+          router.push("/terapis/observasi");
+          break;
+        case "orangtua":
+        case "user":
+          router.push("/orangtua/dashboard");
+          break;
+        default:
+          router.push("/");
+      }
+    },
+
+    onError: (error: LoginErrorResponse) => {
+      setFieldError(error); 
+    },
+  });
 
   const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setFieldError({});
-
-    const payload: LoginPayload = { identifier, password };
-
-    loginMutation.mutate(payload, {
-      onSuccess: () => {
-        router.push("/terapis/observasi"); 
-      },
-      onError: (error) => {
-        if (error instanceof Error) {
-          setFieldError({ general: error.message });
-        } else {
-          setFieldError({ general: "Terjadi kesalahan saat login." });
-        }
-      },
-    });
+    loginMutation.mutate({ identifier, password });
   };
 
   return (
@@ -67,20 +76,25 @@ export default function LoginPage() {
               </label>
               <input
                 type="text"
-                placeholder="Enter username or email address"
+                placeholder="Masukkan username atau email"
                 className="w-full h-[50px] rounded-lg px-3 py-2 border border-[#ADADAD] bg-white outline-none focus:ring-2 focus:ring-[#81B7A9]"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 required
               />
+              {fieldError.identifier && (
+                <p className="text-[#AD3113] text-sm mt-1">{fieldError.identifier[0]}</p>
+              )}
             </div>
 
             <div className="mb-3">
-              <label className="block text-sm font-medium text-[#36315B] mb-2">Password</label>
+              <label className="block text-sm font-medium text-[#36315B] mb-2">
+                Password
+              </label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter Password"
+                  placeholder="Masukkan Password"
                   className="w-full h-[50px] rounded-lg px-3 pr-12 py-2 border border-[#ADADAD] bg-white outline-none focus:ring-2 focus:ring-[#81B7A9]"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
@@ -94,6 +108,9 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
                 </button>
               </div>
+              {fieldError.password && (
+                <p className="text-[#AD3113] text-sm mt-1">{fieldError.password[0]}</p>
+              )}
             </div>
 
             {fieldError.general && (
@@ -122,9 +139,9 @@ export default function LoginPage() {
           </form>
 
           <div className="text-center mt-4">
-            <p className="text-[#8D8D8D] text-[15px] mb-1">Belum Punya Akun?</p>
+            <p className="text-[#8D8D8D] text-[15px] mb-1">Belum punya akun?</p>
             <p className="text-[#EDB720] text-[16px] font-semibold">
-              <Link href="/auth/register">Daftar disini!</Link>
+              <Link href="/auth/register">Daftar di sini!</Link>
             </p>
           </div>
         </motion.div>

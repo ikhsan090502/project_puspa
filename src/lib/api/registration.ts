@@ -1,4 +1,4 @@
-import axios, { AxiosError } from "axios";
+import axios from "axios";
 
 export interface RegistrationPayload {
   child_name: string;
@@ -8,36 +8,38 @@ export interface RegistrationPayload {
   child_school: string;
   child_address: string;
   child_complaint: string;
-  child_service_choice: string;
+  child_service_choice: string; 
   email: string;
-  parent_name: string;
-  parent_phone: string;
-  parent_type: string;
+  guardian_name: string;
+  guardian_phone: string;
+  guardian_type: string;
 }
 
-export async function registrationChild(data: RegistrationPayload) {
+export async function registrationChild(payload: RegistrationPayload) {
   try {
     const response = await axios.post(
-      "https://50f0aeb59dfd.ngrok-free.app/api/v1/registration",
-      data,
+      "https://puspa.sinus.ac.id/api/v1/registration", 
+      payload,
       {
         headers: {
           "Content-Type": "application/json",
         },
+        withCredentials: false, 
       }
     );
+
     return response.data;
-  } catch (error: unknown) {
+  } catch (error: any) {
     if (axios.isAxiosError(error)) {
-      throw {
-        message:
-          error.response?.data?.message ||
-          `Server error: ${error.response?.status || "Unknown"}`,
-      };
-    } else if (error instanceof Error) {
-      throw { message: error.message };
+      console.error("❌ Axios error detail:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        headers: error.response?.headers,
+      });
     } else {
-      throw { message: "Terjadi kesalahan saat mengirim data." };
+      console.error("❌ Unknown error:", error);
     }
+    throw error;
   }
 }

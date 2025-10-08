@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { registrationChild, RegistrationPayload } from "@/lib/api/registration";
@@ -39,6 +40,7 @@ export default function Page() {
     pilihanLayanan: [] as string[],
   });
 
+ 
   useEffect(() => {
     if (formData.tanggalLahir) {
       const today = new Date();
@@ -52,9 +54,11 @@ export default function Page() {
     }
   }, [formData.tanggalLahir]);
 
+
   const mutation = useMutation({
     mutationFn: (payload: RegistrationPayload) => registrationChild(payload),
     onSuccess: () => {
+      alert("✅ Pendaftaran berhasil!");
       setFormData({
         namaLengkap: "",
         tempatLahir: "",
@@ -70,12 +74,16 @@ export default function Page() {
         email: "",
         pilihanLayanan: [],
       });
-
       router.push("/pendaftaran");
     },
     onError: (error: any) => {
-      console.error(error);
-      alert("Terjadi kesalahan saat pendaftaran.");
+      console.error("❌ Error saat submit:", error);
+
+      if (error.response?.data) {
+        alert(`Error: ${JSON.stringify(error.response.data)}`);
+      } else {
+        alert(error.message || "Terjadi kesalahan saat pendaftaran.");
+      }
     },
   });
 
@@ -83,7 +91,6 @@ export default function Page() {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value, type, checked } = e.target as HTMLInputElement;
-
     if (type === "checkbox") {
       setFormData((prev) => {
         const updated = checked
@@ -97,34 +104,37 @@ export default function Page() {
   };
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    let birthDate = formData.tanggalLahir;
-    if (birthDate) {
-      const date = new Date(birthDate);
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-      birthDate = `${year}-${month}-${day}`;
-    }
+  let birthDate = formData.tanggalLahir;
+  if (birthDate) {
+    const date = new Date(birthDate);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    birthDate = `${year}-${month}-${day}`;
+  }
 
-    const payload: RegistrationPayload = {
-      child_name: formData.namaLengkap,
-      child_gender: formData.jenisKelamin,
-      child_birth_place: formData.tempatLahir,
-      child_birth_date: birthDate,
-      child_school: formData.sekolah,
-      child_address: formData.alamat,
-      child_complaint: formData.keluhan,
-      child_service_choice: formData.pilihanLayanan.join(", "),
-      email: formData.email,
-      parent_name: formData.orangTua,
-      parent_phone: formData.nomorTelepon,
-      parent_type: formData.statusOrtu,
-    };
+ const payload: RegistrationPayload = {
+  child_name: formData.namaLengkap,
+  child_gender: formData.jenisKelamin.toLowerCase(),
+  child_birth_place: formData.tempatLahir,
+  child_birth_date: birthDate,
+  child_school: formData.sekolah,
+  child_address: formData.alamat,
+  child_complaint: formData.keluhan,
+  child_service_choice: formData.pilihanLayanan.join(", "), 
+  email: formData.email,
+  guardian_name: formData.orangTua,
+  guardian_phone: formData.nomorTelepon,
+  guardian_type: formData.statusOrtu.toLowerCase(),
+};
 
-    mutation.mutate(payload);
-  };
+
+  console.log("📤 Payload yang dikirim:", payload);
+  mutation.mutate(payload);
+};
+
 
   return (
     <div className="min-h-screen bg-[#B8E8DB] pb-5">
@@ -214,8 +224,8 @@ export default function Page() {
                 <input
                   type="radio"
                   name="jenisKelamin"
-                  value="Laki-laki"
-                  checked={formData.jenisKelamin === "Laki-laki"}
+                  value="laki-laki"
+                  checked={formData.jenisKelamin === "laki-laki"}
                   onChange={handleChange}
                   className="mr-2"
                 />
@@ -225,8 +235,8 @@ export default function Page() {
                 <input
                   type="radio"
                   name="jenisKelamin"
-                  value="Perempuan"
-                  checked={formData.jenisKelamin === "Perempuan"}
+                  value="perempuan"
+                  checked={formData.jenisKelamin === "perempuan"}
                   onChange={handleChange}
                   className="mr-2"
                 />
@@ -274,8 +284,8 @@ export default function Page() {
                 <input
                   type="radio"
                   name="statusOrtu"
-                  value="Ayah"
-                  checked={formData.statusOrtu === "Ayah"}
+                  value="ayah"
+                  checked={formData.statusOrtu === "ayah"}
                   onChange={handleChange}
                   className="mr-2"
                 />
@@ -285,8 +295,8 @@ export default function Page() {
                 <input
                   type="radio"
                   name="statusOrtu"
-                  value="Ibu"
-                  checked={formData.statusOrtu === "Ibu"}
+                  value="ibu"
+                  checked={formData.statusOrtu === "ibu"}
                   onChange={handleChange}
                   className="mr-2"
                 />
@@ -296,8 +306,8 @@ export default function Page() {
                 <input
                   type="radio"
                   name="statusOrtu"
-                  value="Wali"
-                  checked={formData.statusOrtu === "Wali"}
+                  value="wali"
+                  checked={formData.statusOrtu === "wali"}
                   onChange={handleChange}
                   className="mr-2"
                 />

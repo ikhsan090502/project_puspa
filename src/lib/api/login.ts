@@ -1,5 +1,4 @@
 import axios from "axios";
-import { useMutation, UseMutationResult } from "@tanstack/react-query";
 
 export interface LoginPayload {
   identifier: string;
@@ -7,76 +6,56 @@ export interface LoginPayload {
 }
 
 export interface LoginResponse {
-  success: boolean;
-  message: string;
-  data?: {
-    id: string;
-    username: string;
-    email?: string;
-    role: string;
-    tokenType: string;      
-    accessToken: string;
-    refreshToken?: string;
-    createdAt?: string;
-    updatedAt?: string;
-  };
+  token: string;
+  tokenType: string;
+  role: string;
 }
 
-export const authAxios = axios.create({
-  baseURL: "https://50f0aeb59dfd.ngrok-free.app/api/v1",
+export interface LoginErrorResponse {
+  identifier?: string[];
+  password?: string[];
+  general?: string;
+}
+
+const axiosInstance = axios.create({
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "https://puspa.sinus.ac.id/api/v1",
 });
 
-authAxios.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers = config.headers || {};
-    config.headers.Authorization = token; 
+axiosInstance.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    const tokenType = localStorage.getItem("tokenType") || "Bearer";
+    if (token) {
+      config.headers.Authorization = `${tokenType} ${token}`;
+    }
   }
   return config;
 });
 
-export async function loginUser({ identifier, password }: LoginPayload): Promise<string> {
+export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
   try {
-    const res = await axios.post<LoginResponse>(
-      "https://50f0aeb59dfd.ngrok-free.app/api/v1/auth/login",
-      { identifier, password },
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const res = await axiosInstance.post("/auth/login", payload);
 
-    if (!res.data.success || !res.data.data) {
-      throw new Error(res.data.message || "Login gagal.");
+    if (!res.data?.success) {
+      throw res.data; 
     }
 
-    const token = `${res.data.data.tokenType} ${res.data.data.accessToken}`;
-    localStorage.setItem("token", token); 
-    return token;
+    const { token, tokenType, role } = res.data.data;
 
-  } catch (err: unknown) {
-    if (axios.isAxiosError(err)) {
-      const status = err.response?.status;
-      const message = err.response?.data?.message || "";
+    localStorage.setItem("token", token);
+    localStorage.setItem("tokenType", tokenType);
+    localStorage.setItem("role", role);
 
-      if (status === 401) {
-        throw new Error("Username atau Password salah. Coba lagi!");
-      }
-
-      if (message.toLowerCase().includes("belum aktif")) {
-        throw new Error("Akun belum aktif. Silakan melakukan verifikasi!");
-      }
-
-      throw new Error(message || "Gagal menghubungi server.");
+    return { token, tokenType, role };
+  } catch (err: any) {
+    if (err.response?.status === 401) {
+      throw { general: "Username atau password salah." };
     }
 
-    if (err instanceof Error) {
-      throw new Error(err.message);
+    if (err.errors) {
+      throw err.errors; 
     }
 
-    throw new Error("Terjadi kesalahan saat login.");
+    throw { general: err.response?.data?.message || err.message || "Terjadi kesalahan login." };
   }
-}
-
-export function useLogin(): UseMutationResult<string, Error, LoginPayload> {
-  return useMutation({
-    mutationFn: loginUser,
-  });
-}
+};

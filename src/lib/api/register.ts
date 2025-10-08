@@ -1,35 +1,59 @@
 import axios from "axios";
 
 export async function registerUser({
-  username,
   email,
+  username,
   password,
 }: {
-  username: string;
   email: string;
+  username: string;
   password: string;
 }) {
   try {
     const res = await axios.post(
-      "https://50f0aeb59dfd.ngrok-free.app/api/v1/auth/register",
-      {
-        username,
-        email,
-        password,
-      }
+      "https://puspa.sinus.ac.id/api/v1/auth/register",
+      { email, username, password }
     );
 
-    return res.data; 
-  } catch (err: any) {
-    if (err.response) {
-      if (err.response.status === 409) {
+    const user_id =
+      res.data?.data?.user_id ||
+      res.data?.data?.user?.id ||
+      res.data?.user_id ||
+      null;
+
+    return {
+      success: true,
+      message:
+        res.data?.message ||
+        "Registrasi berhasil! Silakan verifikasi email Anda.",
+      user_id,
+    };
+  } catch (error: any) {
+    if (error.response) {
+      const status = error.response.status;
+      const data = error.response.data;
+
+      if (status === 422 && data.errors) {
+        const emailError = data.errors.email?.[0];
+        const usernameError = data.errors.username?.[0];
+        const passwordError = data.errors.password?.[0];
+
         throw new Error(
-          err.response.data.errors?.error ||
-            "Email atau username sudah terdaftar."
+          emailError ||
+            usernameError ||
+            passwordError ||
+            data.message ||
+            "Data tidak valid. Mohon periksa kembali."
         );
       }
-      throw new Error(err.response.data.message || "Gagal melakukan registrasi.");
+
+      throw new Error(data?.message || "Terjadi kesalahan di server.");
     }
-    throw new Error("Gagal menghubungi server.");
+
+    if (error.request) {
+      throw new Error("Tidak dapat terhubung ke server. Periksa koneksi internet Anda.");
+    }
+
+    throw new Error(error.message || "Terjadi kesalahan tak terduga.");
   }
 }

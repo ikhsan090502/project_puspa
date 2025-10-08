@@ -7,25 +7,26 @@ import Link from "next/link";
 import { Eye, EyeOff, CheckCircle2 } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { registerUser } from "@/lib/api/register";
+import { useRouter } from "next/navigation";
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-
   const [emailError, setEmailError] = useState<string | null>(null);
   const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
 
   const isFilled = email && username && password;
 
- const validations = [
-  { text: "Minimal 8 karakter", valid: password.length >= 8 },
-  { text: "Terdapat huruf kapital", valid: /[A-Z]/.test(password) },
-  { text: "Terdapat angka", valid: /\d/.test(password) },
-  { text: "Terdapat simbol (!@#%&)", valid: /[!@#%&]/.test(password) },
-];
-
+  const validations = [
+    { text: "Minimal 8 karakter", valid: password.length >= 8 },
+    { text: "Terdapat huruf kapital", valid: /[A-Z]/.test(password) },
+    { text: "Terdapat angka", valid: /\d/.test(password) },
+    { text: "Terdapat simbol (!@#%&)", valid: /[!@#%&]/.test(password) },
+  ];
 
   const validateEmail = (value: string) => {
     if (!/\S+@\S+\.\S+/.test(value)) {
@@ -46,20 +47,27 @@ export default function RegisterPage() {
     }
     setUsername(value);
   };
-  
+
   const mutation = useMutation({
     mutationFn: registerUser,
-    onSuccess: () => {
-      window.location.href = "/auth/login";
+    onSuccess: (data) => {
+      const userId = data?.user_id;
+      if (userId) {
+        router.push(`/auth/timer_verif_email?user_id=${encodeURIComponent(userId)}`);
+      } else {
+        router.push(`/auth/timer_verif_email?email=${encodeURIComponent(email)}&type=register`);
+      }
+    },
+    onError: (error: any) => {
+      setServerError(error.message || "Terjadi kesalahan saat registrasi");
     },
   });
 
   const handleRegister = (e: React.FormEvent) => {
     e.preventDefault();
-
+    setServerError(null);
     if (!isFilled || emailError || usernameError) return;
     if (!validations.every((rule) => rule.valid)) return;
-
     mutation.mutate({ username, email, password });
   };
 
@@ -85,9 +93,7 @@ export default function RegisterPage() {
 
           <form onSubmit={handleRegister}>
             <div className="mb-4">
-              <label className="block text-sm font-medium text-[#36315B] mb-2">
-                Alamat Email
-              </label>
+              <label className="block text-sm font-medium text-[#36315B] mb-2">Alamat Email</label>
               <input
                 type="text"
                 placeholder="Masukkan Email"
@@ -101,9 +107,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="mb-4">
-              <label className="block text-sm font-medium text-[#36315B] mb-2">
-                Nama Pengguna
-              </label>
+              <label className="block text-sm font-medium text-[#36315B] mb-2">Nama Pengguna</label>
               <input
                 type="text"
                 placeholder="Masukkan username"
@@ -117,9 +121,7 @@ export default function RegisterPage() {
             </div>
 
             <div className="mb-2">
-              <label className="block text-sm font-medium text-[#36315B] mb-2">
-                Password
-              </label>
+              <label className="block text-sm font-medium text-[#36315B] mb-2">Password</label>
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
@@ -152,11 +154,7 @@ export default function RegisterPage() {
               ))}
             </ul>
 
-            {mutation.isError && (
-              <p className="text-red-500 text-sm mb-3">
-                {(mutation.error as Error).message}
-              </p>
-            )}
+            {serverError && <p className="text-red-500 text-sm mb-3">{serverError}</p>}
 
             <button
               type="submit"
@@ -186,7 +184,7 @@ export default function RegisterPage() {
           </form>
 
           <div className="text-center mt-4">
-            <p className="text-[#8D8D8D] text-[15px] mb-1">Sudah Punya Akun ?</p>
+            <p className="text-[#8D8D8D] text-[15px] mb-1">Sudah Punya Akun?</p>
             <p className="text-[#EDB720] text-[16px] font-semibold">
               <Link href="/auth/login">Log in disini!</Link>
             </p>
