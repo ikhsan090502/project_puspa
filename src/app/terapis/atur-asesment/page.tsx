@@ -1,59 +1,57 @@
 "use client";
+
 import { useState } from "react";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
+import DatePicker from "@/components/dashboard/datepicker";
 
-interface DatePickerProps {
-  pasien: { id: number; nama: string };
-  initialDate?: string;
-  onClose: () => void;
-  onSave: (date: Date) => void;
-}
+export default function AturAsesmentPage() {
+  const [open, setOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0); // buat trigger refresh data kalau perlu
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
 
-export default function DatePicker({
-  pasien,
-  initialDate,
-  onClose,
-  onSave,
-}: DatePickerProps) {
-  const [date, setDate] = useState<Date>(
-    initialDate ? new Date(initialDate) : new Date()
-  );
+  // contoh data pasien
+  const pasien = {
+    id: 1,
+    observation_id: "OBS001",
+    nama: "Budi Santoso",
+  };
+
+  // dipanggil setelah berhasil update tanggal asesmen
+  const handleUpdate = () => {
+    console.log("Tanggal asesmen berhasil diperbarui!");
+    setRefreshKey((prev) => prev + 1); // kalau nanti mau trigger fetch data ulang
+  };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-[420px]">
-        <h2 className="text-lg font-semibold mb-4">Pilih tanggal asesment</h2>
+    <div className="p-6">
+      <h1 className="text-xl font-semibold mb-4">Atur Asesmen</h1>
 
-        <p className="text-sm mb-2">
-          Nama Pasien: <b>{pasien.nama}</b>
-        </p>
-
-        <Calendar
-          onChange={(val: any) => setDate(val)}
-          value={date}
-          locale="id-ID"
-          className="rounded-md border border-gray-300 p-2"
-        />
-
-        <div className="flex justify-end gap-3 mt-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded border border-gray-300 text-gray-600 hover:bg-gray-100"
-          >
-            Batal
-          </button>
-          <button
-            onClick={() => {
-              onSave(date);
-              onClose();
-            }}
-            className="px-4 py-2 rounded bg-[#81B7A9] text-white hover:bg-[#5f9d8f]"
-          >
-            Simpan
-          </button>
-        </div>
+      <div className="mb-4">
+        <button
+          onClick={() => setOpen(true)}
+          className="bg-[#81B7A9] text-white px-4 py-2 rounded hover:bg-[#5f9d8f]"
+        >
+          Pilih Tanggal Asesmen
+        </button>
       </div>
+
+      {selectedDate && (
+        <p className="text-gray-700">
+          <b>Tanggal asesmen terpilih:</b>{" "}
+          {new Date(selectedDate).toLocaleDateString("id-ID")}
+        </p>
+      )}
+
+      {open && (
+        <DatePicker
+          pasien={pasien}
+          initialDate={selectedDate || undefined}
+          onClose={() => setOpen(false)}
+          onUpdate={() => {
+            handleUpdate();
+            setSelectedDate(new Date().toISOString());
+          }}
+        />
+      )}
     </div>
   );
 }

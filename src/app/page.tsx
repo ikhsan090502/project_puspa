@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { registrationChild, RegistrationPayload } from "@/lib/api/registration";
 import { useMutation } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 
 const layananOptions = [
   "Asesmen Tumbuh Kembang",
@@ -139,7 +140,7 @@ export default function Page() {
   return (
     <div className="min-h-screen bg-[#B8E8DB] pb-5">
       <header className="bg-white flex items-center px-10 py-3 shadow-md mb-5 w-full">
-        <img src="/logo.png" alt="Logo Puspa" className="w-[150px] h-[51px]" />
+        <Image src="/logo.png" alt="Foto" width={150} height={51} />
       </header>
 
       <motion.h2
