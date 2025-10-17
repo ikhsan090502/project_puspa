@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import { Pencil, Trash2, Plus, Search, Eye } from "lucide-react";
@@ -8,16 +8,14 @@ import { Pencil, Trash2, Plus, Search, Eye } from "lucide-react";
 import FormTambahAdmin from "@/components/form/FormTambahAdmin";
 import FormUbahAdmin from "@/components/form/FormUbahAdmin";
 import FormHapusAdmin from "@/components/form/FormHapusAdmin";
-
-interface Admin {
-  id: number;
-  nama: string;
-  username: string;
-  email: string;
-  telepon: string;
-  ditambahkan: string;
-  diubah: string;
-}
+import {
+  getAdmins,
+  getAdminById,
+  addAdmin,
+  updateAdmin,
+  deleteAdmin,
+  Admin,
+} from "@/lib/api/data_admin";
 
 function DetailAdmin({
   open,
@@ -60,92 +58,85 @@ function DetailAdmin({
 
 export default function AdminPage() {
   const [search, setSearch] = useState("");
-  const [admins, setAdmins] = useState<Admin[]>([
-    {
-      id: 1,
-      nama: "Alief Arifin Mahardiko",
-      username: "admin.alief",
-      email: "admin@puspa.com",
-      telepon: "08123456789",
-      ditambahkan: "11/9/2025",
-      diubah: "01/10/2025",
-    },
-    {
-      id: 2,
-      nama: "Rendra Prasetya",
-      username: "admin.rendra",
-      email: "admin@puspa.com",
-      telepon: "08123456789",
-      ditambahkan: "11/9/2025",
-      diubah: "01/10/2025",
-    },
-    {
-      id: 3,
-      nama: "Annisa Nur Qoriah",
-      username: "admin.annisa",
-      email: "admin@puspa.com",
-      telepon: "08123456789",
-      ditambahkan: "11/9/2025",
-      diubah: "01/10/2025",
-    },
-    {
-      id: 4,
-      nama: "Zamzam Berlian",
-      username: "admin.zamzam",
-      email: "admin@puspa.com",
-      telepon: "08123456789",
-      ditambahkan: "11/9/2025",
-      diubah: "01/10/2025",
-    },
-  ]);
-
+  const [admins, setAdmins] = useState<Admin[]>([]);
+  const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
   const [showTambah, setShowTambah] = useState(false);
   const [showUbah, setShowUbah] = useState(false);
-  const [selectedAdmin, setSelectedAdmin] = useState<Admin | null>(null);
-
   const [showHapus, setShowHapus] = useState(false);
-  const [deleteId, setDeleteId] = useState<number | null>(null);
-
   const [showDetail, setShowDetail] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const handleTambah = (data: {
+  // 🔹 Ambil daftar admin
+  const fetchAdmins = async () => {
+    try {
+      const data = await getAdmins();
+      setAdmins(data);
+    } catch (error) {
+      console.error("Gagal mengambil data admin:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchAdmins();
+  }, []);
+
+  // 🔹 Lihat detail admin
+  const handleDetail = async (id: string) => {
+    try {
+      const item = await getAdminById(id);
+      setSelectedAdmin(item);
+      setShowDetail(true);
+    } catch (error) {
+      console.error("Gagal memuat detail admin:", error);
+    }
+  };
+
+  // 🔹 Tambah admin
+  const handleTambah = async (data: {
     nama: string;
     username: string;
     email: string;
     telepon: string;
+    password?: string;
   }) => {
-    const newAdmin: Admin = {
-      id: admins.length + 1,
-      ...data,
-      ditambahkan: new Date().toLocaleDateString("en-GB"),
-      diubah: new Date().toLocaleDateString("en-GB"),
-    };
-    setAdmins([...admins, newAdmin]);
-    setShowTambah(false);
+    try {
+      await addAdmin(data);
+      alert("Admin berhasil ditambahkan!");
+      setShowTambah(false);
+      fetchAdmins();
+    } catch (error) {
+      console.error("Gagal menambah admin:", error);
+    }
   };
 
-  const handleUbah = (data: {
+  // 🔹 Ubah admin
+  const handleUbah = async (data: {
     nama: string;
     username: string;
     email: string;
     telepon: string;
   }) => {
     if (!selectedAdmin) return;
-    setAdmins(
-      admins.map((a) =>
-        a.id === selectedAdmin.id
-          ? { ...a, ...data, diubah: new Date().toLocaleDateString("en-GB") }
-          : a
-      )
-    );
-    setShowUbah(false);
-    setSelectedAdmin(null);
+    try {
+      await updateAdmin(selectedAdmin.id, data);
+      setShowUbah(false);
+      setSelectedAdmin(null);
+      fetchAdmins();
+    } catch (error) {
+      console.error("Gagal mengubah admin:", error);
+    }
   };
 
-  const handleHapus = (id: number) => {
-    setAdmins(admins.filter((a) => a.id !== id));
-    setShowHapus(false);
-    setDeleteId(null);
+  // 🔹 Hapus admin
+  const handleHapus = async (id: string) => {
+    try {
+      await deleteAdmin(id);
+      setShowHapus(false);
+      setDeleteId(null);
+      fetchAdmins();
+    } catch (error) {
+      console.error("Gagal menghapus admin:", error);
+    }
   };
 
   const filtered = admins.filter(
@@ -157,10 +148,8 @@ export default function AdminPage() {
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
-
       <div className="flex flex-col flex-1">
         <Header />
-
         <main className="p-6 space-y-6">
           <div className="flex justify-between items-center">
             <button
@@ -186,7 +175,7 @@ export default function AdminPage() {
             </div>
           </div>
 
-          <div className=" bg-white rounded-lg shadow-md shadow-[#ADADAD] p-4">
+          <div className="bg-white rounded-lg shadow-md shadow-[#ADADAD] p-4">
             <table className="w-full text-sm border-collapse">
               <thead>
                 <tr className="border-b border-[#81B7A9] text-[#36315B]">
@@ -199,55 +188,42 @@ export default function AdminPage() {
                 </tr>
               </thead>
               <tbody>
-  {filtered.map((admin, i) => (
-    <tr
-      key={admin.id}
-      onClick={() => setSelectedAdmin(admin)} 
-      className={`border-b border-[#81B7A9] hover:bg-gray-50 cursor-pointer 
-        ${selectedAdmin?.id === admin.id && (showDetail || showUbah) ? "bg-[#C0DCD6] text-[#36315B]" : ""}`}
-    >
-      
-      <td className="p-3">{i + 1}</td>
-      <td className="p-3">{admin.nama}</td>
-      <td className="p-3 font-medium !text-[#757575]">{admin.username}</td>
-      <td className="p-3 font-medium !text-[#757575]">{admin.email}</td>
-      <td className="p-3 font-medium !text-[#757575]">{admin.telepon}</td>
-      <td className="p-3 flex justify-center gap-3">
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedAdmin(admin);
-            setShowDetail(true);
-          }}
-          className="hover:scale-110 transition text-[#36315B]"
-        >
-          <Eye size={18} />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setSelectedAdmin(admin);
-            setShowUbah(true);
-          }}
-          className="hover:scale-110 transition text-[#4AB58E]"
-        >
-          <Pencil size={18} />
-        </button>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            setDeleteId(admin.id);
-            setShowHapus(true);
-          }}
-          className="hover:scale-110 transition text-red-600"
-        >
-          <Trash2 size={18} />
-        </button>
-      </td>
-    </tr>
-  ))}
-</tbody>
-
+                {filtered.map((admin, i) => (
+                  <tr key={admin.id} className="border-b border-[#81B7A9] hover:bg-gray-50">
+                    <td className="p-3">{i + 1}</td>
+                    <td className="p-3">{admin.nama}</td>
+                    <td className="p-3 font-medium text-[#757575]">{admin.username}</td>
+                    <td className="p-3 font-medium text-[#757575]">{admin.email}</td>
+                    <td className="p-3 font-medium text-[#757575]">{admin.telepon}</td>
+                    <td className="p-3 flex justify-center gap-3">
+                      <button
+                        onClick={() => handleDetail(admin.id)}
+                        className="hover:scale-110 transition text-[#36315B]"
+                      >
+                        <Eye size={18} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setSelectedAdmin(admin);
+                          setShowUbah(true);
+                        }}
+                        className="hover:scale-110 transition text-[#4AB58E]"
+                      >
+                        <Pencil size={18} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDeleteId(admin.id);
+                          setShowHapus(true);
+                        }}
+                        className="hover:scale-110 transition text-red-600"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
             </table>
           </div>
         </main>

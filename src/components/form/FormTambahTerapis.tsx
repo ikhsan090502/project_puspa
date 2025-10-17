@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 
-const bidangOptions = ["Fisioterapi", "Paedagog", "Terapi Wicara", "Okupasi Terapi"];
+const bidangOptions = ["Fisioterapi", "Okupasi Terapi", "Terapi Wicara", "Paedagog"];
 
 export default function FormTambahTerapis({
   open,

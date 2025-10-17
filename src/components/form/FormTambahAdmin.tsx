@@ -83,7 +83,7 @@ export default function FormTambahAdmin({ open, onClose, onSave }: FormTambahAdm
             <label className="block text-sm font-medium text-[#36315B] mb-1">Nama Pengguna</label>
             <input
               type="text"
-              placeholder='Buat nama pengguna “admin.(nama)”'
+              placeholder='Buat nama pengguna “admin(Nama)”'
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#81B7A9] outline-none"

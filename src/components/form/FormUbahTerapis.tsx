@@ -25,7 +25,7 @@ const bidangOptions = [
   "Fisioterapi",
   "Okupasi Terapi",
   "Terapi Wicara",
-  "Psikologi",
+  "Paedagog",
 ];
 
 export default function FormUbahTerapis({
@@ -42,17 +42,20 @@ export default function FormUbahTerapis({
     telepon: "",
   });
 
+
   useEffect(() => {
-    if (initialData) {
-      setFormData({
-        nama: initialData.nama,
-        bidang: initialData.bidang,
-        username: initialData.username,
-        email: initialData.email,
-        telepon: initialData.telepon,
-      });
-    }
-  }, [initialData]);
+  if (initialData) {
+    setFormData({
+      nama: initialData.nama || "",
+      bidang: initialData.bidang || "",
+      username: initialData.username || "",
+      email: initialData.email || "",
+      telepon: initialData.telepon || "",
+    });
+  }
+}, [initialData]);
+
+  
 
   if (!open) return null;
 
