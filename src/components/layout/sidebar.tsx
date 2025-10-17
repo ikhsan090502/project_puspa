@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 
 interface SidebarProps {
-  activePage?: string; 
+  activePage?: string;
 }
 
 export const menu = [
@@ -28,7 +28,7 @@ export const menu = [
     items: [
       { name: "Admin", href: "/admin/data_admin", icon: UserCog },
       { name: "Terapis", href: "/admin/data_terapis", icon: UserSquare2 },
-      { name: "Pasien / Anak", href:"/admin/data_pasien", icon: Users },
+      { name: "Pasien / Anak", href: "/admin/data_pasien", icon: Users },
       { name: "Jadwal", href: "/admin/jadwal", icon: CalendarDays },
     ],
   },
@@ -45,16 +45,24 @@ export const menu = [
   },
 ];
 
-export default function SidebarTerapis({ activePage }: SidebarProps) {
+export default function Sidebar({ activePage }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 h-screen bg-white shadow-md shadow-[#ADADAD] p-4 flex flex-col">
+    <aside className="w-64 min-h-screen bg-white shadow-md shadow-[#ADADAD] p-4 flex flex-col">
+      {/* Logo */}
       <div className="flex justify-center mb-6">
-        <Image src="/logo.png" alt="Logo Puspa" width={160} height={50} priority />
+        <Image
+          src="/logo.png"
+          alt="Logo Puspa"
+          width={160}
+          height={50}
+          priority
+        />
       </div>
 
-      <nav className="flex-1 space-y-6">
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto pb-8 space-y-6">
         {menu.map((group, idx) => (
           <div key={idx}>
             {group.section && (
@@ -67,7 +75,7 @@ export default function SidebarTerapis({ activePage }: SidebarProps) {
                 const isActive =
                   pathname === item.href ||
                   pathname.startsWith(item.href + "/") ||
-                  activePage === item.name.toLowerCase(); 
+                  activePage === item.name.toLowerCase();
 
                 return (
                   <Link

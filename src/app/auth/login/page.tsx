@@ -22,6 +22,9 @@ export default function LoginPage() {
     mutationFn: (payload: LoginPayload) => login(payload),
 
     onSuccess: (data) => {
+      // Simpan user ke localStorage
+      localStorage.setItem("user", JSON.stringify(data));
+
       switch (data.role) {
         case "admin":
           router.push("/admin/dashboard");

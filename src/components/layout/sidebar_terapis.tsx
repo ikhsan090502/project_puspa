@@ -46,59 +46,50 @@ export const menu = [
   },
 ];
 
-export default function SidebarTerapis({ activePage, isMobile, onClose }: SidebarProps) {
+export default function SidebarTerapis({ activePage }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 h-screen bg-white shadow-md shadow-[#ADADAD] p-4 flex flex-col relative">
-      {isMobile && onClose && (
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-600 hover:text-[#36315B] sm:hidden"
-        >
-          <X size={24} />
-        </button>
-      )}
+    <aside className="w-64 min-h-screen bg-white shadow-md shadow-[#ADADAD] p-4 flex flex-col">
+  <div className="flex justify-center mb-6">
+    <Image src="/logo.png" alt="Logo Puspa" width={160} height={50} priority />
+  </div>
 
-      <div className="flex justify-center mb-6">
-        <Image src="/logo.png" alt="Logo Puspa" width={160} height={50} priority />
+  <nav className="flex-1 space-y-6 overflow-y-auto">
+    {menu.map((group, idx) => (
+      <div key={idx}>
+        {group.section && (
+          <p className="text-xs font-bold uppercase mb-2 text-[#36315B] tracking-wide">
+            {group.section}
+          </p>
+        )}
+        <div className="space-y-1">
+          {group.items.map((item, i) => {
+            const isActive =
+              pathname === item.href ||
+              pathname.startsWith(item.href + "/") ||
+              activePage === item.name.toLowerCase();
+
+            return (
+              <Link
+                key={i}
+                href={item.href}
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                  isActive
+                    ? "bg-[#C0DCD6] text-[#36315B] font-semibold"
+                    : "text-[#36315B] hover:bg-[#81B7A9] hover:text-white"
+                }`}
+              >
+                <item.icon size={20} />
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
+    ))}
+  </nav>
+</aside>
 
-      <nav className="flex-1 space-y-6">
-        {menu.map((group, idx) => (
-          <div key={idx}>
-            {group.section && (
-              <p className="text-xs font-bold uppercase mb-2 text-[#36315B] tracking-wide">
-                {group.section}
-              </p>
-            )}
-            <div className="space-y-1">
-              {group.items.map((item, i) => {
-                const isActive =
-                  pathname === item.href ||
-                  pathname.startsWith(item.href + "/") ||
-                  activePage === item.name.toLowerCase();
-
-                return (
-                  <Link
-                    key={i}
-                    href={item.href}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                      isActive
-                        ? "bg-[#C0DCD6] text-[#36315B] font-semibold"
-                        : "text-[#36315B] hover:bg-[#81B7A9] hover:text-white"
-                    }`}
-                    onClick={isMobile && onClose ? onClose : undefined} 
-                  >
-                    <item.icon size={20} />
-                    <span>{item.name}</span>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </nav>
-    </aside>
   );
 }

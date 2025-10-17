@@ -2,17 +2,23 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Eye, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
+import {
+  getScheduledObservations,
+  getScheduledObservationDetail,
+} from "@/lib/api/observasiTerapis";
 
 interface Anak {
-  nama: string;
-  jenisKelamin: string;
-  usia: string;
-  sekolah: string;
-  tglObservasi: string;
+  id: string | number;
+  child_name: string;
+  child_gender: string;
+  child_age: string;
+  child_school: string;
+  scheduled_date?: string;
 }
 
 interface Kategori {
@@ -20,70 +26,92 @@ interface Kategori {
   filter: (d: Anak) => boolean;
 }
 
-const data: Anak[] = [
-  {
-    nama: "AKU",
-    jenisKelamin: "Laki-laki",
-    usia: "2 Tahun 5 Bulan",
-    sekolah: "-",
-    tglObservasi: "11/09/2025",
-  },
-  {
-    nama: "Nama",
-    jenisKelamin: "Perempuan",
-    usia: "4 Tahun 11 Bulan",
-    sekolah: "TK B",
-    tglObservasi: "23/09/2025",
-  },
-  {
-    nama: "Nama",
-    jenisKelamin: "Laki-laki",
-    usia: "3 Tahun 0 Bulan",
-    sekolah: "TK A",
-    tglObservasi: "01/10/2025",
-  },
-];
-
 const getTahun = (usia: string): number => {
-  const parts = usia.split(" ");
-  return parseInt(parts[0], 10) || 0;
+  if (!usia) return 0;
+  const match = usia.match(/(\d+)\s*Tahun/);
+  return match ? parseInt(match[1], 10) : 0;
 };
 
+// Kategori tab
 const kategori: Kategori[] = [
-  { title: "Usia 0-5 Tahun", filter: (d) => getTahun(d.usia) <= 5 },
+  { title: "Usia 0-5 Tahun", filter: (d) => getTahun(d.child_age) <= 5 },
   {
     title: "Usia 6-12 Tahun",
-    filter: (d) => getTahun(d.usia) >= 6 && getTahun(d.usia) <= 12,
+    filter: (d) => getTahun(d.child_age) >= 6 && getTahun(d.child_age) <= 12,
   },
   {
     title: "Usia 13-17 Tahun",
-    filter: (d) => getTahun(d.usia) >= 13 && getTahun(d.usia) <= 17,
+    filter: (d) => getTahun(d.child_age) >= 13 && getTahun(d.child_age) <= 17,
   },
-  { title: "Usia 17+ Tahun", filter: (d) => getTahun(d.usia) > 17 },
+  { title: "Usia 17+ Tahun", filter: (d) => getTahun(d.child_age) > 17 },
 ];
+
+const getKategoriByUsia = (usia: string): string => {
+  const tahun = getTahun(usia);
+  if (tahun <= 5) return "balita";
+  if (tahun <= 12) return "anak-anak";
+  if (tahun <= 17) return "remaja";
+  return "dewasa";
+};
 
 export default function ObservasiPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<Anak | null>(null);
   const [activeKategori, setActiveKategori] = useState(0);
-
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [detailObservasi, setDetailObservasi] = useState<any | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
-  const filtered = data.filter((d) => kategori[activeKategori].filter(d));
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ["observations", "scheduled"],
+    queryFn: getScheduledObservations,
+  });
+
+  const children: Anak[] = Array.isArray(data?.data) ? data.data : [];
+  const filtered = children.filter((d) => kategori[activeKategori].filter(d));
+
+  // ✅ FIX: gunakan "observation_id" agar konsisten dengan form_observasi.tsx
+  const handleStartObservasi = (child: Anak) => {
+    const kategoriUsia = getKategoriByUsia(child.child_age);
+    const params = new URLSearchParams({
+      observation_id: String(child.id), // ⬅️ sebelumnya id, sekarang observation_id
+      nama: child.child_name,
+      usia: child.child_age,
+      kategori: kategoriUsia,
+      tglObservasi: child.scheduled_date || "",
+    });
+
+    router.push(`/terapis/observasi/form_observasi?observation_id=${child.id}&nama=${child.child_name}&usia=${child.child_age}&kategori=${kategoriUsia}&tglObservasi=${child.scheduled_date}`);
+
+  };
+
+  const handleViewDetail = async (id: string | number) => {
+    setLoadingDetail(true);
+    try {
+      const res = await getScheduledObservationDetail(String(id));
+      setDetailObservasi(res);
+      setSelected(null);
+    } catch (err) {
+      console.error("❌ Gagal ambil detail observasi:", err);
+      alert("Gagal memuat detail observasi");
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
 
   return (
     <div className="flex h-screen text-[#36315B] font-playpen">
+      {/* Sidebar */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-40 z-40 sm:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
-
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} 
-          sm:translate-x-0 sm:static sm:shadow-md`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full"
+        } sm:translate-x-0 sm:static sm:shadow-md`}
       >
         <SidebarTerapis
           activePage="observasi"
@@ -92,9 +120,9 @@ export default function ObservasiPage() {
         />
       </div>
 
+      {/* Content */}
       <div className="flex flex-col flex-1 bg-gray-50">
         <HeaderTerapis />
-
         <div className="sm:hidden p-2">
           <button
             onClick={() => setSidebarOpen(true)}
@@ -109,7 +137,6 @@ export default function ObservasiPage() {
             <h2 className="text-lg sm:text-2xl font-bold">
               Pilih Anak Untuk Observasi
             </h2>
-
             <button
               onClick={() => router.push("/terapis/observasi/riwayat")}
               className="bg-[#81B7A9] hover:bg-[#36315B] text-white font-semibold px-3 py-2 rounded-lg text-sm sm:text-base"
@@ -118,6 +145,7 @@ export default function ObservasiPage() {
             </button>
           </div>
 
+          {/* Tabs */}
           <div className="relative flex flex-wrap border-b border-gray-300 mb-4">
             {kategori.map((kat, idx) => (
               <button
@@ -140,6 +168,7 @@ export default function ObservasiPage() {
             ))}
           </div>
 
+          {/* Table Anak */}
           <AnimatePresence mode="wait">
             <motion.div
               key={activeKategori}
@@ -149,171 +178,158 @@ export default function ObservasiPage() {
               transition={{ duration: 0.3 }}
               className="bg-white shadow-md rounded-lg p-3 sm:p-4 border border-[#E4E4E4] overflow-x-auto"
             >
-              <table className="w-full text-xs sm:text-sm table-auto border-collapse min-w-[600px]">
-                <thead>
-                  <tr className="border-b border-[#81B7A9] bg-gray-100">
-                    <th className="text-center py-2 sm:py-3 px-2 sm:px-4">
-                      Nama
-                    </th>
-                    <th className="text-center py-2 sm:py-3 px-2 sm:px-4">
-                      Jenis Kelamin
-                    </th>
-                    <th className="text-center py-2 sm:py-3 px-2 sm:px-4">
-                      Usia
-                    </th>
-                    <th className="text-center py-2 sm:py-3 px-2 sm:px-4">
-                      Sekolah
-                    </th>
-                    <th className="text-center py-2 sm:py-3 px-2 sm:px-4">
-                      Tanggal Observasi
-                    </th>
-                    <th className="text-center py-2 sm:py-3 px-2 sm:px-4">
-                      Aksi
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.length > 0 ? (
-                    filtered.map((d, i) => (
+              {isLoading ? (
+                <p className="text-center py-4">Memuat data...</p>
+              ) : isError ? (
+                <p className="text-center py-4 text-red-500">
+                  Gagal memuat data
+                </p>
+              ) : filtered.length === 0 ? (
+                <p className="text-center py-4 text-[#36315B]">
+                  Tidak ada data observasi terjadwal
+                </p>
+              ) : (
+                <table className="w-full text-xs sm:text-sm table-auto border-collapse min-w-[600px]">
+                  <thead>
+                    <tr className="border-b border-[#81B7A9] bg-gray-100">
+                      <th className="py-2 px-4 text-center">Nama</th>
+                      <th className="py-2 px-4 text-center">Jenis Kelamin</th>
+                      <th className="py-2 px-4 text-center">Usia</th>
+                      <th className="py-2 px-4 text-center">Sekolah</th>
+                      <th className="py-2 px-4 text-center">
+                        Tanggal Observasi
+                      </th>
+                      <th className="py-2 px-4 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map((d) => (
                       <tr
-                        key={i}
-                        className={`border-b border-[#81B7A9] hover:bg-gray-50 cursor-pointer ${
-                          selected === d ? "bg-[#C0DCD6]" : ""
+                        key={d.id}
+                        className={`border-b border-[#81B7A9] hover:bg-gray-50 ${
+                          selected?.id === d.id ? "bg-[#C0DCD6]" : ""
                         }`}
-                        onClick={() => setSelected(d)}
                       >
-                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
-                          {d.nama}
+                        <td className="py-2 px-4 text-center">
+                          {d.child_name}
                         </td>
-                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
-                          {d.jenisKelamin}
+                        <td className="py-2 px-4 text-center">
+                          {d.child_gender}
                         </td>
-                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
-                          {d.usia}
+                        <td className="py-2 px-4 text-center">{d.child_age}</td>
+                        <td className="py-2 px-4 text-center">
+                          {d.child_school}
                         </td>
-                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
-                          {d.sekolah}
+                        <td className="py-2 px-4 text-center">
+                          {d.scheduled_date || "-"}
                         </td>
-                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
-                          {d.tglObservasi}
-                        </td>
-                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-center">
+                        <td className="py-2 px-4 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <button
                               className="bg-[#81B7A9] hover:bg-[#36315B] text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                router.push(
-                                  `/terapis/observasi/form_observasi?nama=${encodeURIComponent(
-                                    d.nama
-                                  )}&jenisKelamin=${encodeURIComponent(
-                                    d.jenisKelamin
-                                  )}&usia=${encodeURIComponent(
-                                    d.usia
-                                  )}&sekolah=${encodeURIComponent(
-                                    d.sekolah
-                                  )}&tglObservasi=${encodeURIComponent(
-                                    d.tglObservasi
-                                  )}`
-                                );
-                              }}
+                              onClick={() => handleStartObservasi(d)}
                             >
                               Mulai
                             </button>
                             <button
                               className="p-1 text-[#81B7A9] hover:text-[#36315B]"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelected(d);
-                              }}
+                              onClick={() => handleViewDetail(d.id)}
                             >
                               <Eye className="w-4 h-4" />
                             </button>
                           </div>
                         </td>
                       </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={6}
-                        className="text-center py-3 px-4 text-[#36315B] text-sm"
-                      >
-                        Tidak ada data
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </motion.div>
           </AnimatePresence>
 
-          {selected && (
-  <div className="fixed inset-0 bg-opacity-40 flex items-center justify-center z-50 px-4">
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      exit={{ scale: 0.8, opacity: 0 }}
-      transition={{ duration: 0.3 }}
-      className="bg-white rounded-lg shadow-lg w-[90%] max-w-md p-6 relative"
-    >
-      <button
-        className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
-        onClick={() => setSelected(null)}
-      >
-        ✕
-      </button>
+          {/* ✅ Modal Detail Observasi tetap utuh */}
+          <AnimatePresence>
+            {(loadingDetail || detailObservasi) && (
+              <motion.div
+                className="fixed inset-0 bg-opacity-40 flex items-center justify-center z-50 px-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+              >
+                <motion.div
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0.8 }}
+                  className="bg-white rounded-lg shadow-lg w-[90%] max-w-md p-6 relative"
+                >
+                  <button
+                    className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
+                    onClick={() => setDetailObservasi(null)}
+                  >
+                    ✕
+                  </button>
 
-      <h3 className="text-lg sm:text-xl font-bold text-[#36315B] mb-4">
-        Detail Observasi
-      </h3>
-      <hr className="mb-4 border-[#81B7A9]" />
+                  {loadingDetail ? (
+                    <div className="flex justify-center items-center py-10">
+                      <div className="w-8 h-8 border-4 border-[#81B7A9] border-t-transparent rounded-full animate-spin"></div>
+                    </div>
+                  ) : (
+                    <>
+                      <h3 className="text-lg sm:text-xl font-bold text-[#36315B] mb-4">
+                        Detail Observasi
+                      </h3>
+                      <hr className="mb-4 border-[#81B7A9]" />
 
-      <h4 className="font-semibold mb-1">Informasi Anak</h4>
-      <ul className="list-disc ml-6 text-xs sm:text-sm space-y-1 mb-3">
-        <li>Nama Lengkap : {selected.nama}</li>
-        <li>Tanggal Lahir : 10 Februari 2021</li>
-        <li>Usia : {selected.usia}</li>
-        <li>Jenis Kelamin : {selected.jenisKelamin}</li>
-        <li>Sekolah : {selected.sekolah}</li>
-        <li>Alamat : JL Mawar No. 12, Solo</li>
-        <li>Tanggal Observasi : {selected.tglObservasi}</li>
-      </ul>
+                      <div className="text-xs sm:text-sm space-y-3 mb-3">
+                        <div>
+                          <h4 className="font-semibold mb-1">Data Anak</h4>
+                          <ul className="list-disc ml-6 space-y-1">
+                            <li>Nama Lengkap: {detailObservasi?.child_name || "-"}</li>
+                            <li>Tanggal Lahir: {detailObservasi?.child_birth_date || "-"}</li>
+                            <li>Usia: {detailObservasi?.child_age || "-"}</li>
+                            <li>Jenis Kelamin: {detailObservasi?.child_gender || "-"}</li>
+                            <li>Sekolah: {detailObservasi?.child_school || "-"}</li>
+                            <li>Alamat: {detailObservasi?.child_address || "-"}</li>
+                            <li>Tanggal Observasi: {detailObservasi?.scheduled_date || "-"}</li>
+                          </ul>
+                        </div>
 
-      <h4 className="font-semibold mb-1">Informasi Orangtua / Wali</h4>
-      <ul className="list-disc ml-6 text-xs sm:text-sm space-y-1 mb-3">
-        <li>Nama Orangtua : Ibu Eny</li>
-        <li>Hubungan : Ibu</li>
-        <li>Nomor WhatsApp : 0812-xxxx-xxxx</li>
-      </ul>
+                        <div>
+                          <h4 className="font-semibold mb-1">Informasi Orangtua / Wali</h4>
+                          <ul className="list-disc ml-6 space-y-1">
+                            <li>Nama Orangtua: {detailObservasi?.parent_name || "-"}</li>
+                            <li>Hubungan: {detailObservasi?.parent_type || "-"}</li>
+                            <li>Nomor WhatsApp: {detailObservasi?.parent_phone || "-"}</li>
+                          </ul>
+                        </div>
 
-      <h4 className="font-semibold mb-1">Keluhan</h4>
-      <p className="text-xs sm:text-sm mb-3">
-        Anak saya sudah 3 tahun tapi belum bisa jalan dengan lancar
-      </p>
+                        <div>
+                          <h4 className="font-semibold mb-1">Keluhan</h4>
+                          <p className="ml-4">{detailObservasi?.child_complaint || "Tidak ada keluhan"}</p>
+                        </div>
 
-      <h4 className="font-semibold mb-1">Jenis Layanan</h4>
-      <ul className="list-disc ml-6 text-xs sm:text-sm space-y-1 mb-6">
-        <li>Daycare</li>
-        <li>Homecare</li>
-        <li>Konsultasi Dokter</li>
-      </ul>
+                        <div>
+                          <h4 className="font-semibold mb-1">Jenis Layanan</h4>
+                          <p className="ml-4">{detailObservasi?.child_service_choice || "-"}</p>
+                        </div>
+                      </div>
 
-      <div className="flex justify-end">
-        <button
-          className="px-3 sm:px-4 py-2 bg-[#81B7A9] text-white rounded hover:bg-[#36315B] text-sm sm:text-base"
-          onClick={() => setSelected(null)}
-        >
-          Tutup
-        </button>
-      </div>
-    </motion.div>
-  </div>
-)}
-
+                      <div className="flex justify-end">
+                        <button
+                          className="px-3 sm:px-4 py-2 bg-[#81B7A9] text-white rounded hover:bg-[#36315B] text-sm sm:text-base"
+                          onClick={() => setDetailObservasi(null)}
+                        >
+                          Tutup
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </main>
       </div>
     </div>
   );
 }
-
