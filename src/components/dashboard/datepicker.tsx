@@ -1,4 +1,3 @@
-// datepicker.tsx
 "use client";
 
 import { useState } from "react";
@@ -7,13 +6,24 @@ import "react-calendar/dist/Calendar.css";
 import { updateAssessmentDate } from "@/lib/api/observasiSubmit";
 
 interface DatePickerProps {
-  pasien: { id: number; observation_id: string; nama: string };
+  pasien: { 
+    id: number; 
+    nama: string; 
+    observation_id?: string; // ✅ dibuat opsional agar aman di semua page
+  };
   initialDate?: string;
   onClose: () => void;
-  onUpdate: () => void; // diganti dari onSave
+  onUpdate?: () => void; // ✅ opsional biar nggak wajib dikirim
+  onSave?: (date: Date) => void; // ✅ fallback untuk local save (jadwal page)
 }
 
-export default function DatePicker({ pasien, initialDate, onClose, onUpdate }: DatePickerProps) {
+export default function DatePicker({
+  pasien,
+  initialDate,
+  onClose,
+  onUpdate,
+  onSave,
+}: DatePickerProps) {
   const [date, setDate] = useState<Date>(initialDate ? new Date(initialDate) : new Date());
   const [saving, setSaving] = useState(false);
 
@@ -21,14 +31,23 @@ export default function DatePicker({ pasien, initialDate, onClose, onUpdate }: D
     setSaving(true);
     try {
       const formattedDate = date.toISOString().split("T")[0];
-      const res = await updateAssessmentDate(pasien.observation_id, formattedDate);
-      if (res.success) {
-        alert(`Tanggal asesmen untuk ${pasien.nama} berhasil diperbarui ✅`);
-        onUpdate(); // refresh data
-        onClose();
-      } else {
-        alert("Gagal memperbarui tanggal asesmen ❌");
+
+      // ✅ kalau punya observation_id → kirim ke API
+      if (pasien.observation_id) {
+        const res = await updateAssessmentDate(pasien.observation_id, formattedDate);
+        if (res.success) {
+          alert(`Tanggal asesmen untuk ${pasien.nama} berhasil diperbarui ✅`);
+          onUpdate?.(); // refresh data
+        } else {
+          alert("Gagal memperbarui tanggal asesmen ❌");
+        }
+      } 
+      // ✅ kalau tidak punya observation_id → simpan lokal (jadwal page)
+      else {
+        onSave?.(date);
       }
+
+      onClose();
     } catch {
       alert("Terjadi kesalahan saat menyimpan tanggal asesmen.");
     } finally {
@@ -39,7 +58,7 @@ export default function DatePicker({ pasien, initialDate, onClose, onUpdate }: D
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
       <div className="bg-white rounded-lg shadow-lg p-6 w-[420px]">
-        <h2 className="text-lg font-semibold mb-4">Pilih tanggal asesment</h2>
+        <h2 className="text-lg font-semibold mb-4">Pilih tanggal asesmen</h2>
         <p className="text-sm mb-2">
           Nama Pasien: <b>{pasien.nama}</b>
         </p>
@@ -61,7 +80,9 @@ export default function DatePicker({ pasien, initialDate, onClose, onUpdate }: D
           <button
             onClick={handleSave}
             disabled={saving}
-            className={`px-4 py-2 rounded bg-[#81B7A9] text-white hover:bg-[#5f9d8f] ${saving ? "opacity-60" : ""}`}
+            className={`px-4 py-2 rounded bg-[#81B7A9] text-white hover:bg-[#5f9d8f] ${
+              saving ? "opacity-60" : ""
+            }`}
           >
             {saving ? "Menyimpan..." : "Simpan"}
           </button>
