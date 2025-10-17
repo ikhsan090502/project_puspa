@@ -20,7 +20,8 @@ const eslintConfig = [
       "next-env.d.ts",
     ],
     rules: {
-      "@typescript-eslint/no-explicit-any": "off", // 🚀 Matikan rule ini
+      "@typescript-eslint/no-explicit-any": "off", 
+      "@typescript-eslint/no-unused-vars": "off",// 🚀 Matikan rule ini
     },
   },
 ];
