@@ -17,18 +17,8 @@ export interface CompletedObservationDetail {
   conclusion: string;
 }
 
-// 🔹 Ambil header token
-const getAuthHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem("token");
-  const tokenType = localStorage.getItem("tokenType") || "Bearer";
-
-  if (!token) console.warn("⚠️ Token tidak ditemukan di localStorage");
-
-  return {
-    Authorization: `${tokenType} ${token}`,
-    "Content-Type": "application/json",
-  };
-};
+// Note: Authentication is now handled automatically by axios interceptors
+// No need for manual header management since we're using HTTP-only cookies
 
 // 🟡 Get Questions
 export const getObservationQuestions = async (observation_id: string): Promise<any[]> => {
@@ -39,7 +29,7 @@ export const getObservationQuestions = async (observation_id: string): Promise<a
 
   try {
     const url = `/observations/${observation_id}?type=question`;
-    const res = await axiosInstance.get(url, { headers: getAuthHeaders() });
+    const res = await axiosInstance.get(url);
     return res.data.data;
   } catch (err: any) {
     console.error("❌ Gagal ambil pertanyaan:", err);
@@ -53,7 +43,7 @@ export const submitObservation = async (observation_id: string, payload: any): P
 
   try {
     const url = `/observations/${observation_id}/submit`;
-    const res = await axiosInstance.post(url, payload, { headers: getAuthHeaders() });
+    const res = await axiosInstance.post(url, payload);
     return res.data;
   } catch (err: any) {
     console.error("❌ Gagal submit observasi:", err);
@@ -65,7 +55,7 @@ export const submitObservation = async (observation_id: string, payload: any): P
 export const getCompletedObservations = async (): Promise<any[]> => {
   try {
     const url = `/observations?status=completed`;
-    const res = await axiosInstance.get(url, { headers: getAuthHeaders() });
+    const res = await axiosInstance.get(url);
     return res.data.data;
   } catch (err: any) {
     console.error("❌ Gagal mengambil data completed:", err);
@@ -80,9 +70,7 @@ export const getCompletedObservationDetail = async (
   if (!observation_id) return null;
 
   try {
-    const res = await axiosInstance.get(`/observations/${observation_id}?type=completed`, {
-      headers: getAuthHeaders(),
-    });
+    const res = await axiosInstance.get(`/observations/${observation_id}?type=completed`);
 
     const d = res.data.data;
     if (!d) return null;
@@ -115,7 +103,7 @@ export const getObservationAnswer = async (observation_id: string): Promise<any 
 
   try {
     const url = `/observations/${observation_id}?type=answer`;
-    const res = await axiosInstance.get(url, { headers: getAuthHeaders() });
+    const res = await axiosInstance.get(url);
     return res.data.data;
   } catch (err: any) {
     console.error("❌ Gagal ambil riwayat jawaban:", err);
@@ -136,9 +124,7 @@ export const updateAssessmentDate = async (observation_id: string, date: string)
       _method: "PUT",
     };
 
-    const res = await axiosInstance.post(`/observations/${observation_id}/agreement`, payload, {
-      headers: getAuthHeaders(),
-    });
+    const res = await axiosInstance.post(`/observations/${observation_id}/agreement`, payload);
 
     return res.data;
   } catch (err: any) {
@@ -149,15 +135,7 @@ export const updateAssessmentDate = async (observation_id: string, date: string)
 
 export const getObserverNameByTherapistId = async (therapistId: string) => {
   try {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      console.warn("Token tidak ditemukan di localStorage");
-      return "";
-    }
-
-    const res = await axiosInstance.get("/therapists", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await axiosInstance.get("/therapists");
 
     console.log("Respon /therapists:", res.data);
 

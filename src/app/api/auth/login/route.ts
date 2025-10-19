@@ -78,27 +78,19 @@ export async function POST(request: NextRequest) {
       token
     });
 
-    // Set HTTP-only cookies for security
+    // Set secure HTTP-only cookies as specified
     response.cookies.set('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Always secure for production
+      sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/'
     });
 
     response.cookies.set('role', user.role, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 7 * 24 * 60 * 60, // 7 days
-      path: '/'
-    });
-
-    response.cookies.set('userId', user.id.toString(), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      secure: true, // Always secure for production
+      sameSite: 'strict',
       maxAge: 7 * 24 * 60 * 60, // 7 days
       path: '/'
     });

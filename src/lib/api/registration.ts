@@ -18,7 +18,7 @@ export interface RegistrationPayload {
 
 export async function registrationChild(payload: RegistrationPayload) {
   try {
-    const response = await axiosInstance.post("/registration", payload);
+    const response = await axiosInstance.post("/proxy/registration", payload);
     return response.data;
   } catch (error: any) {
     if (axios.isAxiosError(error)) {
@@ -28,6 +28,12 @@ export async function registrationChild(payload: RegistrationPayload) {
         data: error.response?.data,
         headers: error.response?.headers,
       });
+
+      // If backend returns 422, throw the backend error message
+      if (error.response?.status === 422) {
+        const backendErrors = error.response.data;
+        throw new Error(backendErrors.message || backendErrors.error || "Validation error from server");
+      }
     } else {
       console.error("❌ Unknown error:", error);
     }
