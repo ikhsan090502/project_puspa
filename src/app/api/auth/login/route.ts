@@ -71,11 +71,39 @@ export async function POST(request: NextRequest) {
     // Return user without password and token
     const { password: _password, ...userWithoutPassword } = user;
 
-    return NextResponse.json({
+    // Create response with cookies
+    const response = NextResponse.json({
       message: 'Login successful',
       user: userWithoutPassword,
       token
     });
+
+    // Set HTTP-only cookies for security
+    response.cookies.set('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    });
+
+    response.cookies.set('role', user.role, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    });
+
+    response.cookies.set('userId', user.id.toString(), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60, // 7 days
+      path: '/'
+    });
+
+    return response;
 
   } catch (error) {
     console.error('Login error:', error);

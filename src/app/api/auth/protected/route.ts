@@ -16,15 +16,15 @@ const users: User[] = [];
 
 export async function GET(request: NextRequest) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Check for token in cookies first (for middleware compatibility)
+    const token = request.cookies.get('token')?.value;
+
+    if (!token) {
       return NextResponse.json(
-        { error: 'Authorization header missing or invalid' },
+        { error: 'No authentication token provided' },
         { status: 401 }
       );
     }
-
-    const token = authHeader.substring(7);
 
     // Verify token
     let decoded;
