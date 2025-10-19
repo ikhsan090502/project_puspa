@@ -18,24 +18,37 @@ export interface RegistrationPayload {
 
 export async function registrationChild(payload: RegistrationPayload) {
   try {
-    const response = await axiosInstance.post("/proxy/registration", payload);
+    const endpoint = "/proxy/registration";
+    console.log("🔄 Registration API Call:", {
+      endpoint,
+      method: "POST",
+      baseURL: axiosInstance.defaults.baseURL,
+      fullURL: `${axiosInstance.defaults.baseURL}${endpoint}`,
+      payload: payload
+    });
+
+    const response = await axiosInstance.post(endpoint, payload);
+    console.log("✅ Registration API Success:", {
+      endpoint,
+      status: response.status,
+      data: response.data
+    });
+
     return response.data;
   } catch (error: any) {
-    if (axios.isAxiosError(error)) {
-      console.error("❌ Axios error detail:", {
-        message: error.message,
-        status: error.response?.status,
-        data: error.response?.data,
-        headers: error.response?.headers,
-      });
+    console.error("❌ Registration API Error:", {
+      endpoint: "/proxy/registration",
+      error: error.message,
+      status: error.response?.status,
+      data: error.response?.data
+    });
 
+    if (axios.isAxiosError(error)) {
       // If backend returns 422, throw the backend error message
       if (error.response?.status === 422) {
         const backendErrors = error.response.data;
         throw new Error(backendErrors.message || backendErrors.error || "Validation error from server");
       }
-    } else {
-      console.error("❌ Unknown error:", error);
     }
     throw error;
   }

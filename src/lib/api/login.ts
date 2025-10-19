@@ -19,13 +19,29 @@ export interface LoginErrorResponse {
 
 export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
   try {
-    const res = await axiosInstance.post("/auth/login", payload);
+    const endpoint = "/auth/login";
+    console.log("🔄 Login API Call:", {
+      endpoint,
+      method: "POST",
+      baseURL: axiosInstance.defaults.baseURL,
+      fullURL: `${axiosInstance.defaults.baseURL}${endpoint}`,
+      payload: { identifier: payload.identifier, password: "****" } // Hide password in logs
+    });
+
+    const res = await axiosInstance.post(endpoint, payload);
 
     if (!res.data?.success) {
       throw res.data;
     }
 
     const { token, tokenType, role } = res.data.data;
+
+    console.log("✅ Login API Success:", {
+      endpoint,
+      status: res.status,
+      role: role,
+      hasToken: !!token
+    });
 
     // Store in sessionStorage for client-side access (cookies are HTTP-only)
     if (typeof window !== "undefined") {
@@ -36,6 +52,13 @@ export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
 
     return { token, tokenType, role };
   } catch (err: any) {
+    console.error("❌ Login API Error:", {
+      endpoint: "/auth/login",
+      error: err.message,
+      status: err.response?.status,
+      data: err.response?.data
+    });
+
     if (err.response?.status === 401) {
       throw { general: "Username atau password salah." };
     }

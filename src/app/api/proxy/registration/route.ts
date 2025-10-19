@@ -4,6 +4,16 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    console.log("🔄 Proxy Registration Request:", {
+      endpoint: "https://puspa.sinus.ac.id/api/v1/registration",
+      method: "POST",
+      body: body,
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      }
+    });
+
     // Forward ke backend Puspa API
     const response = await fetch('https://puspa.sinus.ac.id/api/v1/registration', {
       method: 'POST',
@@ -12,6 +22,12 @@ export async function POST(request: NextRequest) {
         Accept: 'application/json',
       },
       body: JSON.stringify(body),
+    });
+
+    console.log("🔄 Proxy Registration Response:", {
+      status: response.status,
+      statusText: response.statusText,
+      headers: Object.fromEntries(response.headers.entries())
     });
 
     // Tangkap data response
