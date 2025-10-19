@@ -4,70 +4,53 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    // Forward the request to the external API
+    // Forward ke backend Puspa API
     const response = await fetch('https://puspa.sinus.ac.id/api/v1/registration', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Accept': 'application/json',
+        Accept: 'application/json',
       },
       body: JSON.stringify(body),
     });
 
-    // Get response data
-    let responseData;
-    const contentType = response.headers.get('content-type');
-
-    if (contentType && contentType.includes('application/json')) {
-      responseData = await response.json();
-    } else {
-      responseData = await response.text();
+    // Tangkap data response
+    const text = await response.text();
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      data = { raw: text };
     }
 
-    // Create Next.js response with external API data
-    const nextResponse = new NextResponse(
-      contentType && contentType.includes('application/json')
-        ? JSON.stringify(responseData)
-        : responseData,
-      {
-        status: response.status,
-        statusText: response.statusText,
-      }
-    );
+    const res = NextResponse.json(data, { status: response.status });
 
-    // Copy response headers from external API
-    response.headers.forEach((value, key) => {
-      nextResponse.headers.set(key, value);
-    });
+    // CORS headers agar frontend (Vercel) tidak diblokir
+    res.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
+    res.headers.set('Access-Control-Allow-Credentials', 'true');
+    res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 
-    // Add CORS headers to allow frontend access
-    nextResponse.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
-    nextResponse.headers.set('Access-Control-Allow-Credentials', 'true');
-    nextResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    nextResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-
-    return nextResponse;
-
+    return res;
   } catch (error) {
     console.error('Proxy registration error:', error);
 
-    return new NextResponse(
-      JSON.stringify({
+    return NextResponse.json(
+      {
         error: 'Proxy server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }),
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
       {
         status: 500,
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': request.headers.get('origin') || '*',
+          'Access-Control-Allow-Origin': '*',
         },
       }
     );
   }
 }
 
-// Handle preflight requests
+// OPTIONS untuk preflight request (CORS)
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
