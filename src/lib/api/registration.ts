@@ -18,7 +18,7 @@ export interface RegistrationPayload {
 
 export async function registrationChild(payload: RegistrationPayload) {
   try {
-    const endpoint = "/proxy/registration";
+    const endpoint = "/registration";
     console.log("🔄 Registration API Call:", {
       endpoint,
       method: "POST",
@@ -37,7 +37,7 @@ export async function registrationChild(payload: RegistrationPayload) {
     return response.data;
   } catch (error: any) {
     console.error("❌ Registration API Error:", {
-      endpoint: "/proxy/registration",
+      endpoint: "/registration",
       error: error.message,
       status: error.response?.status,
       data: error.response?.data
