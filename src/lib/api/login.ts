@@ -1,4 +1,4 @@
-import axiosInstance from "../axios";
+import axios from "axios";
 
 export interface LoginPayload {
   identifier: string;
@@ -17,17 +17,26 @@ export interface LoginErrorResponse {
   general?: string;
 }
 
-export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
-  try {
-    const endpoint = "/auth/login";
-    console.log("🔄 Login API Call:", {
-      endpoint,
-      method: "POST",
-      baseURL: axiosInstance.defaults.baseURL,
-      fullURL: `${axiosInstance.defaults.baseURL}${endpoint}`,
-      payload: { identifier: payload.identifier, password: "****" } // Hide password in logs
-    });
+const axiosInstance = axios.create({
+  baseURL: "/api/proxy", // ✅ selalu pakai proxy ke API Laravel
+  headers: {
+    "Content-Type": "application/json",
+    Accept: "application/json",
+  },
+  withCredentials: true, // penting supaya cookie dari Next API bisa diterima browser
+});
 
+export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
+  const endpoint = "/auth/login";
+  console.log("🔄 Login API Call:", {
+    endpoint,
+    method: "POST",
+    baseURL: axiosInstance.defaults.baseURL,
+    fullURL: `${axiosInstance.defaults.baseURL}${endpoint}`,
+    payload: { identifier: payload.identifier, password: "****" },
+  });
+
+  try {
     const res = await axiosInstance.post(endpoint, payload);
 
     if (!res.data?.success) {
@@ -39,11 +48,11 @@ export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
     console.log("✅ Login API Success:", {
       endpoint,
       status: res.status,
-      role: role,
-      hasToken: !!token
+      role,
+      hasToken: !!token,
     });
 
-    // Store in sessionStorage for client-side access (cookies are HTTP-only)
+    // Simpan sementara di sessionStorage untuk client-side navigasi
     if (typeof window !== "undefined") {
       sessionStorage.setItem("token", token);
       sessionStorage.setItem("tokenType", tokenType);
@@ -53,20 +62,25 @@ export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
     return { token, tokenType, role };
   } catch (err: any) {
     console.error("❌ Login API Error:", {
-      endpoint: "/auth/login",
+      endpoint,
       error: err.message,
       status: err.response?.status,
-      data: err.response?.data
+      data: err.response?.data,
     });
+
+    const resData = err.response?.data;
 
     if (err.response?.status === 401) {
       throw { general: "Username atau password salah." };
     }
 
-    if (err.errors) {
-      throw err.errors;
+    if (resData?.errors) {
+      throw resData.errors;
     }
 
-    throw { general: err.response?.data?.message || err.message || "Terjadi kesalahan login." };
+    throw {
+      general:
+        resData?.message || err.message || "Terjadi kesalahan saat login.",
+    };
   }
 };
