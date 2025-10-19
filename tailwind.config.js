@@ -1,12 +1,11 @@
-import { defineConfig } from "tailwindcss";
-
-export default defineConfig({
+/** @type {import('tailwindcss').Config} */
+module.exports = {
   content: [
-    "./src/pages/*/.{js,ts,jsx,tsx,mdx}",
-    "./src/components/*/.{js,ts,jsx,tsx,mdx}",
-    "./src/app/*/.{js,ts,jsx,tsx,mdx}",
+    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
-   theme: {
+  theme: {
     extend: {
       fontFamily: {
         playpen: ["'Playpen Sans'", "cursive"],
@@ -14,6 +13,6 @@ export default defineConfig({
     },
   },
   plugins: [],
-})
+};
 
 
