@@ -1,0 +1,1136 @@
+{
+	"info": {
+		"_postman_id": "9ab4cd7c-17c7-4b32-a38f-8424684d854f",
+		"name": "Puspa API",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33828589"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"aliefarifin99@gmail.com\",\r\n    \"username\": \"aliefarfn\",\r\n    \"password\": \"Alief123.\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resend Email",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/resend-verification/{{user_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"resend-verification",
+								"{{user_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resend Email Status",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/resend-status/{{user_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"resend-status",
+								"{{user_id}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"identifier\": \"aliefarfn\",\r\n    \"password\": \"Alief12345.\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/auth/logout",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"logout"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Forgot Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"aliefarifin99@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/forgot-password",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"forgot-password"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resend Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"aliefarifin99@gmail.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/resend-reset/{{email}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"resend-reset",
+								"{{email}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Resend Reset Status",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/resend-reset-status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"resend-reset-status"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Reset Password",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"password\": \"Alief12345.\",\r\n    \"password_confirmation\": \"Alief12345.\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/reset-password?token=2e8e35fbc9724ee2965ae81859e55b3da5c09fe3e618112158fdee35073303e7&email=aliefarifin99%40gmail.com",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"reset-password"
+							],
+							"query": [
+								{
+									"key": "token",
+									"value": "2e8e35fbc9724ee2965ae81859e55b3da5c09fe3e618112158fdee35073303e7"
+								},
+								{
+									"key": "email",
+									"value": "aliefarifin99%40gmail.com"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Owner Stuff",
+			"item": [
+				{
+					"name": "All Admin Unverified",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{owner_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/admins/unverified",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"admins",
+								"unverified"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "All Therapist Unverified",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{owner_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/therapists/unverified",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"therapists",
+								"unverified"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Verified Employee",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{owner_token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/users/verified/{{user_id}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"users",
+								"verified",
+								"{{user_id}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin Stuff",
+			"item": [
+				{
+					"name": "Management Admin",
+					"item": [
+						{
+							"name": "All Admin",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admins",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admins"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Detail Admin",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admins/{{admin_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admins",
+										"{{admin_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Admin",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"adminZendho\",\r\n    \"email\": \"zendhodwi01@gmail.com\",\r\n    \"password\": \"Zendho123.\",\r\n    \"admin_name\": \"Zedho Dwi Prasetyo\",\r\n    \"admin_phone\": \"085862226676\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/admins",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admins"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Admin",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"email\": \"zendhodwi01@gmail.com\",\r\n    \"username\": \"adminZendho\",\r\n    \"admin_name\": \"Zedho Dwi\",\r\n    \"admin_phone\": \"085862226676\",\r\n    \"_method\": \"PUT\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/admins/{{admin_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admins",
+										"{{admin_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Admin",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/admins/{{admin_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"admins",
+										"{{admin_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Management Therapist",
+					"item": [
+						{
+							"name": "All Terapis",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/therapists",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"therapists"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Detail Terapis",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/therapists/{{therapist_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"therapists",
+										"{{therapist_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Add Terapis",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"okupasiNindya\",\r\n    \"email\": \"nindyazahra02@gmail.com\",\r\n    \"password\": \"Nindya123.\",\r\n    \"therapist_name\": \"Nindya Zahra\",\r\n    \"therapist_phone\": \"085965127886\",\r\n    \"therapist_section\": \"okupasi\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/therapists",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"therapists"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Terapis",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"username\": \"okupasiNindya\",\r\n    \"email\": \"nindyazahra01@gmail.com\",\r\n    \"therapist_name\": \"Nindya Zahra\",\r\n    \"therapist_phone\": \"085965127886\",\r\n    \"therapist_section\": \"okupasi\",\r\n    \"_method\": \"PUT\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/therapists/{{therapist_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"therapists",
+										"{{therapist_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Delete Terapis",
+							"request": {
+								"method": "DELETE",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/therapists/{{therapist_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"therapists",
+										"{{therapist_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Management  Patient",
+					"item": [
+						{
+							"name": "Show Children",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/children",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"children"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show Children Detail",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/children/{{child_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"children",
+										"{{child_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Management  Observation",
+					"item": [
+						{
+							"name": "Show Pending Observations",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/observations/pending",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"pending"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Observation Date",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"scheduled_date\": \"2025-10-06\",\r\n    \"_method\": \"PUT\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/observations/{{observation_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"{{observation_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show Scheduled Observations",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{admin_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/observations/scheduled",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"scheduled"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Therapist Stuff",
+			"item": [
+				{
+					"name": "Management Obervation",
+					"item": [
+						{
+							"name": "Show Scheduled Observations",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{therapist_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/observations/scheduled",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"scheduled"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show Scheduled Observation Detail",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{therapist_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/observations/scheduled/{{observation_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"scheduled",
+										"{{observation_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show Observation Questions",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{therapist_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/observations/question/{{observation_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"question",
+										"{{observation_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Submit Balita Observation Questions",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{therapist_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"answers\": [\r\n    {\r\n      \"question_id\": 1,\r\n      \"answer\": true,\r\n      \"note\": \"Unfocused movement observed\"\r\n    },\r\n    {\r\n      \"question_id\": 2,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 3,\r\n      \"answer\": true,\r\n      \"note\": \"Struggles with rules\"\r\n    },\r\n    {\r\n      \"question_id\": 4,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 5,\r\n      \"answer\": true,\r\n      \"note\": \"Mild aggression\"\r\n    },\r\n    {\r\n      \"question_id\": 6,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 7,\r\n      \"answer\": true,\r\n      \"note\": \"Restless behavior\"\r\n    },\r\n    {\r\n      \"question_id\": 8,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 9,\r\n      \"answer\": true,\r\n      \"note\": \"Minor limb issue\"\r\n    },\r\n    {\r\n      \"question_id\": 10,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 11,\r\n      \"answer\": true,\r\n      \"note\": \"Poor coordination\"\r\n    },\r\n    {\r\n      \"question_id\": 12,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 13,\r\n      \"answer\": true,\r\n      \"note\": \"Difficulty with fine motor skills\"\r\n    },\r\n    {\r\n      \"question_id\": 14,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 15,\r\n      \"answer\": true,\r\n      \"note\": \"Repeats questions\"\r\n    },\r\n    {\r\n      \"question_id\": 16,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 17,\r\n      \"answer\": true,\r\n      \"note\": \"Incomplete tasks\"\r\n    },\r\n    {\r\n      \"question_id\": 18,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 19,\r\n      \"answer\": true,\r\n      \"note\": \"Cannot name family\"\r\n    },\r\n    {\r\n      \"question_id\": 20,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 21,\r\n      \"answer\": true,\r\n      \"note\": \"Struggles with counting\"\r\n    },\r\n    {\r\n      \"question_id\": 22,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 23,\r\n      \"answer\": true,\r\n      \"note\": \"Cannot identify shapes\"\r\n    },\r\n    {\r\n      \"question_id\": 24,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 25,\r\n      \"answer\": true,\r\n      \"note\": \"Prefers solitude\"\r\n    },\r\n    {\r\n      \"question_id\": 26,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    }\r\n  ],\r\n  \"conclusion\": \"Child shows normal development with minor concerns.\",\r\n  \"recommendation\": \"Monitor progress and schedule follow-up in 2 weeks.\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/observations/submit/{{observation_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"submit",
+										"{{observation_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Submit Anak-anak Observation Questions",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{therapist_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"answers\": [\r\n    {\r\n      \"question_id\": 27,\r\n      \"answer\": true,\r\n      \"note\": \"Tak terarah\"\r\n    },\r\n    {\r\n      \"question_id\": 28,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 29,\r\n      \"answer\": true,\r\n      \"note\": \"Ra aturan\"\r\n    },\r\n    {\r\n      \"question_id\": 30,\r\n      \"answer\": false,\r\n      \"note\": \"Aggresive behavior observed\"\r\n    },\r\n    {\r\n      \"question_id\": 31,\r\n      \"answer\": true,\r\n      \"note\": \"Repetitive hand movements\"\r\n    },\r\n    {\r\n      \"question_id\": 32,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 33,\r\n      \"answer\": true,\r\n      \"note\": \"Minor limb issue\"\r\n    },\r\n    {\r\n      \"question_id\": 34,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 35,\r\n      \"answer\": true,\r\n      \"note\": \"Struggles with coordination\"\r\n    },\r\n    {\r\n      \"question_id\": 36,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 37,\r\n      \"answer\": true,\r\n      \"note\": \"Difficulty with fine motor skills\"\r\n    },\r\n    {\r\n      \"question_id\": 38,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 39,\r\n      \"answer\": true,\r\n      \"note\": \"Needs clear instructions\"\r\n    },\r\n    {\r\n      \"question_id\": 40,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 41,\r\n      \"answer\": true,\r\n      \"note\": \"Incomplete tasks\"\r\n    },\r\n    {\r\n      \"question_id\": 42,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 43,\r\n      \"answer\": true,\r\n      \"note\": \"Cannot name family\"\r\n    },\r\n    {\r\n      \"question_id\": 44,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 45,\r\n      \"answer\": true,\r\n      \"note\": \"Struggles with counting\"\r\n    },\r\n    {\r\n      \"question_id\": 46,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 47,\r\n      \"answer\": true,\r\n      \"note\": \"Minimal eye contact\"\r\n    },\r\n    {\r\n      \"question_id\": 48,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 49,\r\n      \"answer\": true,\r\n      \"note\": \"Refuses to share\"\r\n    },\r\n    {\r\n      \"question_id\": 50,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    }\r\n  ],\r\n  \"conclusion\": \"Child shows normal development with minor concerns.\",\r\n  \"recommendation\": \"Monitor progress and schedule follow-up in 2 weeks.\",\r\n  \"fisio\": false,\r\n  \"wicara\": false,\r\n  \"paedagog\": true,\r\n  \"okupasi\": true\r\n\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/observations/submit/{{observation_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"submit",
+										"{{observation_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Submit Remaja Observation Questions",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{therapist_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n  \"answers\": [\r\n    {\r\n      \"question_id\": 51,\r\n      \"answer\": true,\r\n      \"note\": \"Hyperactive movements noted\"\r\n    },\r\n    {\r\n      \"question_id\": 52,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 53,\r\n      \"answer\": true,\r\n      \"note\": \"Rule-breaking observed\"\r\n    },\r\n    {\r\n      \"question_id\": 54,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 55,\r\n      \"answer\": true,\r\n      \"note\": \"Repetitive behaviors\"\r\n    },\r\n    {\r\n      \"question_id\": 56,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 57,\r\n      \"answer\": true,\r\n      \"note\": \"Excessive interest in opposite gender\"\r\n    },\r\n    {\r\n      \"question_id\": 58,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 59,\r\n      \"answer\": true,\r\n      \"note\": \"Limb abnormality\"\r\n    },\r\n    {\r\n      \"question_id\": 60,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 61,\r\n      \"answer\": true,\r\n      \"note\": \"Repeats questions\"\r\n    },\r\n    {\r\n      \"question_id\": 62,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 63,\r\n      \"answer\": true,\r\n      \"note\": \"Poor communication skills\"\r\n    },\r\n    {\r\n      \"question_id\": 64,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 65,\r\n      \"answer\": true,\r\n      \"note\": \"Attention deficit\"\r\n    },\r\n    {\r\n      \"question_id\": 66,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 67,\r\n      \"answer\": true,\r\n      \"note\": \"Basic math struggles\"\r\n    },\r\n    {\r\n      \"question_id\": 68,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 69,\r\n      \"answer\": true,\r\n      \"note\": \"Minimal eye contact\"\r\n    },\r\n    {\r\n      \"question_id\": 70,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 71,\r\n      \"answer\": true,\r\n      \"note\": \"Adaptation difficulties\"\r\n    },\r\n    {\r\n      \"question_id\": 72,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 73,\r\n      \"answer\": true,\r\n      \"note\": \"Buttoning issues\"\r\n    },\r\n    {\r\n      \"question_id\": 74,\r\n      \"answer\": false,\r\n      \"note\": \"\"\r\n    },\r\n    {\r\n      \"question_id\": 75,\r\n      \"answer\": true,\r\n      \"note\": \"Unaware of currency\"\r\n    }\r\n  ],\r\n  \"conclusion\": \"Child shows normal development with minor concerns.\",\r\n  \"recommendation\": \"Monitor progress and schedule follow-up in 2 weeks.\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/observations/submit/{{observation_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"submit",
+										"{{observation_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show Completed Observations",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{therapist_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/observations/completed",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"completed"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show Completed Observation Summary",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{therapist_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/observations/completed/{{observation_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"completed",
+										"{{observation_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Show Observation Detail Answer",
+							"request": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{therapist_token}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{base_url}}/observations/answer/{{observation_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"answer",
+										"{{observation_id}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "Update Assessment Agreement",
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Authorization",
+										"value": "Bearer {{therapist_token}}",
+										"type": "text"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"scheduled_date\": \"2025-10-07\",\r\n    \"_method\": \"PUT\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{base_url}}/observations/assessment-agreement/{{observation_id}}",
+									"host": [
+										"{{base_url}}"
+									],
+									"path": [
+										"observations",
+										"assessment-agreement",
+										"{{observation_id}}"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Protected",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{token}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{base_url}}/auth/protected",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"auth",
+						"protected"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Registration",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"child_name\": \"Zendho Dwi\",\r\n    \"child_gender\": \"laki-laki\",\r\n    \"child_birth_place\": \"Karanganyar\",\r\n    \"child_birth_date\": \"2017-02-16\",\r\n    \"child_school\": \"SD Karanganyar\",\r\n    \"child_address\": \"Jl. Jauh No. 01\",\r\n    \"child_complaint\": \"Sulit fokus, Suka bengong\",\r\n    \"child_service_choice\": \"Konsultasi Dokter, Tes Psikologi\",\r\n    \"email\": \"aliefarifin99@gmail.com\",\r\n    \"guardian_name\": \"Alief Arifin M\",\r\n    \"guardian_phone\": \"089922002245\",\r\n    \"guardian_type\": \"ayah\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/registration",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"registration"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
