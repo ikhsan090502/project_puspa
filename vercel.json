@@ -15,10 +15,5 @@
       "src": "/(.*)",
       "dest": "/$1"
     }
-  ],
-  "env": {
-    "JWT_SECRET": "@jwt-secret",
-    "NEXTAUTH_URL": "@nextauth-url",
-    "DATABASE_URL": "@database-url"
-  }
+  ]
 }

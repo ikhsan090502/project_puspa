@@ -10,18 +10,22 @@ This project implements a comprehensive API for the Puspa application with authe
 
 ### Environment Variables Setup
 
-Create the following environment variables in your Vercel dashboard:
+After deployment, you need to set up environment variables in your Vercel dashboard:
+
+1. **Go to your project dashboard** on Vercel
+2. **Navigate to Settings** → **Environment Variables**
+3. **Add the following variables:**
 
 #### Required Variables:
-- `JWT_SECRET`: A secure random string for JWT token signing
+- `JWT_SECRET`: A secure random string for JWT token signing (generate a strong secret)
 - `NEXTAUTH_URL`: Your deployed application URL (e.g., `https://your-app.vercel.app`)
 - `DATABASE_URL`: Database connection string (for future use)
 
-#### Optional Variables:
-- `SMTP_HOST`: SMTP server for email sending
+#### Optional Variables (for email functionality):
+- `SMTP_HOST`: SMTP server for email sending (e.g., `smtp.gmail.com`)
 - `SMTP_PORT`: SMTP port (default: 587)
-- `SMTP_USER`: SMTP username
-- `SMTP_PASS`: SMTP password
+- `SMTP_USER`: SMTP username/email
+- `SMTP_PASS`: SMTP password/app password
 
 ### Deployment Steps
 
@@ -48,8 +52,8 @@ Create the following environment variables in your Vercel dashboard:
 
 5. **Set environment variables in Vercel**:
    - Go to your project dashboard on Vercel
-   - Navigate to Settings → Environment Variables
-   - Add all required environment variables
+   - Navigate to **Settings** → **Environment Variables**
+   - Add all required environment variables manually (see Environment Variables Setup section below)
 
 ## 📋 API Endpoints
 
@@ -192,6 +196,21 @@ When deploying to Vercel:
 2. **Authentication failures**: Check JWT_SECRET is properly configured
 3. **Database connection errors**: Verify DATABASE_URL is correct
 4. **Email sending failures**: Check SMTP configuration
+
+### Vercel Deployment Issues:
+
+**Environment Variable Error:**
+If you see: `Environment Variable "JWT_SECRET" references Secret "jwt-secret", which does not exist.`
+
+**Solution:**
+1. Go to your Vercel project dashboard
+2. Navigate to **Settings** → **Environment Variables**
+3. Add the environment variables manually:
+   - `JWT_SECRET`: Generate a secure random string
+   - `NEXTAUTH_URL`: Your deployed Vercel URL
+   - `DATABASE_URL`: Your database connection string
+
+**Note:** The `vercel.json` file was simplified to avoid secret reference issues. Set up environment variables directly in the Vercel dashboard.
 
 ### Logs:
 Check Vercel function logs in the dashboard for debugging API issues.
