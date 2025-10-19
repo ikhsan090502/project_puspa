@@ -3,29 +3,27 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const { identifier, email, username, password } = body;
 
-    // Deteksi apakah input email atau username
-    const identifier = body.email || body.username || body.identifier;
-    const password = body.password;
+    const userIdentifier = identifier || email || username;
 
-    if (!identifier || !password) {
+    if (!userIdentifier || !password) {
       return NextResponse.json(
         { error: 'Email/Username dan Password wajib diisi.' },
         { status: 400 }
       );
     }
 
-    // Tentukan field mana yang akan dikirim ke backend
-    const payload = identifier.includes('@')
-      ? { email: identifier, password }
-      : { username: identifier, password };
+    // Sesuaikan payload ke API eksternal
+    const payload = userIdentifier.includes('@')
+      ? { email: userIdentifier, password }
+      : { username: userIdentifier, password };
 
-    // Forward ke API eksternal
     const response = await fetch('https://puspa.sinus.ac.id/api/v1/auth/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Accept: 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify(payload),
     });
@@ -39,37 +37,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Simpan token dan role ke cookie
-    const nextResponse = NextResponse.json(data, { status: response.status });
-
-    if (data?.data?.token) {
-      nextResponse.cookies.set('token', data.data.token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'lax',
-        path: '/',
-      });
-    }
-
-    if (data?.data?.role) {
-      nextResponse.cookies.set('role', data.data.role, {
-        path: '/',
-      });
-    }
-
-    // CORS
-    nextResponse.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
-    nextResponse.headers.set('Access-Control-Allow-Credentials', 'true');
-    nextResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    nextResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+    // Simpan cookie token + role
+    const nextResponse = NextResponse.json(data, { status: 200 });
+    nextResponse.cookies.set('token', data.data?.token || '', {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
+    });
+    nextResponse.cookies.set('role', data.data?.role || '', {
+      path: '/',
+    });
 
     return nextResponse;
+
   } catch (error) {
     console.error('Proxy login error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error', message: (error as Error).message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
