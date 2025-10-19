@@ -15,6 +15,14 @@ const nextConfig: NextConfig = {
   experimental: {
     serverActions: true
   },
+  async rewrites() {
+    return [
+      {
+        source: '/api/external/:path*',
+        destination: 'https://puspa.sinus.ac.id/api/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;
