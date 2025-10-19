@@ -1,8 +1,5 @@
-@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@400;600;800&display=swap');
-
-
-
+@import "tailwindcss";
 
 :root {
   --foreground-rgb: 0, 0, 0;
@@ -10,81 +7,24 @@
   --background-end-rgb: 255, 255, 255;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
-  }
-}
-
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-  font-family: 'Playpen Sans', cursive; 
-}
-
-
-.rounded-lg {
-  border-radius: 0.5rem; 
-}
-
-.shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.focus\:border-\[\#26a69a\]:focus {
-  border-color: #26a69a;
-}
-
-.focus\:ring-\[\#26a69a\]:focus {
-  --tw-ring-color: #26a69a;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  width: 100%;
+  @apply text-gray-800 bg-[#B8E8DB] font-[Playpen_Sans] antialiased;
 }
 
 .layout-main {
-  min-height: 100vh;
-  width: 100%;
-  background-color: #B8E8DB;
-  position: relative;
+  @apply min-h-screen w-full bg-[#B8E8DB] relative;
 }
 
 .header {
-  width: 100%;
-  padding: 1rem 2rem;
-  position: absolute;
-  top: 0;
-  left: 0;
+  @apply w-full px-8 py-4 absolute top-0 left-0 bg-white shadow-md;
 }
 
 .form-wrapper {
-  min-height: 100vh;       
-  display: flex;
-  align-items: center;     
-  justify-content: center; 
+  @apply min-h-screen flex items-center justify-center;
 }
 
 .layout-form {
-  background-color: #FFFFFF;
-  border-radius: 16px;
-  padding: 2rem;
-  width: 500px;
-  height: 550px;
-  box-shadow: 0px 4px 15px #ADADAD;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  @apply bg-white rounded-2xl shadow-xl p-8 w-[500px] h-[550px] flex flex-col justify-center;
 }
 
 
