@@ -1,5 +1,4 @@
-import axios from "axios";
-import { AxiosError } from "axios";
+import axiosInstance from "../axios";
 
 export async function registerUser({
   email,
@@ -11,10 +10,7 @@ export async function registerUser({
   password: string;
 }) {
   try {
-    const res = await axios.post(
-      "https://puspa.sinus.ac.id/api/v1/auth/register",
-      { email, username, password }
-    );
+    const res = await axiosInstance.post("/auth/register", { email, username, password });
 
     const user_id =
       res.data?.data?.user_id ||

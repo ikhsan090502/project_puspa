@@ -1,5 +1,6 @@
 
-import axios, { AxiosError } from "axios";
+import axiosInstance from "../axios";
+import axios from "axios";
 
 export interface ForgotPasswordPayload {
   email: string;
@@ -15,18 +16,14 @@ export async function forgotPassword(
   { email }: ForgotPasswordPayload
 ): Promise<ForgotPasswordResponse> {
   try {
-    const response = await axios.post(
-      "https://puspa.sinus.ac.id/api/v1/auth/forgot-password",
-      { email },
-      { headers: { "Content-Type": "application/json" } }
-    );
+    const response = await axiosInstance.post("/auth/forgot-password", { email });
 
     return {
       success: true,
       message: response.data?.message || "Permintaan reset password berhasil.",
       data: response.data,
     };
-  } catch (err: unknown) {
+  } catch (err: any) {
     if (axios.isAxiosError(err)) {
       const status = err.response?.status;
       const data = err.response?.data;
@@ -34,7 +31,7 @@ export async function forgotPassword(
       console.error("❌ Axios error:", status, data);
 
       if (status === 422) {
-        const errors = (data as any)?.errors;
+        const errors = data?.errors;
         const firstError = errors?.email?.[0] || "Email tidak valid";
         throw new Error(firstError);
       }
@@ -43,7 +40,7 @@ export async function forgotPassword(
         throw new Error("Email tidak ditemukan.");
       }
 
-      throw new Error((data as any)?.message || "Gagal mengirim email.");
+      throw new Error(data?.message || "Gagal mengirim email.");
     } else if (err instanceof Error) {
       throw new Error(err.message);
     } else {

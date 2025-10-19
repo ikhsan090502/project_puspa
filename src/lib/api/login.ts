@@ -1,4 +1,4 @@
-import axios from "axios";
+import axiosInstance from "../axios";
 
 export interface LoginPayload {
   identifier: string;
@@ -17,34 +17,22 @@ export interface LoginErrorResponse {
   general?: string;
 }
 
-const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "https://puspa.sinus.ac.id/api/v1",
-});
-
-axiosInstance.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    const tokenType = localStorage.getItem("tokenType") || "Bearer";
-    if (token) {
-      config.headers.Authorization = `${tokenType} ${token}`;
-    }
-  }
-  return config;
-});
-
 export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
   try {
     const res = await axiosInstance.post("/auth/login", payload);
 
     if (!res.data?.success) {
-      throw res.data; 
+      throw res.data;
     }
 
     const { token, tokenType, role } = res.data.data;
 
-    localStorage.setItem("token", token);
-    localStorage.setItem("tokenType", tokenType);
-    localStorage.setItem("role", role);
+    // Store in sessionStorage for client-side access (cookies are HTTP-only)
+    if (typeof window !== "undefined") {
+      sessionStorage.setItem("token", token);
+      sessionStorage.setItem("tokenType", tokenType);
+      sessionStorage.setItem("role", role);
+    }
 
     return { token, tokenType, role };
   } catch (err: any) {
@@ -53,7 +41,7 @@ export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
     }
 
     if (err.errors) {
-      throw err.errors; 
+      throw err.errors;
     }
 
     throw { general: err.response?.data?.message || err.message || "Terjadi kesalahan login." };
