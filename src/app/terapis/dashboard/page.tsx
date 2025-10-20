@@ -1,8 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye } from "lucide-react";
+import { checkAuth } from "@/lib/checkAuth";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
 
@@ -70,9 +71,34 @@ const kategori: Kategori[] = [
   { title: "Usia +17 tahun", filter: (d) => getTahun(d.usia) > 17 },
 ];
 
-export default function ObservasiPage() {
+export default function TerapisDashboard() {
   const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState("");
   const [selected, setSelected] = useState<Anak | null>(null);
+
+  useEffect(() => {
+    async function validate() {
+      const auth = await checkAuth();
+
+      if (!auth.success) {
+        router.replace("/auth/login");
+        return;
+      }
+
+      if (auth.role !== "terapis") {
+        router.replace(`/${auth.role}/dashboard`);
+        return;
+      }
+
+      setRole(auth.role);
+      setLoading(false);
+    }
+
+    validate();
+  }, [router]);
+
+  if (loading) return <div className="flex h-screen items-center justify-center text-lg">Memuat dashboard terapis...</div>;
 
   return (
     <div className="flex h-screen text-[#36315B] font-playpen">

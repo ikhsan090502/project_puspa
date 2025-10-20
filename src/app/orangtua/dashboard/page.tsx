@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { checkAuth } from "@/lib/checkAuth";
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
 
 export default function DashboardOrangtua() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState("");
   const [namaAnak, setNamaAnak] = useState("Ananda");
   const [progress, setProgress] = useState<number | null>(null);
   const [jadwal, setJadwal] = useState([
@@ -13,10 +18,33 @@ export default function DashboardOrangtua() {
   ]);
 
   useEffect(() => {
-    const anak = localStorage.getItem("namaAnak");
-    if (anak) setNamaAnak(anak);
-    setProgress(78); // contoh data sementara
-  }, []);
+    async function validate() {
+      const auth = await checkAuth();
+
+      if (!auth.success) {
+        router.replace("/auth/login");
+        return;
+      }
+
+      if (auth.role !== "orangtua") {
+        router.replace(`/${auth.role}/dashboard`);
+        return;
+      }
+
+      setRole(auth.role);
+
+      // Load anak data from sessionStorage if available
+      const anak = sessionStorage.getItem("namaAnak");
+      if (anak) setNamaAnak(anak);
+      setProgress(78); // contoh data sementara
+
+      setLoading(false);
+    }
+
+    validate();
+  }, [router]);
+
+  if (loading) return <div className="flex h-screen items-center justify-center text-lg">Memuat dashboard orangtua...</div>;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
