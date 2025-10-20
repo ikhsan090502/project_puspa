@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { checkAuth } from "@/lib/checkAuth";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import CardInfo from "@/components/dashboard/card_info";
@@ -13,31 +12,33 @@ import FormTambahAdmin from "@/components/form/FormTambahAdmin";
 export default function AdminDashboard() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState("");
   const [openTambahAdmin, setOpenTambahAdmin] = useState(false);
 
   useEffect(() => {
     async function validate() {
-      const auth = await checkAuth();
+      try {
+        const res = await fetch("/api/proxy/auth/protected", { credentials: "include" });
+        const data = await res.json();
 
-      if (!auth.success) {
+        if (!data?.success || data?.data?.role !== "admin") {
+          router.replace("/auth/login");
+        } else {
+          setLoading(false);
+        }
+      } catch (e) {
         router.replace("/auth/login");
-        return;
       }
-
-      if (auth.role !== "admin") {
-        router.replace(`/${auth.role}/dashboard`);
-        return;
-      }
-
-      setRole(auth.role);
-      setLoading(false);
     }
 
     validate();
   }, [router]);
 
-  if (loading) return <div className="flex h-screen items-center justify-center text-lg">Memuat dashboard admin...</div>;
+  if (loading)
+    return (
+      <div className="flex h-screen items-center justify-center">
+        Memeriksa autentikasi...
+      </div>
+    );
 
   return (
     <div className="flex min-h-screen bg-gray-100">

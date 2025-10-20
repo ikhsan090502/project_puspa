@@ -19,32 +19,28 @@ export default function DashboardOrangtua() {
 
   useEffect(() => {
     async function validate() {
-      const auth = await checkAuth();
+      try {
+        const res = await fetch("/api/proxy/auth/protected", { credentials: "include" });
+        const data = await res.json();
 
-      if (!auth.success) {
+        if (!data?.success || data?.data?.role !== "orangtua") {
+          router.replace("/auth/login");
+        } else {
+          setLoading(false);
+        }
+      } catch (e) {
         router.replace("/auth/login");
-        return;
       }
-
-      if (auth.role !== "orangtua") {
-        router.replace(`/${auth.role}/dashboard`);
-        return;
-      }
-
-      setRole(auth.role);
-
-      // Load anak data from sessionStorage if available
-      const anak = sessionStorage.getItem("namaAnak");
-      if (anak) setNamaAnak(anak);
-      setProgress(78); // contoh data sementara
-
-      setLoading(false);
     }
 
     validate();
   }, [router]);
 
-  if (loading) return <div className="flex h-screen items-center justify-center text-lg">Memuat dashboard orangtua...</div>;
+  if (loading) return (
+    <div className="flex h-screen items-center justify-center text-lg">
+      Memeriksa autentikasi...
+    </div>
+  );
 
   return (
     <div className="flex min-h-screen bg-gray-50">
