@@ -1,215 +1,62 @@
-export const runtime = 'nodejs'
-
+export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, 'GET', params.path);
-}
-
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, 'POST', params.path);
-}
-
-export async function PUT(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, 'PUT', params.path);
-}
-
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, 'DELETE', params.path);
-}
-
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: { path: string[] } }
-) {
-  return proxyRequest(request, 'PATCH', params.path);
-}
+// --- Forward semua method ---
+export async function GET(req: NextRequest, ctx: any) { return proxy(req, 'GET', ctx.params.path); }
+export async function POST(req: NextRequest, ctx: any) { return proxy(req, 'POST', ctx.params.path); }
+export async function PUT(req: NextRequest, ctx: any) { return proxy(req, 'PUT', ctx.params.path); }
+export async function DELETE(req: NextRequest, ctx: any) { return proxy(req, 'DELETE', ctx.params.path); }
+export async function PATCH(req: NextRequest, ctx: any) { return proxy(req, 'PATCH', ctx.params.path); }
 
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Credentials': 'true',
       'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   });
 }
 
-async function proxyRequest(
-  request: NextRequest,
-  method: HttpMethod,
-  pathSegments: string[]
-) {
-  try {
-    // Construct the external API URL
-    const path = pathSegments.join('/');
-    const externalUrl = `https://puspa.sinus.ac.id/api/v1/${path}`;
+// --- Proxy handler utama ---
+async function proxy(request: NextRequest, method: HttpMethod, pathSegments: string[]) {
+  const path = pathSegments.join('/');
+  const targetUrl = `https://puspa.sinus.ac.id/api/v1/${path}`;
 
-    // Handle query parameters
-    const url = new URL(request.url);
-    const searchParams = url.searchParams;
-    const finalExternalUrl = searchParams.toString()
-      ? `${externalUrl}?${searchParams.toString()}`
-      : externalUrl;
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+  };
 
-    console.log('🔄 Proxy Request:', {
-      method,
-      externalUrl: finalExternalUrl,
-      pathSegments,
-      hasQuery: searchParams.toString().length > 0
+  const token = request.cookies.get('token')?.value;
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const body = ['POST', 'PUT', 'PATCH'].includes(method) ? await request.text() : undefined;
+
+  const res = await fetch(targetUrl, { method, headers, body });
+  const data = await res.json().catch(() => ({}));
+
+  // 🧠 Jika ini endpoint login → simpan cookie di domain frontend
+  if (path.includes('auth/login') && data?.data?.token) {
+    const nextRes = NextResponse.json(data, { status: res.status });
+
+    nextRes.cookies.set('token', data.data.token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      path: '/',
     });
 
-    // Get request body for POST, PUT, PATCH requests
-    let body = null;
-    if (['POST', 'PUT', 'PATCH'].includes(method)) {
-      try {
-        body = await request.arrayBuffer();
-      } catch (error) {
-        console.warn('⚠️ Body parsing failed:', error);
-        // If body parsing fails, continue without body
-      }
+    if (data.data.role) {
+      nextRes.cookies.set('role', data.data.role, { path: '/' });
     }
 
-    // Prepare headers - copy important headers from original request
-    const headers = new Headers();
-
-    // Copy specific headers
-    const contentType = request.headers.get('content-type');
-    const authorization = request.headers.get('authorization');
-
-    if (contentType) headers.set('Content-Type', contentType);
-    if (authorization) headers.set('Authorization', authorization);
-
-    // Set other common headers
-    headers.set('Accept', 'application/json');
-    headers.set('User-Agent', 'Next.js Proxy (Vercel)');
-
-    // Create AbortController for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
-
-    try {
-      // Make the request to external API
-      const response = await fetch(finalExternalUrl, {
-        method,
-        headers,
-        body: body || undefined,
-        signal: controller.signal,
-      });
-
-      clearTimeout(timeoutId);
-
-      console.log('🔄 Proxy Response:', {
-        status: response.status,
-        statusText: response.statusText,
-        contentType: response.headers.get('content-type')
-      });
-
-      // Handle non-JSON responses (like HTML error pages)
-      const contentType = response.headers.get('content-type');
-      let responseData;
-
-      if (contentType && contentType.includes('application/json')) {
-        responseData = await response.json();
-      } else {
-        const text = await response.text();
-        console.error('❌ Non-JSON response from external API:', {
-          status: response.status,
-          contentType,
-          body: text.substring(0, 200)
-        });
-        return new NextResponse(
-          JSON.stringify({
-            success: false,
-            error: 'External API returned invalid response',
-            details: 'Expected JSON but received HTML/text'
-          }),
-          {
-            status: 502,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': request.headers.get('origin') || '*',
-            },
-          }
-        );
-      }
-
-      // Create Next.js response with external API data
-      const nextResponse = new NextResponse(
-        JSON.stringify(responseData),
-        {
-          status: response.status,
-          statusText: response.statusText,
-        }
-      );
-
-      // Copy response headers from external API
-      response.headers.forEach((value, key) => {
-        nextResponse.headers.set(key, value);
-      });
-
-      // Add CORS headers to allow frontend access
-      nextResponse.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
-      nextResponse.headers.set('Access-Control-Allow-Credentials', 'true');
-      nextResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-      nextResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
-
-      return nextResponse;
-
-    } catch (fetchError: any) {
-      clearTimeout(timeoutId);
-
-      if (fetchError.name === 'AbortError') {
-        console.error('❌ Request timeout to external API');
-        return new NextResponse(
-          JSON.stringify({
-            success: false,
-            error: 'Request timeout',
-            message: 'External API took too long to respond'
-          }),
-          {
-            status: 504,
-            headers: {
-              'Content-Type': 'application/json',
-              'Access-Control-Allow-Origin': request.headers.get('origin') || '*',
-            },
-          }
-        );
-      }
-
-      throw fetchError;
-    }
-  } catch (error) {
-    console.error('Proxy error:', error);
-
-    return new NextResponse(
-      JSON.stringify({
-        error: 'Proxy server error',
-        message: error instanceof Error ? error.message : 'Unknown error'
-      }),
-      {
-        status: 500,
-        headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': request.headers.get('origin') || '*',
-        },
-      }
-    );
+    console.log('✅ Proxy login success – cookies stored');
+    return nextRes;
   }
+
+  return NextResponse.json(data, { status: res.status });
 }
