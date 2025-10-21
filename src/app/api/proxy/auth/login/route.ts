@@ -4,8 +4,6 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    console.log("📡 Proxying login request to external API...");
-
     const response = await fetch("https://puspa.sinus.ac.id/api/v1/auth/login", {
       method: "POST",
       headers: {
@@ -13,8 +11,6 @@ export async function POST(request: NextRequest) {
         Accept: "application/json",
       },
       body: JSON.stringify(body),
-      // Penting agar cookies bisa diteruskan dengan benar di Vercel
-      credentials: "include",
     });
 
     const data = await response.json();
@@ -27,14 +23,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Simpan token & role ke cookie
+    // ✅ Simpan cookie token & role
     const res = NextResponse.json(data, { status: 200 });
 
+    // Gunakan domain otomatis agar bisa dibaca middleware (Vercel fix)
     if (data?.data?.token) {
       res.cookies.set("token", data.data.token, {
         httpOnly: true,
-        secure: true,
-        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "none", // penting agar bisa cross-domain di vercel
         path: "/",
       });
     }
@@ -42,11 +39,13 @@ export async function POST(request: NextRequest) {
     if (data?.data?.role) {
       res.cookies.set("role", data.data.role, {
         httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "none",
         path: "/",
       });
     }
 
-    console.log("✅ Login proxy success, cookies set.");
+    console.log("✅ Login proxy success — cookies stored.");
     return res;
   } catch (error) {
     console.error("🔥 Proxy login error:", error);
@@ -57,7 +56,6 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// ⚙️ Handle CORS preflight (OPTIONS)
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,
