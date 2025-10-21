@@ -25,23 +25,25 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Simpan cookie token & role
+    // ✅ Buat response success
     const res = NextResponse.json({
       success: true,
       message: "Login berhasil",
       data: data.data,
     });
 
+    // ✅ Simpan cookie token (tidak httpOnly agar bisa dibaca middleware)
     if (data?.data?.token) {
       res.cookies.set("token", data.data.token, {
-        httpOnly: true,
+        httpOnly: false, // ⚠️ ini kuncinya
         secure: process.env.NODE_ENV === "production",
-        sameSite: "lax", // ✅ gunakan "lax" agar dikirim otomatis ke domain yang sama
+        sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 4, // 4 jam
       });
     }
 
+    // ✅ Simpan cookie role
     if (data?.data?.role) {
       res.cookies.set("role", data.data.role, {
         httpOnly: false,
