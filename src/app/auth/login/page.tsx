@@ -18,9 +18,10 @@ export default function LoginPage() {
   setLoading(true);
 
   try {
-    console.log("🔄 Login API Call:", { endpoint: "/api/proxy/auth/login" });
+    console.log("🔄 Login API Call:", { endpoint: "/auth/login" });
 
-    const response = await axiosInstance.post("/api/proxy/auth/login", {
+    // 🔧 perbaikan: hilangkan "/api/proxy"
+    const response = await axiosInstance.post("/auth/login", {
       identifier,
       password,
     });
@@ -48,6 +49,7 @@ export default function LoginPage() {
     setLoading(false);
   }
 };
+
 
 
   return (
