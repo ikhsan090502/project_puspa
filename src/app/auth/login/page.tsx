@@ -23,27 +23,37 @@ export default function LoginPage() {
     mutationFn: (payload: LoginPayload) => login(payload),
 
     onSuccess: (data) => {
-      // Simpan user ke localStorage
       localStorage.setItem("user", JSON.stringify(data));
 
-      switch (data.role) {
-        case "admin":
-          router.push("/admin/dashboard");
-          break;
-        case "terapis":
-          router.push("/terapis/observasi");
-          break;
-        case "orangtua":
-        case "user":
-          router.push("/orangtua/dashboard");
-          break;
-        default:
-          router.push("/");
-      }
+      // Ambil path tujuan semula (kalau ada)
+      const params = new URLSearchParams(window.location.search);
+      const nextPath = params.get("next");
+
+      // Tunggu sebentar biar cookie tersimpan dulu
+      setTimeout(() => {
+        if (nextPath) {
+          router.push(nextPath);
+        } else {
+          switch (data.role) {
+            case "admin":
+              router.push("/admin/dashboard");
+              break;
+            case "terapis":
+              router.push("/terapis/dashboard");
+              break;
+            case "orangtua":
+            case "user":
+              router.push("/orangtua/dashboard");
+              break;
+            default:
+              router.push("/");
+          }
+        }
+      }, 400); // delay kecil agar cookie stabil di Vercel
     },
 
     onError: (error: LoginErrorResponse) => {
-      setFieldError(error); 
+      setFieldError(error);
     },
   });
 
