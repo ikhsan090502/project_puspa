@@ -1,30 +1,44 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const role = request.cookies.get("role")?.value;
-  const { pathname } = request.nextUrl;
+  const path = request.nextUrl.pathname;
 
-  // 🔐 Semua halaman dilindungi
-  const protectedPaths = ["/admin", "/terapis", "/orangtua"];
-  const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
+  const isLoginPage = path.startsWith("/auth/login");
+  const isProtectedAdmin = path.startsWith("/admin");
+  const isProtectedTerapis = path.startsWith("/terapis");
+  const isProtectedOrangtua = path.startsWith("/orangtua");
 
-  // 🚫 Belum login tapi akses halaman dilindungi
-  if (isProtected && !token) {
-    console.log("🔒 Belum login, redirect ke:", "/auth/login");
-    const loginUrl = new URL("/auth/login", request.url);
-    return NextResponse.redirect(loginUrl);
+  // 1️⃣ Belum login → redirect ke /auth/login
+  if (!token && (isProtectedAdmin || isProtectedTerapis || isProtectedOrangtua)) {
+    const redirectUrl = new URL("/auth/login", request.url);
+    redirectUrl.searchParams.set("next", path);
+    console.log("🔒 Belum login, redirect ke:", redirectUrl.toString());
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // ✅ Sudah login tapi buka halaman login lagi
-  if (token && pathname.startsWith("/auth/login")) {
-    console.log("✅ Sudah login, redirect ke dashboard role:", role);
-    if (role === "admin") return NextResponse.redirect(new URL("/admin/dashboard", request.url));
-    if (role === "terapis") return NextResponse.redirect(new URL("/terapis/dashboard", request.url));
-    if (role === "orangtua") return NextResponse.redirect(new URL("/orangtua/dashboard", request.url));
+  // 2️⃣ Sudah login tapi buka /auth/login → arahkan ke dashboard role
+  if (token && isLoginPage) {
+    let dashboard = "/";
+    switch (role) {
+      case "admin":
+        dashboard = "/admin/dashboard";
+        break;
+      case "terapis":
+        dashboard = "/terapis/dashboard";
+        break;
+      case "orangtua":
+      case "user":
+        dashboard = "/orangtua/dashboard";
+        break;
+    }
+    console.log("✅ Sudah login, redirect ke:", dashboard);
+    return NextResponse.redirect(new URL(dashboard, request.url));
   }
 
+  // 3️⃣ Kalau token valid → lanjut tanpa redirect
   return NextResponse.next();
 }
 
