@@ -6,26 +6,17 @@ export function middleware(request: NextRequest) {
   const role = request.cookies.get("role")?.value;
   const { pathname } = request.nextUrl;
 
-  console.log("🧩 Middleware check:", {
-    pathname,
-    token: token ? "✅ found" : "❌ missing",
-    role,
-  });
+  console.log("🧩 Middleware check:", { pathname, token, role });
 
   const protectedPaths = ["/admin", "/terapis", "/orangtua"];
   const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
 
-  // 🔒 Belum login — redirect ke login
   if (isProtected && !token) {
-    console.log("🔒 Belum login, redirect ke /auth/login");
     const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // 🚫 Sudah login tapi mencoba ke halaman login lagi
   if (token && pathname.startsWith("/auth/login")) {
-    console.log("✅ Sudah login, redirect sesuai role:", role);
     if (role === "admin")
       return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     if (role === "terapis")

@@ -1,71 +1,50 @@
 "use client";
 
-
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import axiosInstance from "@/lib/axios";
 
-interface LoginErrorResponse {
-  identifier?: string[];  
-  password?: string[];
-  general?: string;
-}
-
 export default function LoginPage() {
-  const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [fieldError, setFieldError] = useState<LoginErrorResponse>({});
   const [loading, setLoading] = useState(false);
 
-  const isFilled = identifier.trim() !== "" && password.trim() !== "";
-
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setFieldError({});
-  setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    console.log("🔄 Login API Call:", {
-      endpoint: "/auth/login",
-      method: "POST",
-      baseURL: "/api/proxy"
-    });
+    try {
+      console.log("🔄 Login API Call:", { endpoint: "/api/proxy/auth/login" });
 
-    const response = await axiosInstance.post("/api/proxy/auth/login", { identifier, password });
+      const response = await axiosInstance.post("/api/proxy/auth/login", {
+        identifier,
+        password,
+      });
 
+      console.log("✅ Login API Success:", response.data);
 
-    console.log("✅ Login API Success:", response.data);
+      const { role } = response.data?.data || {};
+      localStorage.setItem("role", role);
 
-    const { role } = response.data?.data || {};
+      // Tunggu sebentar agar cookie dari server tersimpan
+      await new Promise((r) => setTimeout(r, 1000));
 
-    // Simpan di localStorage agar bisa diakses client-side
-    localStorage.setItem("role", role);
+      if (role === "admin") window.location.replace("/admin/dashboard");
+      else if (role === "terapis") window.location.replace("/terapis/dashboard");
+      else if (role === "orangtua") window.location.replace("/orangtua/dashboard");
+      else window.location.replace("/");
 
-    // 🕐 Tunggu cookie tersimpan dulu
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-
-    // Gunakan router.replace agar tidak reload penuh
-    if (role === "admin") router.replace("/admin/dashboard");
-    else if (role === "terapis") router.replace("/terapis/dashboard");
-    else if (role === "orangtua") router.replace("/orangtua/dashboard");
-    else router.replace("/");
-
-  } catch (err: any) {
-    console.error("❌ Login error:", err.response?.data || err.message);
-    alert("Login gagal. Cek kembali username/password Anda.");
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-  // Removed old mutation-based handler
+    } catch (err: any) {
+      console.error("❌ Login error:", err.response?.data || err.message);
+      alert("Login gagal. Cek username/password Anda.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="layout-main min-h-screen bg-[#B8E8DB] flex flex-col">
@@ -80,12 +59,9 @@ export default function LoginPage() {
           transition={{ duration: 0.6 }}
           className="w-full max-w-md bg-white rounded-2xl p-8 shadow-[0_4px_20px_#ADADAD]"
         >
-          <h2 className="text-xl font-extrabold text-left text-[#36315B] mb-2">
-            Selamat Datang Kembali di Puspa
+          <h2 className="text-xl font-extrabold text-[#36315B] mb-2">
+            Selamat Datang di Puspa
           </h2>
-          <p className="text-left text-sm text-[#36315B] mb-6">
-            Kami sangat senang bisa menjadi bagian dari perjalanan tumbuh kembang anak Anda.
-          </p>
 
           <form onSubmit={handleLogin}>
             <div className="mb-4">
@@ -94,15 +70,11 @@ export default function LoginPage() {
               </label>
               <input
                 type="text"
-                placeholder="Masukkan username atau email"
-                className="w-full h-[50px] rounded-lg px-3 py-2 border border-[#ADADAD] bg-white outline-none focus:ring-2 focus:ring-[#81B7A9]"
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
+                className="w-full h-[50px] rounded-lg px-3 py-2 border border-[#ADADAD]"
                 required
               />
-              {fieldError.identifier && (
-                <p className="text-[#AD3113] text-sm mt-1">{fieldError.identifier[0]}</p>
-              )}
             </div>
 
             <div className="mb-3">
@@ -112,47 +84,27 @@ export default function LoginPage() {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Masukkan Password"
-                  className="w-full h-[50px] rounded-lg px-3 pr-12 py-2 border border-[#ADADAD] bg-white outline-none focus:ring-2 focus:ring-[#81B7A9]"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
+                  className="w-full h-[50px] rounded-lg px-3 pr-10 border border-[#ADADAD]"
                   required
                 />
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                   onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
                 >
-                  {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
               </div>
-              {fieldError.password && (
-                <p className="text-[#AD3113] text-sm mt-1">{fieldError.password[0]}</p>
-              )}
-            </div>
-
-            {fieldError.general && (
-              <p className="text-[#AD3113] text-sm mb-3 text-left">{fieldError.general}</p>
-            )}
-
-            <div className="text-right w-full mb-4">
-              <Link href="/auth/lupa_password" className="text-[13px] text-[#AD3113] underline">
-                Lupa Password?
-              </Link>
             </div>
 
             <button
               type="submit"
-              disabled={loading || !isFilled}
-              className={`w-full h-[50px] mb-4 rounded-lg font-medium text-white shadow-md transition-colors duration-300 flex items-center justify-center ${
-                isFilled ? "bg-[#81B7A9] hover:bg-[#6EA092]" : "bg-[#C0DCD6] cursor-not-allowed"
-              }`}
+              disabled={loading}
+              className="w-full h-[50px] mt-4 rounded-lg bg-[#81B7A9] text-white font-medium"
             >
-              {loading ? (
-                <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-              ) : (
-                "LOGIN"
-              )}
+              {loading ? "Memproses..." : "LOGIN"}
             </button>
           </form>
 
