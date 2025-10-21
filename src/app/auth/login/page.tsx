@@ -14,37 +14,41 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
+  e.preventDefault();
+  setLoading(true);
 
-    try {
-      console.log("🔄 Login API Call:", { endpoint: "/api/proxy/auth/login" });
+  try {
+    console.log("🔄 Login API Call:", { endpoint: "/api/proxy/auth/login" });
 
-      const response = await axiosInstance.post("/api/proxy/auth/login", {
-        identifier,
-        password,
-      });
+    const response = await axiosInstance.post("/api/proxy/auth/login", {
+      identifier,
+      password,
+    });
 
-      console.log("✅ Login API Success:", response.data);
+    console.log("✅ Login API Success:", response.data);
 
-      const { role } = response.data?.data || {};
-      localStorage.setItem("role", role);
+    const { role } = response.data?.data || {};
+    localStorage.setItem("role", role);
 
-      // Tunggu sebentar agar cookie dari server tersimpan
-      await new Promise((r) => setTimeout(r, 1000));
+    await new Promise((r) => setTimeout(r, 800));
 
-      if (role === "admin") window.location.replace("/admin/dashboard");
-      else if (role === "terapis") window.location.replace("/terapis/dashboard");
-      else if (role === "orangtua") window.location.replace("/orangtua/dashboard");
-      else window.location.replace("/");
+    if (role === "admin") window.location.replace("/admin/dashboard");
+    else if (role === "terapis") window.location.replace("/terapis/dashboard");
+    else if (role === "orangtua") window.location.replace("/orangtua/dashboard");
+    else window.location.replace("/");
 
-    } catch (err: any) {
-      console.error("❌ Login error:", err.response?.data || err.message);
-      alert("Login gagal. Cek username/password Anda.");
-    } finally {
-      setLoading(false);
-    }
-  };
+  } catch (err: any) {
+    console.error("❌ Login error:", err.response?.data || err.message);
+    const message =
+      err.response?.data?.message ||
+      err.response?.data?.error ||
+      "Login gagal. Username atau password salah.";
+    alert(message);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <main className="layout-main min-h-screen bg-[#B8E8DB] flex flex-col">

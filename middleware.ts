@@ -11,11 +11,14 @@ export function middleware(request: NextRequest) {
   const protectedPaths = ["/admin", "/terapis", "/orangtua"];
   const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
 
+  // 🔒 Jika belum login tapi akses halaman protected
   if (isProtected && !token) {
     const loginUrl = new URL("/auth/login", request.url);
+    loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
+  // ✅ Jika sudah login dan sedang di /auth/login, langsung redirect ke dashboard
   if (token && pathname.startsWith("/auth/login")) {
     if (role === "admin")
       return NextResponse.redirect(new URL("/admin/dashboard", request.url));

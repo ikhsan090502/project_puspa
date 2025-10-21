@@ -4,7 +4,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    console.log("📡 Proxying login request to external API...");
+    console.log("📡 Proxying login request ke API eksternal...");
 
     const response = await fetch("https://puspa.sinus.ac.id/api/v1/auth/login", {
       method: "POST",
@@ -18,23 +18,27 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("❌ External API Error:", data);
+      console.error("❌ Login gagal dari API eksternal:", data);
       return NextResponse.json(
-        { error: "External API error", details: data },
+        { success: false, message: data.message || "Login gagal. Cek kembali username/password Anda." },
         { status: response.status }
       );
     }
 
-    // ✅ Simpan token & role ke cookie
-    const res = NextResponse.json(data, { status: 200 });
+    // ✅ Simpan cookie token dan role
+    const res = NextResponse.json({
+      success: true,
+      message: "Login berhasil",
+      data: data.data,
+    });
 
     if (data?.data?.token) {
       res.cookies.set("token", data.data.token, {
         httpOnly: true,
         secure: true,
-        sameSite: "none", // ⬅️ WAJIB agar cookie dibaca di Vercel
+        sameSite: "none",
         path: "/",
-        maxAge: 60 * 60 * 24 * 7, // 7 hari
+        maxAge: 60 * 60 * 4, // 4 jam
       });
     }
 
@@ -44,30 +48,17 @@ export async function POST(request: NextRequest) {
         secure: true,
         sameSite: "none",
         path: "/",
-        maxAge: 60 * 60 * 24 * 7,
+        maxAge: 60 * 60 * 4,
       });
     }
 
-    console.log("✅ Login proxy success - cookies stored.");
+    console.log("✅ Cookie token & role berhasil diset.");
     return res;
   } catch (error) {
     console.error("🔥 Proxy login error:", error);
     return NextResponse.json(
-      { error: "Internal Server Error" },
+      { success: false, message: "Kesalahan server internal." },
       { status: 500 }
     );
   }
-}
-
-// ⚙️ Handle CORS preflight (OPTIONS)
-export async function OPTIONS() {
-  return new NextResponse(null, {
-    status: 200,
-    headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Credentials": "true",
-      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-      "Access-Control-Allow-Headers": "Content-Type, Authorization",
-    },
-  });
 }
