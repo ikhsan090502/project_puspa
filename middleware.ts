@@ -3,20 +3,22 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
+  const role = request.cookies.get("role")?.value;
   const { pathname } = request.nextUrl;
 
   const protectedPaths = ["/admin", "/terapis", "/orangtua"];
   const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
 
-  // Jika halaman butuh login tapi belum ada token
+  // 🔒 Belum login tapi mau akses halaman dilindungi
   if (isProtected && !token) {
+    console.log("🔒 Belum login, redirect ke /auth/login");
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("next", pathname);
-    console.log("🔒 Belum login — redirect ke:", loginUrl.toString());
     return NextResponse.redirect(loginUrl);
   }
 
-  // Jika sudah login, middleware tidak perlu redirect ke dashboard (biar tidak looping)
+  // ✅ Kalau sudah login, jangan redirect apa pun di middleware
+  // biar tidak balik ke /auth/login lagi
   return NextResponse.next();
 }
 
@@ -25,6 +27,5 @@ export const config = {
     "/admin/:path*",
     "/terapis/:path*",
     "/orangtua/:path*",
-    "/auth/login",
   ],
 };

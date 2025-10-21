@@ -4,11 +4,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
+    console.log("📡 Proxying login request...");
+
     const response = await fetch("https://puspa.sinus.ac.id/api/v1/auth/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
+        "Accept": "application/json",
       },
       body: JSON.stringify(body),
     });
@@ -17,21 +19,17 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       console.error("❌ External API Error:", data);
-      return NextResponse.json(
-        { error: "External API error", details: data },
-        { status: response.status }
-      );
+      return NextResponse.json({ error: "External API error", details: data }, { status: response.status });
     }
 
-    // ✅ Simpan cookie token & role
     const res = NextResponse.json(data, { status: 200 });
 
-    // Gunakan domain otomatis agar bisa dibaca middleware (Vercel fix)
+    // 🧠 Gunakan konfigurasi cookie yang bisa dibaca middleware di Vercel
     if (data?.data?.token) {
       res.cookies.set("token", data.data.token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "none", // penting agar bisa cross-domain di vercel
+        secure: true,
+        sameSite: "none",  // <— WAJIB agar bisa dikirim di cross-site redirect
         path: "/",
       });
     }
@@ -39,20 +37,17 @@ export async function POST(request: NextRequest) {
     if (data?.data?.role) {
       res.cookies.set("role", data.data.role, {
         httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "none",
         path: "/",
       });
     }
 
-    console.log("✅ Login proxy success — cookies stored.");
+    console.log("✅ Cookie diset: token & role");
     return res;
   } catch (error) {
     console.error("🔥 Proxy login error:", error);
-    return NextResponse.json(
-      { error: "Internal Server Error" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
   }
 }
 
