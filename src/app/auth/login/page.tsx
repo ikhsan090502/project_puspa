@@ -47,14 +47,14 @@ export default function LoginPage() {
     // Simpan di localStorage agar bisa diakses client-side
     localStorage.setItem("role", role);
 
-    // 🕐 Tunggu dulu sedikit supaya cookie tersimpan di browser
-    await new Promise((resolve) => setTimeout(resolve, 1500));
+    // 🕐 Tunggu cookie tersimpan dulu
+    await new Promise((resolve) => setTimeout(resolve, 1000));
 
-    // Redirect sesuai role
-    if (role === "admin") window.location.replace("/admin/dashboard");
-    else if (role === "terapis") window.location.replace("/terapis/dashboard");
-    else if (role === "orangtua") window.location.replace("/orangtua/dashboard");
-    else window.location.replace("/");
+    // Gunakan router.replace agar tidak reload penuh
+    if (role === "admin") router.replace("/admin/dashboard");
+    else if (role === "terapis") router.replace("/terapis/dashboard");
+    else if (role === "orangtua") router.replace("/orangtua/dashboard");
+    else router.replace("/");
 
   } catch (err: any) {
     console.error("❌ Login error:", err.response?.data || err.message);

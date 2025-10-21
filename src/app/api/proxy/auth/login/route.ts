@@ -4,13 +4,13 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    console.log("📡 Proxying login request...");
+    console.log("📡 Proxying login request to external API...");
 
     const response = await fetch("https://puspa.sinus.ac.id/api/v1/auth/login", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Accept": "application/json",
+        Accept: "application/json",
       },
       body: JSON.stringify(body),
     });
@@ -19,18 +19,22 @@ export async function POST(request: NextRequest) {
 
     if (!response.ok) {
       console.error("❌ External API Error:", data);
-      return NextResponse.json({ error: "External API error", details: data }, { status: response.status });
+      return NextResponse.json(
+        { error: "External API error", details: data },
+        { status: response.status }
+      );
     }
 
+    // ✅ Simpan token & role ke cookie
     const res = NextResponse.json(data, { status: 200 });
 
-    // 🧠 Gunakan konfigurasi cookie yang bisa dibaca middleware di Vercel
     if (data?.data?.token) {
       res.cookies.set("token", data.data.token, {
         httpOnly: true,
         secure: true,
-        sameSite: "none",  // <— WAJIB agar bisa dikirim di cross-site redirect
+        sameSite: "none", // ⬅️ WAJIB agar cookie dibaca di Vercel
         path: "/",
+        maxAge: 60 * 60 * 24 * 7, // 7 hari
       });
     }
 
@@ -40,17 +44,22 @@ export async function POST(request: NextRequest) {
         secure: true,
         sameSite: "none",
         path: "/",
+        maxAge: 60 * 60 * 24 * 7,
       });
     }
 
-    console.log("✅ Cookie diset: token & role");
+    console.log("✅ Login proxy success - cookies stored.");
     return res;
   } catch (error) {
     console.error("🔥 Proxy login error:", error);
-    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
 }
 
+// ⚙️ Handle CORS preflight (OPTIONS)
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 200,

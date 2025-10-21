@@ -1,22 +1,11 @@
 import axios from "axios";
 
-// Vercel-compatible base URL configuration
-const getBaseURL = () => {
-  // In production (Vercel), use relative URLs
-  if (typeof window !== "undefined" && window.location.hostname.includes('vercel.app')) {
-    return ""; // Use relative URLs in production
-  }
-  // In development, use the configured API URL
-  return process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
-};
-
 const axiosInstance = axios.create({
-  baseURL: getBaseURL(),
-  timeout: 15000, // 15 second timeout for Vercel
-  withCredentials: true, // Include cookies in requests
+  baseURL: "/api/proxy", // ✅ Gunakan proxy bawaan Next.js
+  withCredentials: true, // ✅ biar cookie (token, role) ikut terkirim
   headers: {
     "Content-Type": "application/json",
-    "Accept": "application/json",
+    Accept: "application/json",
   },
 });
 
