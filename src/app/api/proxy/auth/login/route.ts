@@ -32,27 +32,26 @@ export async function POST(request: NextRequest) {
       data: data.data,
     });
 
-    // ✅ Simpan cookie token (tidak httpOnly agar bisa dibaca middleware)
-    if (data?.data?.token) {
-      res.cookies.set("token", data.data.token, {
-        httpOnly: false, // ⚠️ ini kuncinya
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 4, // 4 jam
-      });
-    }
+   if (data?.data?.token) {
+  res.cookies.set("token", data.data.token, {
+    httpOnly: false,
+    secure: false, // 🧩 ubah dulu ke false agar terbaca di dev & vercel test
+    sameSite: "strict", // pastikan cookie tidak cross-site
+    path: "/",
+    maxAge: 60 * 60 * 4,
+  });
+}
 
-    // ✅ Simpan cookie role
-    if (data?.data?.role) {
-      res.cookies.set("role", data.data.role, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 4,
-      });
-    }
+if (data?.data?.role) {
+  res.cookies.set("role", data.data.role, {
+    httpOnly: false,
+    secure: false,
+    sameSite: "strict",
+    path: "/",
+    maxAge: 60 * 60 * 4,
+  });
+}
+
 
     console.log("✅ Cookie token & role berhasil diset.");
     return res;
