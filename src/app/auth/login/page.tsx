@@ -14,43 +14,45 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-  try {
-    console.log("🔄 Login API Call:", { endpoint: "/auth/login" });
+    try {
+      console.log("🔄 Login API Call:", { endpoint: "/auth/login" });
 
-    // 🔧 perbaikan: hilangkan "/api/proxy"
-    const response = await axiosInstance.post("/auth/login", {
-      identifier,
-      password,
-    });
+      // ✅ kirim ke proxy bawaan Next.js
+      const response = await axiosInstance.post("/auth/login", {
+        identifier,
+        password,
+      });
 
-    console.log("✅ Login API Success:", response.data);
+      console.log("✅ Login API Success:", response.data);
 
-    const { role } = response.data?.data || {};
-    localStorage.setItem("role", role);
+      const { role } = response.data?.data || {};
 
-    await new Promise((r) => setTimeout(r, 800));
+      // Simpan role sementara di localStorage (opsional)
+      localStorage.setItem("role", role);
 
-    if (role === "admin") window.location.replace("/admin/dashboard");
-    else if (role === "terapis") window.location.replace("/terapis/dashboard");
-    else if (role === "orangtua") window.location.replace("/orangtua/dashboard");
-    else window.location.replace("/");
+      // ✅ Tunggu supaya cookie tersimpan dengan benar
+      await new Promise((r) => setTimeout(r, 1500));
 
-  } catch (err: any) {
-    console.error("❌ Login error:", err.response?.data || err.message);
-    const message =
-      err.response?.data?.message ||
-      err.response?.data?.error ||
-      "Login gagal. Username atau password salah.";
-    alert(message);
-  } finally {
-    setLoading(false);
-  }
-};
+      // ✅ Gunakan window.location.href (bukan replace)
+      if (role === "admin") window.location.href = "/admin/dashboard";
+      else if (role === "terapis") window.location.href = "/terapis/dashboard";
+      else if (role === "orangtua") window.location.href = "/orangtua/dashboard";
+      else window.location.href = "/";
 
-
+    } catch (err: any) {
+      console.error("❌ Login error:", err.response?.data || err.message);
+      const message =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Login gagal. Username atau password salah.";
+      alert(message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <main className="layout-main min-h-screen bg-[#B8E8DB] flex flex-col">
