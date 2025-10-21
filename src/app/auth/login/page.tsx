@@ -37,7 +37,8 @@ export default function LoginPage() {
       baseURL: "/api/proxy"
     });
 
-    const response = await axiosInstance.post("/auth/login", { identifier, password });
+    const response = await axiosInstance.post("/api/proxy/auth/login", { identifier, password });
+
 
     console.log("✅ Login API Success:", response.data);
 
