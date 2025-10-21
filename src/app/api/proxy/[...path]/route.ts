@@ -1,3 +1,5 @@
+export const runtime = 'nodejs'
+
 import { NextRequest, NextResponse } from 'next/server';
 
 type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH' | 'OPTIONS';
@@ -66,12 +68,20 @@ async function proxyRequest(
       ? `${externalUrl}?${searchParams.toString()}`
       : externalUrl;
 
+    console.log('🔄 Proxy Request:', {
+      method,
+      externalUrl: finalExternalUrl,
+      pathSegments,
+      hasQuery: searchParams.toString().length > 0
+    });
+
     // Get request body for POST, PUT, PATCH requests
     let body = null;
     if (['POST', 'PUT', 'PATCH'].includes(method)) {
       try {
         body = await request.arrayBuffer();
       } catch (error) {
+        console.warn('⚠️ Body parsing failed:', error);
         // If body parsing fails, continue without body
       }
     }
@@ -88,49 +98,103 @@ async function proxyRequest(
 
     // Set other common headers
     headers.set('Accept', 'application/json');
-    headers.set('User-Agent', 'Next.js Proxy');
+    headers.set('User-Agent', 'Next.js Proxy (Vercel)');
 
-    // Make the request to external API
-    const response = await fetch(finalExternalUrl, {
-      method,
-      headers,
-      body: body || undefined,
-    });
+    // Create AbortController for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
 
-    // Get response data
-    let responseData;
-    const responseContentType = response.headers.get('content-type');
+    try {
+      // Make the request to external API
+      const response = await fetch(finalExternalUrl, {
+        method,
+        headers,
+        body: body || undefined,
+        signal: controller.signal,
+      });
 
-    if (responseContentType && responseContentType.includes('application/json')) {
-      responseData = await response.json();
-    } else {
-      responseData = await response.text();
-    }
+      clearTimeout(timeoutId);
 
-    // Create Next.js response with external API data
-    const nextResponse = new NextResponse(
-      responseContentType && responseContentType.includes('application/json')
-        ? JSON.stringify(responseData)
-        : responseData,
-      {
+      console.log('🔄 Proxy Response:', {
         status: response.status,
         statusText: response.statusText,
+        contentType: response.headers.get('content-type')
+      });
+
+      // Handle non-JSON responses (like HTML error pages)
+      const contentType = response.headers.get('content-type');
+      let responseData;
+
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json();
+      } else {
+        const text = await response.text();
+        console.error('❌ Non-JSON response from external API:', {
+          status: response.status,
+          contentType,
+          body: text.substring(0, 200)
+        });
+        return new NextResponse(
+          JSON.stringify({
+            success: false,
+            error: 'External API returned invalid response',
+            details: 'Expected JSON but received HTML/text'
+          }),
+          {
+            status: 502,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': request.headers.get('origin') || '*',
+            },
+          }
+        );
       }
-    );
 
-    // Copy response headers from external API
-    response.headers.forEach((value, key) => {
-      nextResponse.headers.set(key, value);
-    });
+      // Create Next.js response with external API data
+      const nextResponse = new NextResponse(
+        JSON.stringify(responseData),
+        {
+          status: response.status,
+          statusText: response.statusText,
+        }
+      );
 
-    // Add CORS headers to allow frontend access
-    nextResponse.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
-    nextResponse.headers.set('Access-Control-Allow-Credentials', 'true');
-    nextResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-    nextResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
+      // Copy response headers from external API
+      response.headers.forEach((value, key) => {
+        nextResponse.headers.set(key, value);
+      });
 
-    return nextResponse;
+      // Add CORS headers to allow frontend access
+      nextResponse.headers.set('Access-Control-Allow-Origin', request.headers.get('origin') || '*');
+      nextResponse.headers.set('Access-Control-Allow-Credentials', 'true');
+      nextResponse.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
+      nextResponse.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With');
 
+      return nextResponse;
+
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+
+      if (fetchError.name === 'AbortError') {
+        console.error('❌ Request timeout to external API');
+        return new NextResponse(
+          JSON.stringify({
+            success: false,
+            error: 'Request timeout',
+            message: 'External API took too long to respond'
+          }),
+          {
+            status: 504,
+            headers: {
+              'Content-Type': 'application/json',
+              'Access-Control-Allow-Origin': request.headers.get('origin') || '*',
+            },
+          }
+        );
+      }
+
+      throw fetchError;
+    }
   } catch (error) {
     console.error('Proxy error:', error);
 

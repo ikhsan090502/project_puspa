@@ -12,12 +12,14 @@ export function middleware(request: NextRequest) {
 
   // 🚫 Belum login tapi akses halaman dilindungi
   if (isProtected && !token) {
+    console.log("🔒 Belum login, redirect ke:", "/auth/login");
     const loginUrl = new URL("/auth/login", request.url);
     return NextResponse.redirect(loginUrl);
   }
 
   // ✅ Sudah login tapi buka halaman login lagi
   if (token && pathname.startsWith("/auth/login")) {
+    console.log("✅ Sudah login, redirect ke dashboard role:", role);
     if (role === "admin") return NextResponse.redirect(new URL("/admin/dashboard", request.url));
     if (role === "terapis") return NextResponse.redirect(new URL("/terapis/dashboard", request.url));
     if (role === "orangtua") return NextResponse.redirect(new URL("/orangtua/dashboard", request.url));

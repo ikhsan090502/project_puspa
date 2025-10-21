@@ -1,11 +1,22 @@
 import axios from "axios";
 
+// Vercel-compatible base URL configuration
+const getBaseURL = () => {
+  // In production (Vercel), use relative URLs
+  if (typeof window !== "undefined" && window.location.hostname.includes('vercel.app')) {
+    return ""; // Use relative URLs in production
+  }
+  // In development, use the configured API URL
+  return process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
+};
+
 const axiosInstance = axios.create({
-  baseURL: "/api/proxy", // ✅ Gunakan proxy bawaan Next.js
-  withCredentials: true, // ✅ biar cookie (token, role) ikut terkirim
+  baseURL: getBaseURL(),
+  timeout: 15000, // 15 second timeout for Vercel
+  withCredentials: true, // Include cookies in requests
   headers: {
     "Content-Type": "application/json",
-    Accept: "application/json",
+    "Accept": "application/json",
   },
 });
 
@@ -19,16 +30,27 @@ axiosInstance.interceptors.request.use((config) => {
 
     if (tokenCookie) {
       const token = tokenCookie.split("=")[1];
-      if (token && !config.headers.Authorization) {
+      if (token && token !== 'undefined' && token !== 'null' && !config.headers.Authorization) {
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
   }
 
+  const fullURL = config.baseURL ? `${config.baseURL}${config.url}` : config.url;
+
   console.log("🚀 Axios Request:", {
     method: config.method?.toUpperCase(),
-    fullURL: `${config.baseURL}${config.url}`,
-    headers: config.headers,
+    url: config.url,
+    baseURL: config.baseURL,
+    fullURL: fullURL,
+    timeout: config.timeout,
+    headers: {
+      ...config.headers,
+      // Don't log full Authorization header for security
+      ...(config.headers.Authorization && typeof config.headers.Authorization === 'string' && {
+        Authorization: `${config.headers.Authorization.substring(0, 20)}...`
+      })
+    }
   });
 
   return config;
@@ -40,6 +62,7 @@ axiosInstance.interceptors.response.use(
     console.log("✅ Axios Response:", {
       status: response.status,
       url: response.config.url,
+      data: response.data
     });
     return response;
   },
@@ -48,16 +71,23 @@ axiosInstance.interceptors.response.use(
       status: error.response?.status,
       url: error.config?.url,
       message: error.message,
-      data: error.response?.data,
+      code: error.code,
+      data: error.response?.data
     });
 
     if (error.response?.status === 401 && typeof window !== "undefined") {
-      // hapus cookie & redirect ke login
-      document.cookie =
-        "token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      document.cookie =
-        "role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+      // Clear all auth cookies
+      const cookiesToClear = ['token', 'role', 'userId'];
+      cookiesToClear.forEach(cookieName => {
+        document.cookie = `${cookieName}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+      });
+
       window.location.href = "/auth/login";
+    }
+
+    // Handle timeout errors specifically
+    if (error.code === 'ECONNABORTED') {
+      console.error('❌ Request timeout - external API not responding');
     }
 
     return Promise.reject(error);
