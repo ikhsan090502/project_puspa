@@ -7,8 +7,13 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
-import { useMutation } from "@tanstack/react-query";
-import { login, LoginPayload, LoginErrorResponse } from "@/lib/api/login";
+import axiosInstance from "@/lib/axios";
+
+interface LoginErrorResponse {
+  identifier?: string[];  
+  password?: string[];
+  general?: string;
+}
 
 export default function LoginPage() {
   const router = useRouter();
@@ -16,52 +21,50 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [fieldError, setFieldError] = useState<LoginErrorResponse>({});
+  const [loading, setLoading] = useState(false);
 
   const isFilled = identifier.trim() !== "" && password.trim() !== "";
 
-  const loginMutation = useMutation({
-    mutationFn: (payload: LoginPayload) => login(payload),
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setFieldError({});
+  setLoading(true);
 
-    onSuccess: (data) => {
-      localStorage.setItem("user", JSON.stringify(data));
+  try {
+    console.log("🔄 Login API Call:", {
+      endpoint: "/auth/login",
+      method: "POST",
+      baseURL: "/api/proxy"
+    });
 
-      // Ambil path tujuan semula (kalau ada)
-      const params = new URLSearchParams(window.location.search);
-      const nextPath = params.get("next");
+    const response = await axiosInstance.post("/auth/login", { identifier, password });
 
-      // Tunggu sebentar biar cookie tersimpan dulu
-      setTimeout(() => {
-        if (nextPath) {
-          router.push(nextPath);
-        } else {
-          switch (data.role) {
-            case "admin":
-              router.push("/admin/dashboard");
-              break;
-            case "terapis":
-              router.push("/terapis/dashboard");
-              break;
-            case "orangtua":
-            case "user":
-              router.push("/orangtua/dashboard");
-              break;
-            default:
-              router.push("/");
-          }
-        }
-      }, 400); // delay kecil agar cookie stabil di Vercel
-    },
+    console.log("✅ Login API Success:", response.data);
 
-    onError: (error: LoginErrorResponse) => {
-      setFieldError(error);
-    },
-  });
+    const { role } = response.data?.data || {};
 
-  const handleLogin = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setFieldError({});
-    loginMutation.mutate({ identifier, password });
-  };
+    // Simpan di localStorage agar bisa diakses client-side
+    localStorage.setItem("role", role);
+
+    // 🕐 Tunggu dulu sedikit supaya cookie tersimpan di browser
+    await new Promise((resolve) => setTimeout(resolve, 1500));
+
+    // Redirect sesuai role
+    if (role === "admin") window.location.replace("/admin/dashboard");
+    else if (role === "terapis") window.location.replace("/terapis/dashboard");
+    else if (role === "orangtua") window.location.replace("/orangtua/dashboard");
+    else window.location.replace("/");
+
+  } catch (err: any) {
+    console.error("❌ Login error:", err.response?.data || err.message);
+    alert("Login gagal. Cek kembali username/password Anda.");
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+  // Removed old mutation-based handler
 
   return (
     <main className="layout-main min-h-screen bg-[#B8E8DB] flex flex-col">
@@ -139,12 +142,12 @@ export default function LoginPage() {
 
             <button
               type="submit"
-              disabled={loginMutation.isPending || !isFilled}
+              disabled={loading || !isFilled}
               className={`w-full h-[50px] mb-4 rounded-lg font-medium text-white shadow-md transition-colors duration-300 flex items-center justify-center ${
                 isFilled ? "bg-[#81B7A9] hover:bg-[#6EA092]" : "bg-[#C0DCD6] cursor-not-allowed"
               }`}
             >
-              {loginMutation.isPending ? (
+              {loading ? (
                 <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
               ) : (
                 "LOGIN"
