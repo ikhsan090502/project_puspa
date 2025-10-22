@@ -31,12 +31,13 @@ export async function POST(request: NextRequest) {
       data: data.data,
     });
 
-    if (data?.data?.token) {
+   if (data?.data?.token) {
   res.cookies.set("token", data.data.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax", // ✅ ubah dari "strict" → "lax"
+    sameSite: "none", // ✅ gunakan none agar cookie dikirim ke semua konteks
     path: "/",
+    domain: ".vercel.app", // ✅ penting agar terbaca di edge/middleware
     maxAge: 60 * 60 * 4,
   });
 }
@@ -45,11 +46,13 @@ if (data?.data?.role) {
   res.cookies.set("role", data.data.role, {
     httpOnly: false,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax", // ✅ juga "lax"
+    sameSite: "none",
     path: "/",
+    domain: ".vercel.app", // ✅ tambahkan juga domain di sini
     maxAge: 60 * 60 * 4,
   });
 }
+
 
 
     console.log("✅ Cookie token & role berhasil diset.");

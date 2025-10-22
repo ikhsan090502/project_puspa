@@ -3,27 +3,37 @@ import type { NextRequest } from "next/server";
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
+  const role = request.cookies.get("role")?.value;
   const { pathname } = request.nextUrl;
 
-  // 🔒 Path yang butuh login
+  console.log("🧩 Middleware check:", { pathname, hasToken: !!token, role });
+
   const protectedPaths = ["/admin", "/terapis", "/orangtua"];
   const isProtected = protectedPaths.some((path) => pathname.startsWith(path));
 
-  console.log("🧩 Middleware check:", pathname, "| Token:", token ? "✅ ADA" : "❌ KOSONG");
-
-  // Redirect ke login kalau akses halaman protected tanpa token
+  // Redirect kalau belum login
   if (isProtected && !token) {
     const loginUrl = new URL("/auth/login", request.url);
     loginUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // ✅ Jangan cache hasil middleware (biar token baru langsung dibaca)
-  const res = NextResponse.next();
-  res.headers.set("Cache-Control", "no-store, must-revalidate");
-  return res;
+  // Kalau sudah login dan ke /auth/login, lempar ke dashboard
+  if (pathname.startsWith("/auth/login") && token) {
+    const dashboard =
+      role === "admin"
+        ? "/admin/dashboard"
+        : role === "terapis"
+        ? "/terapis/dashboard"
+        : role === "orangtua"
+        ? "/orangtua/dashboard"
+        : "/";
+    return NextResponse.redirect(new URL(dashboard, request.url));
+  }
+
+  return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/terapis/:path*", "/orangtua/:path*"],
+  matcher: ["/admin/:path*", "/terapis/:path*", "/orangtua/:path*", "/auth/login"],
 };
