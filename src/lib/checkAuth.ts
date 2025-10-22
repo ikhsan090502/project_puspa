@@ -1,39 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-
-// src/lib/checkAuth.ts
 export async function checkAuth() {
   try {
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="))
-      ?.split("=")[1];
-
-    if (!token) {
-      return { success: false, message: "No token" };
-    }
-
-    const res = await fetch("https://puspa.sinus.ac.id/api/v1/auth/protected", {
+    const res = await fetch("/api/auth/protected", {
       method: "GET",
-      headers: {
-        Authorization: `Bearer ${decodeURIComponent(token)}`,
-        Accept: "application/json",
-      },
       credentials: "include",
+      cache: "no-store",
     });
 
-    if (!res.ok) {
+    const data = await res.json();
+
+    if (!res.ok || !data?.success) {
       return { success: false, message: "Unauthorized" };
     }
 
-    const data = await res.json();
-    console.log("✅ Auth success:", data);
-
-    // ambil role langsung dari data
-    const role = data?.role || data?.data?.role;
-
+    const role = data?.data?.role || data?.data?.data?.role;
     return { success: true, role, data };
   } catch (error) {
-    console.error("❌ Auth check failed:", error);
-    return { success: false, message: "Auth check failed" };
+    console.error("❌ checkAuth error:", error);
+    return { success: false, message: "Check failed" };
   }
 }
