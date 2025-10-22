@@ -1,46 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // src/lib/checkAuth.ts
-// src/lib/checkAuth.ts
-export async function checkAuth() {
-  try {
-    // Ambil token dari cookie
-    const token = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("token="))
-      ?.split("=")[1];
+// src/lib/authService.ts
+export async function login(email: string, password: string) {
+  const res = await fetch("https://puspa.sinus.ac.id/api/v1/auth/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+    credentials: "include",
+  });
 
-    if (!token) {
-      console.warn("❌ No token found in cookie");
-      return { success: false, message: "No token" };
-    }
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || "Login gagal");
 
-    const res = await fetch("https://puspa.sinus.ac.id/api/v1/auth/protected", {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${decodeURIComponent(token)}`,
-        Accept: "application/json",
-      },
-      credentials: "include",
-    });
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      console.warn("🚫 Unauthorized:", res.status, data);
-      return { success: false, message: data?.message || "Unauthorized" };
-    }
-
-    console.log("✅ Auth success:", data);
-    const role =
-      document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("role="))
-        ?.split("=")[1] || "guest";
-
-    return { success: true, data, role };
-  } catch (error) {
-    console.error("❌ Auth check failed:", error);
-    return { success: false, message: "Auth check failed" };
+  // Setelah login berhasil, simpan token ke cookie
+  if (data.data?.token) {
+    document.cookie = `token=${encodeURIComponent(
+      data.data.token
+    )}; path=/; max-age=86400; SameSite=Lax; Secure`;
   }
+
+  if (data.data?.role) {
+    document.cookie = `role=${data.data.role}; path=/; max-age=86400; SameSite=Lax; Secure`;
+  }
+
+  console.log("✅ Token disimpan di cookie:", data.data.token);
+  return data;
 }
