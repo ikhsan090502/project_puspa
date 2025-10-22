@@ -20,23 +20,23 @@ export async function POST(request: NextRequest) {
     if (!response.ok) {
       console.error("❌ Login gagal:", data);
       return NextResponse.json(
-        { success: false, message: data.message || "Login gagal. Periksa username/password Anda." },
+        { success: false, message: data.message || "Login gagal" },
         { status: response.status }
       );
     }
 
-    // ✅ Simpan cookie agar bisa dikirim dari frontend
     const res = NextResponse.json({
       success: true,
       message: "Login berhasil",
       data: data.data,
     });
 
+    // ✅ Token HARUS diset dengan `sameSite: "lax"` dan `secure: true` agar terbaca di middleware Vercel
     if (data?.data?.token) {
       res.cookies.set("token", data.data.token, {
-        httpOnly: false, // penting! agar axios bisa kirim token otomatis
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax", // biar cookie terbaca lintas route
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax", // <— penting, jangan pakai strict
         path: "/",
         maxAge: 60 * 60 * 4, // 4 jam
       });
@@ -45,14 +45,14 @@ export async function POST(request: NextRequest) {
     if (data?.data?.role) {
       res.cookies.set("role", data.data.role, {
         httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
+        secure: true,
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 4,
       });
     }
 
-    console.log("✅ Cookie token & role berhasil diset.");
+    console.log("✅ Cookie token & role berhasil diset di response.");
     return res;
   } catch (error) {
     console.error("🔥 Proxy login error:", error);
