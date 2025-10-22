@@ -22,13 +22,14 @@ export default function AdminDashboard() {
       const auth = await checkAuth();
       console.log("✅ Auth check result:", auth);
 
-      if (!auth.success || auth.role !== "admin") {
-        console.warn("🚫 Unauthorized, redirecting...");
-        router.replace("/auth/login");
-      } else {
-        console.log("🟢 Authorized as admin");
-        setLoading(false);
-      }
+     if (!auth.success || auth.data?.role !== "admin") {
+  console.warn("🚫 Unauthorized, redirecting...");
+  router.replace("/auth/login");
+} else {
+  console.log("🟢 Authorized as admin");
+  setLoading(false);
+}
+
     }
 
     validate();

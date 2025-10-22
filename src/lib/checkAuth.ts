@@ -1,29 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // src/lib/checkAuth.ts
-// src/lib/authService.ts
-export async function login(email: string, password: string) {
-  const res = await fetch("https://puspa.sinus.ac.id/api/v1/auth/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ email, password }),
-    credentials: "include",
-  });
+export async function checkAuth() {
+  try {
+    const token = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("token="))
+      ?.split("=")[1];
 
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || "Login gagal");
+    if (!token) {
+      return { success: false, message: "No token" };
+    }
 
-  // Setelah login berhasil, simpan token ke cookie
-  if (data.data?.token) {
-    document.cookie = `token=${encodeURIComponent(
-      data.data.token
-    )}; path=/; max-age=86400; SameSite=Lax; Secure`;
+    const res = await fetch("https://puspa.sinus.ac.id/api/v1/auth/protected", {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${decodeURIComponent(token)}`,
+        Accept: "application/json",
+      },
+      credentials: "include",
+    });
+
+    if (!res.ok) {
+      return { success: false, message: "Unauthorized" };
+    }
+
+    const data = await res.json();
+    console.log("✅ Auth success:", data);
+
+    // ambil role langsung dari data
+    const role = data?.role || data?.data?.role;
+
+    return { success: true, role, data };
+  } catch (error) {
+    console.error("❌ Auth check failed:", error);
+    return { success: false, message: "Auth check failed" };
   }
-
-  if (data.data?.role) {
-    document.cookie = `role=${data.data.role}; path=/; max-age=86400; SameSite=Lax; Secure`;
-  }
-
-  console.log("✅ Token disimpan di cookie:", data.data.token);
-  return data;
 }
