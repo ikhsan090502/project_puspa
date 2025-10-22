@@ -12,14 +12,16 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true
   },
-  experimental: {
-    serverActions: true
+ experimental: {
+  serverActions: {
+    bodySizeLimit: "2mb",
   },
+},
   async rewrites() {
     return [
       {
         source: '/api/external/:path*',
-        destination: 'https://puspa.sinus.ac.id/api/:path*',
+        destination: 'https://puspa.sinus.ac.id/api/v1/:path*',
       },
     ];
   },

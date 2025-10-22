@@ -5,13 +5,14 @@ export async function GET(req: NextRequest) {
     const token = req.cookies.get("token")?.value;
 
     if (!token) {
+      console.warn("❌ No token found in frontend cookies");
       return NextResponse.json({ success: false, message: "No token" }, { status: 401 });
     }
 
     const res = await fetch("https://puspa.sinus.ac.id/api/v1/auth/protected", {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${decodeURIComponent(token)}`,
+        Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
       cache: "no-store",
@@ -20,6 +21,7 @@ export async function GET(req: NextRequest) {
     const data = await res.json();
 
     if (!res.ok) {
+      console.warn("🚫 Unauthorized response from backend:", res.status);
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
