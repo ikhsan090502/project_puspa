@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 
 // src/lib/checkAuth.ts
+// src/lib/checkAuth.ts
 export async function checkAuth() {
   try {
+    // Ambil token dari cookie
     const token = document.cookie
       .split("; ")
       .find((row) => row.startsWith("token="))
@@ -22,15 +24,21 @@ export async function checkAuth() {
       credentials: "include",
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      console.warn("🚫 Unauthorized:", res.status);
-      return { success: false, message: "Unauthorized" };
+      console.warn("🚫 Unauthorized:", res.status, data);
+      return { success: false, message: data?.message || "Unauthorized" };
     }
 
-    const data = await res.json();
     console.log("✅ Auth success:", data);
+    const role =
+      document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("role="))
+        ?.split("=")[1] || "guest";
 
-    return { success: true, data };
+    return { success: true, data, role };
   } catch (error) {
     console.error("❌ Auth check failed:", error);
     return { success: false, message: "Auth check failed" };
