@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-
     console.log("📡 Proxying login request ke API eksternal...");
 
     const response = await fetch("https://puspa.sinus.ac.id/api/v1/auth/login", {
@@ -25,33 +24,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // ✅ Buat response success
+    // ✅ Simpan cookie token & role
     const res = NextResponse.json({
       success: true,
       message: "Login berhasil",
       data: data.data,
     });
 
-   if (data?.data?.token) {
-  res.cookies.set("token", data.data.token, {
-    httpOnly: false,
-    secure: false, // 🧩 ubah dulu ke false agar terbaca di dev & vercel test
-    sameSite: "strict", // pastikan cookie tidak cross-site
-    path: "/",
-    maxAge: 60 * 60 * 4,
-  });
-}
+    if (data?.data?.token) {
+      res.cookies.set("token", data.data.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 60 * 4, // 4 jam
+      });
+    }
 
-if (data?.data?.role) {
-  res.cookies.set("role", data.data.role, {
-    httpOnly: false,
-    secure: false,
-    sameSite: "strict",
-    path: "/",
-    maxAge: 60 * 60 * 4,
-  });
-}
-
+    if (data?.data?.role) {
+      res.cookies.set("role", data.data.role, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
+        maxAge: 60 * 60 * 4,
+      });
+    }
 
     console.log("✅ Cookie token & role berhasil diset.");
     return res;

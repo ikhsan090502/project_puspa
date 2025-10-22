@@ -5,9 +5,11 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
+import { useRouter } from "next/navigation";
 import axiosInstance from "@/lib/axios";
 
 export default function LoginPage() {
+  const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -20,7 +22,7 @@ export default function LoginPage() {
     try {
       console.log("🔄 Login API Call:", { endpoint: "/auth/login" });
 
-      // ✅ kirim ke proxy bawaan Next.js
+      // 🚀 Panggil API login via proxy
       const response = await axiosInstance.post("/auth/login", {
         identifier,
         password,
@@ -29,18 +31,16 @@ export default function LoginPage() {
       console.log("✅ Login API Success:", response.data);
 
       const { role } = response.data?.data || {};
-
-      // Simpan role sementara di localStorage (opsional)
       localStorage.setItem("role", role);
 
-      // ✅ Tunggu supaya cookie tersimpan dengan benar
-      await new Promise((r) => setTimeout(r, 1500));
+      // 🕒 beri waktu supaya cookie tersimpan di browser
+      await new Promise((r) => setTimeout(r, 1000));
 
-      // ✅ Gunakan window.location.href (bukan replace)
-      if (role === "admin") window.location.href = "/admin/dashboard";
-      else if (role === "terapis") window.location.href = "/terapis/dashboard";
-      else if (role === "orangtua") window.location.href = "/orangtua/dashboard";
-      else window.location.href = "/";
+      // 🔀 Arahkan sesuai role
+      if (role === "admin") router.push("/admin/dashboard");
+      else if (role === "terapis") router.push("/terapis/dashboard");
+      else if (role === "orangtua") router.push("/orangtua/dashboard");
+      else router.push("/");
 
     } catch (err: any) {
       console.error("❌ Login error:", err.response?.data || err.message);
