@@ -2,32 +2,39 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get("token")?.value;
+    // 🔍 Coba ambil token dari cookie atau header Authorization
+    const cookieToken = req.cookies.get("token")?.value;
+    const headerToken = req.headers.get("authorization")?.replace("Bearer ", "");
+
+    const token = cookieToken || headerToken;
 
     if (!token) {
-      console.warn("❌ No token found in frontend cookies");
-      return NextResponse.json({ success: false, message: "No token" }, { status: 401 });
+      console.warn("❌ No token found in cookie or header");
+      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
+    console.log("✅ Token found, validating...");
+
+    // 🔗 Panggil API backend untuk validasi
     const res = await fetch("https://puspa.sinus.ac.id/api/v1/auth/protected", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
-      cache: "no-store",
     });
 
-    const data = await res.json();
-
     if (!res.ok) {
-      console.warn("🚫 Unauthorized response from backend:", res.status);
+      console.warn("🚫 Token invalid:", res.status);
       return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
     }
 
+    const data = await res.json();
+    console.log("✅ Valid token:", data);
+
     return NextResponse.json({ success: true, data });
-  } catch (err) {
-    console.error("Proxy auth error:", err);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+  } catch (error) {
+    console.error("❌ Auth check failed:", error);
+    return NextResponse.json({ success: false, message: "Internal error" }, { status: 500 });
   }
 }
