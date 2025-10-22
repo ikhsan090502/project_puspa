@@ -14,7 +14,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [openTambahAdmin, setOpenTambahAdmin] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     async function validate() {
       try {
         const res = await fetch("/api/proxy/auth/protected", { credentials: "include" });

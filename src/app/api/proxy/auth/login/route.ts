@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+
     console.log("📡 Proxying login request ke API eksternal...");
 
     const response = await fetch("https://puspa.sinus.ac.id/api/v1/auth/login", {
@@ -17,43 +18,39 @@ export async function POST(request: NextRequest) {
     const data = await response.json();
 
     if (!response.ok) {
-      console.error("❌ Login gagal dari API eksternal:", data);
+      console.error("❌ Login gagal:", data);
       return NextResponse.json(
-        { success: false, message: data.message || "Login gagal. Cek kembali username/password Anda." },
+        { success: false, message: data.message || "Login gagal. Periksa username/password Anda." },
         { status: response.status }
       );
     }
 
-    // ✅ Simpan cookie token & role
+    // ✅ Simpan cookie agar bisa dikirim dari frontend
     const res = NextResponse.json({
       success: true,
       message: "Login berhasil",
       data: data.data,
     });
 
-   if (data?.data?.token) {
-  res.cookies.set("token", data.data.token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none", // ✅ gunakan none agar cookie dikirim ke semua konteks
-    path: "/",
-    domain: ".vercel.app", // ✅ penting agar terbaca di edge/middleware
-    maxAge: 60 * 60 * 4,
-  });
-}
+    if (data?.data?.token) {
+      res.cookies.set("token", data.data.token, {
+        httpOnly: false, // penting! agar axios bisa kirim token otomatis
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax", // biar cookie terbaca lintas route
+        path: "/",
+        maxAge: 60 * 60 * 4, // 4 jam
+      });
+    }
 
-if (data?.data?.role) {
-  res.cookies.set("role", data.data.role, {
-    httpOnly: false,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "none",
-    path: "/",
-    domain: ".vercel.app", // ✅ tambahkan juga domain di sini
-    maxAge: 60 * 60 * 4,
-  });
-}
-
-
+    if (data?.data?.role) {
+      res.cookies.set("role", data.data.role, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: 60 * 60 * 4,
+      });
+    }
 
     console.log("✅ Cookie token & role berhasil diset.");
     return res;
