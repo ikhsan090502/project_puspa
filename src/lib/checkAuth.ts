@@ -1,32 +1,54 @@
 import { NextRequest, NextResponse } from "next/server";
 
-export async function GET(request: NextRequest) {
-  const token = request.cookies.get("token")?.value;
+// src/lib/checkAuth.ts
+export async function checkAuth(): Promise<{
+  success: boolean;
+  role?: string;
+  message?: string;
+}> {
+  try {
+    console.log("🔍 Checking authentication...");
 
-  if (!token) {
-    return NextResponse.json(
-      { success: false, message: "Token tidak ditemukan" },
-      { status: 401 }
-    );
+    const res = await fetch("/api/proxy/auth/protected", {
+      method: "GET",
+      credentials: "include",
+      cache: "no-store",
+    });
+
+    const data = await res.json();
+
+    if (!res.ok || !data?.success) {
+      console.log("❌ Authentication failed:", data);
+      return { success: false, message: "Unauthorized" };
+    }
+
+    console.log("✅ Authentication successful:", { role: data?.data?.role });
+    return { success: true, role: data?.data?.role };
+  } catch (err) {
+    console.error("❌ Auth check error:", err);
+    return { success: false, message: "Server error" };
   }
+}
 
+// Server-side authentication check (optional)
+export async function checkAuthServer(token?: string) {
   try {
     const res = await fetch("https://puspa.sinus.ac.id/api/v1/auth/protected", {
       headers: {
         Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
+      cache: "no-store",
     });
 
     const data = await res.json();
-
-    if (!res.ok) {
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+    if (!res.ok || !data?.success) {
+      return { success: false, message: "Unauthorized" };
     }
 
-    return NextResponse.json({ success: true, data: data.data });
-  } catch (err) {
-    console.error("🔥 Error protected:", err);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    return { success: true, role: data.data?.role };
+  } catch (error) {
+    console.error("❌ checkAuthServer error:", error);
+    return { success: false, message: "Server Error" };
   }
 }

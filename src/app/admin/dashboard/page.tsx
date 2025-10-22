@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { checkAuth } from "@/lib/checkAuth";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import CardInfo from "@/components/dashboard/card_info";
@@ -14,31 +15,32 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [openTambahAdmin, setOpenTambahAdmin] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     async function validate() {
-      try {
-        const res = await fetch("/api/proxy/auth/protected", { credentials: "include" });
-        const data = await res.json();
+      console.log("🔍 Validating token on dashboard...");
 
-        if (!data?.success || data?.data?.role !== "admin") {
-          router.replace("/auth/login");
-        } else {
-          setLoading(false);
-        }
-      } catch (e) {
+      const auth = await checkAuth();
+      console.log("✅ Auth check result:", auth);
+
+      if (!auth.success || auth.role !== "admin") {
+        console.warn("🚫 Unauthorized, redirecting...");
         router.replace("/auth/login");
+      } else {
+        console.log("🟢 Authorized as admin");
+        setLoading(false);
       }
     }
 
     validate();
   }, [router]);
 
-  if (loading)
+  if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex h-screen items-center justify-center text-gray-700">
         Memeriksa autentikasi...
       </div>
     );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -86,4 +88,3 @@ useEffect(() => {
     </div>
   );
 }
-
