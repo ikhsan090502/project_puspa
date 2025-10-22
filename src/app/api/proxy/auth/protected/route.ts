@@ -5,31 +5,47 @@ export async function GET(request: NextRequest) {
     const token = request.cookies.get("token")?.value;
 
     if (!token) {
-      console.warn("⛔ Tidak ada token di cookie");
-      return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        { success: false, message: "Token tidak ditemukan" },
+        { status: 401 }
+      );
     }
 
-    // Panggil API eksternal dengan token
+    console.log("🔑 Memeriksa token ke API eksternal...");
+
     const response = await fetch("https://puspa.sinus.ac.id/api/v1/auth/protected", {
+      method: "GET",
       headers: {
         Authorization: `Bearer ${decodeURIComponent(token)}`,
+        Accept: "application/json",
       },
     });
 
+    const data = await response.json();
+
     if (!response.ok) {
-      console.error("❌ Token invalid atau expired");
-      return NextResponse.json({ success: false, message: "Token invalid" }, { status: 401 });
+      console.error("❌ Token invalid di API eksternal:", data);
+      return NextResponse.json(
+        { success: false, message: data.message || "Unauthorized" },
+        { status: response.status }
+      );
     }
 
-    const data = await response.json();
+    // ✅ Kembalikan data lengkap termasuk role
+    console.log("✅ Token valid, role:", data?.data?.role);
 
     return NextResponse.json({
       success: true,
-      message: "Token valid",
-      data,
+      data: {
+        role: data?.data?.role || "unknown",
+        user: data?.data?.user || null,
+      },
     });
   } catch (error) {
-    console.error("🔥 Error Protected Route:", error);
-    return NextResponse.json({ success: false, message: "Server error" }, { status: 500 });
+    console.error("🔥 Protected route error:", error);
+    return NextResponse.json(
+      { success: false, message: "Server error" },
+      { status: 500 }
+    );
   }
 }
