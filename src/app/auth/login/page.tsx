@@ -37,10 +37,10 @@ export default function LoginPage() {
       await new Promise((r) => setTimeout(r, 1000));
 
       // 🔀 Arahkan sesuai role
-      if (role === "admin") router.push("/admin/dashboard");
-      else if (role === "terapis") router.push("/terapis/dashboard");
-      else if (role === "orangtua") router.push("/orangtua/dashboard");
-      else router.push("/");
+     if (role === "admin") router.push("/admin/dashboard");
+else if (role === "terapis") router.push("/terapis/dashboard");
+else if (role === "orangtua") router.push("/orangtua/dashboard");
+else router.push("/");
 
     } catch (err: any) {
       console.error("❌ Login error:", err.response?.data || err.message);

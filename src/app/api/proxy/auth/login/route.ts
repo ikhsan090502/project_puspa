@@ -32,24 +32,25 @@ export async function POST(request: NextRequest) {
     });
 
     if (data?.data?.token) {
-      res.cookies.set("token", data.data.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        maxAge: 60 * 60 * 4, // 4 jam
-      });
-    }
+  res.cookies.set("token", data.data.token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax", // ✅ ubah dari "strict" → "lax"
+    path: "/",
+    maxAge: 60 * 60 * 4,
+  });
+}
 
-    if (data?.data?.role) {
-      res.cookies.set("role", data.data.role, {
-        httpOnly: false,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "strict",
-        path: "/",
-        maxAge: 60 * 60 * 4,
-      });
-    }
+if (data?.data?.role) {
+  res.cookies.set("role", data.data.role, {
+    httpOnly: false,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax", // ✅ juga "lax"
+    path: "/",
+    maxAge: 60 * 60 * 4,
+  });
+}
+
 
     console.log("✅ Cookie token & role berhasil diset.");
     return res;
