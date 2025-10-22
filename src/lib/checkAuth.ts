@@ -1,13 +1,11 @@
 export async function checkAuth() {
   try {
-    // 🔍 Ambil token dari cookie
     let token =
       document.cookie
         .split("; ")
         .find((row) => row.startsWith("token="))
         ?.split("=")[1] || "";
 
-    // 🔄 Jika cookie kosong, fallback ke localStorage
     if (!token && typeof window !== "undefined") {
       token = localStorage.getItem("token") || "";
     }
@@ -20,7 +18,8 @@ export async function checkAuth() {
     const res = await fetch("/api/auth/protected", {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${decodeURIComponent(token)}`,
+        Accept: "application/json",
       },
     });
 
