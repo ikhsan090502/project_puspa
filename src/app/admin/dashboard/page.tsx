@@ -19,17 +19,28 @@ export default function AdminDashboard() {
     async function validate() {
       console.log("🔍 Validating token on dashboard...");
 
-      const auth = await checkAuth();
-      console.log("✅ Auth check result:", auth);
+      try {
+        const auth = await checkAuth();
+        console.log("✅ Auth check result:", auth);
 
-     if (!auth.success || auth.data?.role !== "admin") {
-  console.warn("🚫 Unauthorized, redirecting...");
-  router.replace("/auth/login");
-} else {
-  console.log("🟢 Authorized as admin");
-  setLoading(false);
-}
+        // Ambil role dari beberapa kemungkinan struktur respons
+        const role =
+          auth?.role ||
+          auth?.data?.role ||
+          auth?.data?.user?.role ||
+          "";
 
+        if (auth?.success && role === "admin") {
+          console.log("✅ Authorized as admin");
+          setLoading(false);
+        } else {
+          console.log("🚫 Unauthorized, redirecting...");
+          router.push("/auth/login");
+        }
+      } catch (error) {
+        console.error("❌ Auth validation failed:", error);
+        router.push("/auth/login");
+      }
     }
 
     validate();

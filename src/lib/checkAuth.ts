@@ -19,8 +19,8 @@ export async function checkAuth() {
 
     token = decodeURIComponent(token);
 
-    // 🔹 Panggil endpoint proteksi
-    const res = await fetch("/api/proxy/auth/protected", {
+    // 🔹 Gunakan prefix v1 agar ke proxy baru
+    const res = await fetch("/api/v1/auth/protected", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -37,10 +37,18 @@ export async function checkAuth() {
     const data = await res.json();
     console.log("✅ Auth success:", data);
 
-    // Tambahkan role jika dikirim dari backend
+    // 🔹 Pastikan role bisa diambil dari beberapa kemungkinan struktur
+    const role =
+      data?.data?.role ||
+      data?.role ||
+      data?.user?.role ||
+      localStorage.getItem("role") ||
+      "unknown";
+
+    // 🔹 Kembalikan hasil validasi
     return {
       success: true,
-      role: data?.data?.role || localStorage.getItem("role") || "unknown",
+      role,
       data,
     };
   } catch (error) {
