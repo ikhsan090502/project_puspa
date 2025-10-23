@@ -34,12 +34,12 @@ export const menu = [
   },
   {
     section: "Dokumen",
-    items: [{ name: "Laporan", href: "/laporan", icon: FileText }],
+    items: [{ name: "Laporan", href: "/admin/laporan", icon: FileText }],
   },
   {
     section: "Kelola Akun",
     items: [
-      { name: "Pengaturan", href: "/pengaturan", icon: Settings },
+      { name: "Pengaturan", href: "/admin/pengaturan", icon: Settings },
       { name: "Log Out", href: "/auth/login", icon: LogOut },
     ],
   },
