@@ -78,20 +78,27 @@ export default function TerapisDashboard() {
   const [selected, setSelected] = useState<Anak | null>(null);
 
   useEffect(() => {
-    async function validate() {
-      try {
-        const res = await fetch("/api/proxy/auth/protected", { credentials: "include" });
-        const data = await res.json();
+  async function validate() {
+    try {
+      console.log("🔍 Memeriksa autentikasi Terapis...");
 
-        if (!data?.success || data?.data?.role !== "terapis") {
-          router.replace("/auth/login");
-        } else {
-          setLoading(false);
-        }
-      } catch (e) {
+      const auth = await checkAuth();
+      console.log("✅ Auth result (Terapis):", auth);
+
+      if (!auth.success || auth.role !== "terapis") {
+        console.warn("🚫 Tidak diizinkan, redirect ke login");
         router.replace("/auth/login");
+      } else {
+        console.log("🎉 Terapis terverifikasi, tampilkan dashboard");
+        setLoading(false);
       }
+    } catch (e) {
+      console.error("🔥 Error saat validasi:", e);
+      router.replace("/auth/login");
     }
+  }
+
+
 
     validate();
   }, [router]);
