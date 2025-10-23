@@ -20,7 +20,7 @@ export async function checkAuth() {
     token = decodeURIComponent(token);
 
     // 🔹 Panggil endpoint proteksi
-    const res = await fetch("https://puspa.sinus.ac.id/api/v1/auth/protected", {
+    const res = await fetch("/api/proxy/auth/protected", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,

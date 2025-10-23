@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
+const API_BASE = "https://puspa.sinus.ac.id/api/v1";
+
 export async function GET(req: NextRequest, { params }: any) {
-  const url = `https://puspa.sinus.ac.id/api/v1/${params.path.join("/")}`;
+  const url = `${API_BASE}/${params.path.join("/")}`;
   const token = req.headers.get("authorization");
 
   try {
@@ -15,14 +17,14 @@ export async function GET(req: NextRequest, { params }: any) {
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
-  } catch (error) {
-    console.error("Proxy GET error:", error);
+  } catch (err) {
+    console.error("Proxy GET error:", err);
     return NextResponse.json({ success: false, message: "Proxy failed" }, { status: 500 });
   }
 }
 
 export async function POST(req: NextRequest, { params }: any) {
-  const url = `https://puspa.sinus.ac.id/api/v1/${params.path.join("/")}`;
+  const url = `${API_BASE}/${params.path.join("/")}`;
   const token = req.headers.get("authorization");
   const body = await req.text();
 
@@ -38,8 +40,8 @@ export async function POST(req: NextRequest, { params }: any) {
 
     const data = await res.json();
     return NextResponse.json(data, { status: res.status });
-  } catch (error) {
-    console.error("Proxy POST error:", error);
+  } catch (err) {
+    console.error("Proxy POST error:", err);
     return NextResponse.json({ success: false, message: "Proxy failed" }, { status: 500 });
   }
 }
