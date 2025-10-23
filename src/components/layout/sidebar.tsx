@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/lib/api/logout";
 import {
   LayoutGrid,
   UserCog,
@@ -14,11 +15,25 @@ import {
   LogOut,
 } from "lucide-react";
 
+// ✅ Definisikan tipe item menu agar TypeScript tahu ada properti `action`
+interface MenuItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<any>;
+  action?: () => void; // <-- tambahkan ini
+}
+
+interface MenuGroup {
+  section: string | null;
+  items: MenuItem[];
+}
+
 interface SidebarProps {
   activePage?: string;
 }
 
-export const menu = [
+// ✅ Struktur menu dengan opsi logout yang punya `action`
+export const menu: MenuGroup[] = [
   {
     section: null,
     items: [{ name: "Dashboard", href: "/admin/dashboard", icon: LayoutGrid }],
@@ -40,7 +55,12 @@ export const menu = [
     section: "Kelola Akun",
     items: [
       { name: "Pengaturan", href: "/admin/pengaturan", icon: Settings },
-      { name: "Log Out", href: "/auth/login", icon: LogOut },
+      {
+        name: "Log Out",
+        href: "#",
+        icon: LogOut,
+        action: logout, // ✅ panggil fungsi logout di sini
+      },
     ],
   },
 ];
@@ -81,6 +101,13 @@ export default function Sidebar({ activePage }: SidebarProps) {
                   <Link
                     key={i}
                     href={item.href}
+                    onClick={(e) => {
+                      // ✅ Jalankan aksi logout jika ada
+                      if (item.action) {
+                        e.preventDefault();
+                        item.action();
+                      }
+                    }}
                     className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                       isActive
                         ? "bg-[#C0DCD6] text-[#36315B] font-semibold"
