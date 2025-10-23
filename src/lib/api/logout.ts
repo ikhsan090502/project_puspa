@@ -1,16 +1,14 @@
+import axiosInstance from "@/lib/axios";
+
 export async function logout() {
   try {
-    const res = await fetch("/api/auth/logout", { method: "POST" });
-    const data = await res.json();
-    console.log("🚪 Logout berhasil:", data);
-
-    // Hapus juga sisa token/role di localStorage (jaga-jaga)
-    localStorage.removeItem("role");
-    localStorage.removeItem("token");
-
-    return true;
+    await axiosInstance.post("/auth/logout");
+    ["token", "role"].forEach((name) => {
+      document.cookie = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;`;
+    });
+    localStorage.clear();
+    window.location.href = "/auth/login";
   } catch (error) {
-    console.error("❌ Logout gagal:", error);
-    return false;
+    console.error("Logout gagal:", error);
   }
 }
