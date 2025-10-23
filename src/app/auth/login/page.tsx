@@ -33,26 +33,30 @@ export default function LoginPage() {
       const { token, role } = response.data?.data || {};
 
       if (token) {
-        // 🧁 Simpan token ke cookie agar bisa dibaca di halaman lain
-        document.cookie = `token=${encodeURIComponent(
-          token
-        )}; path=/; max-age=86400; SameSite=Lax`;
+  // 🧁 Simpan token di cookie
+  document.cookie = `token=${encodeURIComponent(token)}; path=/; max-age=86400; SameSite=Lax`;
 
-        // 🔐 Simpan juga ke localStorage sebagai backup
-        localStorage.setItem("token", token);
-        localStorage.setItem("role", role || "");
+  // 🧁 Simpan role di cookie (biar terbaca middleware)
+  if (role) {
+    document.cookie = `role=${role}; path=/; max-age=86400; SameSite=Lax`;
+  }
 
-        console.log("🍪 Token disimpan di cookie:", token);
+  // 🔐 Backup di localStorage
+  localStorage.setItem("token", token);
+  localStorage.setItem("role", role || "");
 
-        // ⏳ Tunggu sejenak agar cookie tersimpan sepenuhnya
-        await new Promise((r) => setTimeout(r, 700));
+  console.log("🍪 Token disimpan di cookie:", token);
+  console.log("🍪 Role disimpan di cookie:", role);
 
-        // 🔀 Arahkan sesuai role
-        if (role === "admin") router.push("/admin/dashboard");
-        else if (role === "terapis") router.push("/terapis/dashboard");
-        else if (role === "orangtua") router.push("/orangtua/dashboard");
-        else router.push("/");
-      } else {
+  // Tunggu agar cookie tersimpan
+  await new Promise((r) => setTimeout(r, 800));
+
+  // 🔀 Arahkan sesuai role
+  if (role === "admin") router.push("/admin/dashboard");
+  else if (role === "terapis") router.push("/terapis/dashboard");
+  else if (role === "orangtua") router.push("/orangtua/dashboard");
+  else router.push("/");
+} else {
         alert("Login gagal: token tidak diterima dari server");
       }
     } catch (err: any) {

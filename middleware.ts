@@ -1,47 +1,36 @@
-// src/middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
   const role = req.cookies.get("role")?.value;
-  const url = req.nextUrl.pathname;
 
-  // Jika tidak ada token → arahkan ke login umum
+  console.log("🧁 Middleware cookies:", { token, role, path: req.nextUrl.pathname });
+
   if (!token) {
     return NextResponse.redirect(new URL("/auth/login", req.url));
   }
 
-  // 🔹 Proteksi untuk ADMIN
-  if (url.startsWith("/admin")) {
-    if (role !== "admin") {
-      return NextResponse.redirect(new URL("/auth/login", req.url));
-    }
+  const url = req.nextUrl.pathname;
+
+  // Admin
+  if (url.startsWith("/admin") && role !== "admin") {
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
-  // 🔹 Proteksi untuk TERAPIS
-  if (url.startsWith("/terapis")) {
-    if (role !== "terapis") {
-      return NextResponse.redirect(new URL("/auth/login_terapis", req.url));
-    }
+  // Terapis
+  if (url.startsWith("/terapis") && role !== "terapis") {
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
-  // 🔹 Proteksi untuk ORANGTUA
-  if (url.startsWith("/orangtua")) {
-    if (role !== "orangtua") {
-      return NextResponse.redirect(new URL("/auth/login_orangtua", req.url));
-    }
+  // Orangtua
+  if (url.startsWith("/orangtua") && role !== "orangtua") {
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
-  // Jika semua lolos
   return NextResponse.next();
 }
 
-// Jalankan middleware di semua area yang butuh login
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/terapis/:path*",
-    "/orangtua/:path*",
-  ],
+  matcher: ["/admin/:path*", "/terapis/:path*", "/orangtua/:path*"],
 };
