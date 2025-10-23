@@ -20,7 +20,7 @@ export async function checkAuth() {
     token = decodeURIComponent(token);
 
     // 🔹 Gunakan prefix v1 agar ke proxy baru
-    const res = await fetch("/api/v1/auth/protected", {
+    const res = await fetch("/api/proxy/v1/auth/protected", {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
