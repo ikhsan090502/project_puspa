@@ -1,26 +1,32 @@
+// src/lib/checkAuth.ts
 export async function checkAuth() {
   try {
-    let token =
-      document.cookie
-        .split("; ")
-        .find((row) => row.startsWith("token="))
-        ?.split("=")[1] || "";
+    console.log("🔍 Checking authentication...");
 
-    if (!token && typeof window !== "undefined") {
-      token = localStorage.getItem("token") || "";
-    }
+    // 🔹 Ambil token dari cookie atau localStorage
+    let token =
+      (typeof document !== "undefined" &&
+        document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("token="))
+          ?.split("=")[1]) ||
+      (typeof window !== "undefined" && localStorage.getItem("token"));
 
     if (!token) {
       console.warn("❌ No token found");
       return { success: false, message: "No token" };
     }
 
-    const res = await fetch("/api/auth/protected", {
+    token = decodeURIComponent(token);
+
+    // 🔹 Panggil endpoint proteksi
+    const res = await fetch("https://puspa.sinus.ac.id/api/v1/auth/protected", {
       method: "GET",
       headers: {
-        Authorization: `Bearer ${decodeURIComponent(token)}`,
+        Authorization: `Bearer ${token}`,
         Accept: "application/json",
       },
+      credentials: "include",
     });
 
     if (!res.ok) {
@@ -31,7 +37,12 @@ export async function checkAuth() {
     const data = await res.json();
     console.log("✅ Auth success:", data);
 
-    return { success: true, data };
+    // Tambahkan role jika dikirim dari backend
+    return {
+      success: true,
+      role: data?.data?.role || localStorage.getItem("role") || "unknown",
+      data,
+    };
   } catch (error) {
     console.error("❌ Auth check failed:", error);
     return { success: false, message: "Auth check failed" };
