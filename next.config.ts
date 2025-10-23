@@ -20,8 +20,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: '/api/external/:path*',
-        destination: 'https://puspa.sinus.ac.id/api/v1/:path*',
+        source: "/api/v1/:path*",
+        destination: "https://puspa.sinus.ac.id/api/v1/:path*",
       },
     ];
   },
