@@ -1,6 +1,6 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { checkAuthServer } from "@/lib/checkAuth";
+import { checkAuth } from "@/lib/checkAuth";
 
 export default async function OrangtuaRootPage() {
   const cookieStore = await cookies();
@@ -8,7 +8,7 @@ export default async function OrangtuaRootPage() {
 
   if (!token) redirect("/auth/login");
 
-  const auth = await checkAuthServer(token);
+ const auth = await checkAuth();
   if (!auth.success || auth.role !== "orangtua") redirect("/auth/login");
 
   redirect("/orangtua/dashboard");
