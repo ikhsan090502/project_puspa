@@ -8,7 +8,7 @@ export default async function TerapisRootPage() {
 
   if (!token) redirect("/auth/login");
 
-  const auth = await checkAuth(token);
+  const auth = await checkAuth();
   if (!auth.success || auth.role !== "terapis") redirect("/auth/login");
 
   redirect("/terapis/dashboard");
