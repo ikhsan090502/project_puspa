@@ -6,7 +6,10 @@ export async function POST(request: NextRequest) {
 
     console.log("📡 Proxying login request ke API eksternal...");
 
-    const response = await fetch("https://puspa.sinus.ac.id/api/v1/auth/login", {
+    // 🔹 Pastikan URL eksternal benar
+    const API_URL = "https://puspa.sinus.ac.id/api/v1/auth/login";
+
+    const response = await fetch(API_URL, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -15,35 +18,53 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify(body),
     });
 
-    const data = await response.json();
-
+    // 🔹 Jika respons tidak OK (status >= 400)
     if (!response.ok) {
-      console.error("❌ Login gagal:", data);
+      const errorText = await response.text();
+      console.error("❌ Login gagal:", response.status, errorText);
       return NextResponse.json(
-        { success: false, message: data.message || "Login gagal" },
+        {
+          success: false,
+          message: "Login gagal: " + (errorText || response.statusText),
+        },
         { status: response.status }
       );
     }
 
+    const data = await response.json();
+    console.log("✅ Login berhasil, respon dari API eksternal:", data);
+
+    // 🔹 Pastikan struktur data valid
+    const token = data?.data?.token;
+    const role = data?.data?.role;
+
+    if (!token) {
+      console.error("❌ Token tidak ditemukan dalam respon API:", data);
+      return NextResponse.json(
+        { success: false, message: "Token tidak diterima dari server." },
+        { status: 500 }
+      );
+    }
+
+    // 🔹 Buat respons sukses
     const res = NextResponse.json({
       success: true,
       message: "Login berhasil",
       data: data.data,
     });
 
-    // ✅ Token HARUS diset dengan `sameSite: "lax"` dan `secure: process.env.NODE_ENV === "production"` untuk Vercel
-    if (data?.data?.token) {
-      res.cookies.set("token", data.data.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax", // <— penting, jangan pakai strict
-        path: "/",
-        maxAge: 60 * 60 * 4, // 4 jam
-      });
-    }
+    // 🔹 Set cookie token (HTTP only)
+    res.cookies.set("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60 * 4, // 4 jam
+    });
 
-    if (data?.data?.role) {
-      res.cookies.set("role", data.data.role, {
+    // 🔹 Set cookie role (boleh diakses client)
+    if (role) {
+      res.cookies.set("role", role, {
         httpOnly: false,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -52,12 +73,15 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    console.log("✅ Cookie token & role berhasil diset di response.");
+    console.log("🍪 Cookie token & role berhasil diset.");
     return res;
-  } catch (error) {
+  } catch (error: any) {
     console.error("🔥 Proxy login error:", error);
     return NextResponse.json(
-      { success: false, message: "Kesalahan server internal." },
+      {
+        success: false,
+        message: "Kesalahan server internal: " + error.message,
+      },
       { status: 500 }
     );
   }
