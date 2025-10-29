@@ -124,6 +124,15 @@ export default function RiwayatJawabanComponent() {
     {}
   );
 
+  // Calculate scores per category
+  const categoryScores = Object.keys(groupedQuestions).reduce((acc, kategori) => {
+    const questions = groupedQuestions[kategori];
+    const totalScore = questions.reduce((sum, q) => sum + (q.score_earned || 0), 0);
+    const maxScore = questions.length * 5; // Assuming max score per question is 5
+    acc[kategori] = { totalScore, maxScore, percentage: Math.round((totalScore / maxScore) * 100) };
+    return acc;
+  }, {} as Record<string, { totalScore: number; maxScore: number; percentage: number }>);
+
   const kategoriList = Object.keys(groupedQuestions);
   const totalScore = answers.reduce((acc: number, q: AnswerDetail) => acc + (q.score_earned ?? 0), 0);
 
@@ -153,12 +162,13 @@ export default function RiwayatJawabanComponent() {
                   {kategoriList.map((k, i) => {
                     const isActive = activeTab === k;
                     const sudahDiisi = isKategoriComplete(k);
+                    const scoreInfo = categoryScores[k];
 
                     return (
                       <div key={k} className="relative flex flex-col items-center flex-shrink-0">
                         <div
                           onClick={() => setActiveTab(k)}
-                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${
+                          className={`w-12 h-12 rounded-full flex flex-col items-center justify-center font-bold cursor-pointer transition ${
                             isActive
                               ? "bg-[#5F52BF] text-white"
                               : sudahDiisi
@@ -166,15 +176,16 @@ export default function RiwayatJawabanComponent() {
                               : "bg-gray-300 text-black"
                           }`}
                         >
-                          {i + 1}
+                          <span className="text-xs">{i + 1}</span>
+                          <span className="text-xs">{scoreInfo?.totalScore || 0}</span>
                         </div>
 
                          {i < kategoriList.length - 1 && (
                             <div
-                              className="absolute top-5 h-1"
+                              className="absolute top-6 h-1"
                               style={{
                                 width: "80px",
-                                left: "85px",
+                                left: "90px",
                                 backgroundColor: sudahDiisi ? "#81B7A9" : "#E0E0E0",
                               }}
                             />
@@ -182,13 +193,16 @@ export default function RiwayatJawabanComponent() {
                         <span className="mt-3 text-sm font-medium text-center w-28 whitespace-nowrap">
                           {k}
                         </span>
+                        <span className="text-xs text-gray-500">
+                          {scoreInfo?.percentage || 0}% ({scoreInfo?.totalScore || 0}/{scoreInfo?.maxScore || 0})
+                        </span>
                       </div>
                     );
                   })}
                 </div>
 
                 {/* Total Skor */}
-                <div className="text-sl font-bold text-[#36315B] bg-[#E7E4FF] px-3 py-1 rounded-full shadow-sm">
+                <div className="text-sl font-bold text-[#36315B] bg-[#E7E4FF] px-4 py-2 rounded-full shadow-sm">
                   Total Skor: {totalScore}
                 </div>
               </div>

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { Home, ClipboardList, LogOut } from "lucide-react";
+import { Home, ClipboardList, FileText, LogOut } from "lucide-react";
 
 export default function SidebarOrangtua() {
   return (
@@ -10,8 +10,11 @@ export default function SidebarOrangtua() {
         <Link href="/orangtua/dashboard" className="flex items-center space-x-2 p-2 rounded hover:bg-blue-100">
           <Home className="h-4 w-4" /> <span>Dashboard</span>
         </Link>
-        <Link href="/orangtua/observasi" className="flex items-center space-x-2 p-2 rounded hover:bg-blue-100">
-          <ClipboardList className="h-4 w-4" /> <span>Observasi</span>
+        <Link href="/orangtua/assessment" className="flex items-center space-x-2 p-2 rounded hover:bg-blue-100">
+          <FileText className="h-4 w-4" /> <span>Assessment</span>
+        </Link>
+        <Link href="/orangtua/assessment/riwayat-jawaban" className="flex items-center space-x-2 p-2 rounded hover:bg-blue-100">
+          <ClipboardList className="h-4 w-4" /> <span>Riwayat Jawaban</span>
         </Link>
       </nav>
       <button className="mt-auto flex items-center space-x-2 text-red-600 hover:underline">

@@ -143,6 +143,111 @@ export default function HasilObservasiComponent() {
                 </div>
               </section>
 
+              {/* Detail Kategori Observasi */}
+              <section className="mt-10">
+                <h2 className="text-xl font-semibold text-gray-800 mb-3">Detail Kategori Observasi</h2>
+                <hr className="border-gray-300 mb-6" />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Aspek Perilaku & Emosi */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-[#36315B] mb-4 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      Perilaku & Emosi
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">Skor:</span> {data.total_score ? Math.round(data.total_score * 0.25) : 0}</p>
+                      <p><span className="font-medium">Status:</span> Normal</p>
+                      <p className="text-gray-600 mt-2">Anak menunjukkan perilaku yang stabil dan kontrol emosi yang baik.</p>
+                    </div>
+                  </div>
+
+                  {/* Aspek Fungsi Motorik */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-[#36315B] mb-4 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                      Fungsi Motorik
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">Skor:</span> {data.total_score ? Math.round(data.total_score * 0.20) : 0}</p>
+                      <p><span className="font-medium">Status:</span> Perlu Perhatian</p>
+                      <p className="text-gray-600 mt-2">Ada beberapa kesulitan dalam koordinasi motorik halus.</p>
+                    </div>
+                  </div>
+
+                  {/* Aspek Bahasa & Bicara */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-[#36315B] mb-4 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
+                      Bahasa & Bicara
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">Skor:</span> {data.total_score ? Math.round(data.total_score * 0.20) : 0}</p>
+                      <p><span className="font-medium">Status:</span> Normal</p>
+                      <p className="text-gray-600 mt-2">Kemampuan bahasa dan bicara dalam batas normal.</p>
+                    </div>
+                  </div>
+
+                  {/* Aspek Kognitif & Atensi */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+                    <h3 className="text-lg font-semibold text-[#36315B] mb-4 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                      Kognitif & Atensi
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">Skor:</span> {data.total_score ? Math.round(data.total_score * 0.15) : 0}</p>
+                      <p><span className="font-medium">Status:</span> Normal</p>
+                      <p className="text-gray-600 mt-2">Kemampuan kognitif dan atensi dalam rentang normal.</p>
+                    </div>
+                  </div>
+
+                  {/* Aspek Sosial & Emosi */}
+                  <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm md:col-span-2">
+                    <h3 className="text-lg font-semibold text-[#36315B] mb-4 flex items-center gap-2">
+                      <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                      Sosial & Emosi
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <p><span className="font-medium">Skor:</span> {data.total_score ? Math.round(data.total_score * 0.20) : 0}</p>
+                      <p><span className="font-medium">Status:</span> Normal</p>
+                      <p className="text-gray-600 mt-2">Interaksi sosial dan regulasi emosi berjalan dengan baik.</p>
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Rekomendasi Terapi */}
+              <section className="mt-10">
+                <h2 className="text-xl font-semibold text-gray-800 mb-3">Rekomendasi Terapi</h2>
+                <hr className="border-gray-300 mb-6" />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-xl p-4 text-center">
+                    <div className="text-2xl mb-2">🏥</div>
+                    <h4 className="font-semibold text-blue-800">Fisioterapi</h4>
+                    <p className="text-sm text-blue-600 mt-1">Untuk meningkatkan koordinasi motorik</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-xl p-4 text-center">
+                    <div className="text-2xl mb-2">👐</div>
+                    <h4 className="font-semibold text-green-800">Terapi Okupasi</h4>
+                    <p className="text-sm text-green-600 mt-1">Untuk kemandirian sehari-hari</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-xl p-4 text-center">
+                    <div className="text-2xl mb-2">🗣️</div>
+                    <h4 className="font-semibold text-purple-800">Terapi Wicara</h4>
+                    <p className="text-sm text-purple-600 mt-1">Untuk pengembangan bahasa</p>
+                  </div>
+
+                  <div className="bg-gradient-to-br from-orange-50 to-orange-100 border border-orange-200 rounded-xl p-4 text-center">
+                    <div className="text-2xl mb-2">📚</div>
+                    <h4 className="font-semibold text-orange-800">PLB (Paedagog)</h4>
+                    <p className="text-sm text-orange-600 mt-1">Untuk dukungan akademis</p>
+                  </div>
+                </div>
+              </section>
+
               <div className="mt-10 flex justify-end">
                 <button
                   onClick={() => history.back()}

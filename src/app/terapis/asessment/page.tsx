@@ -132,10 +132,15 @@ export default function AssessmentPage() {
                       <td className="px-4 py-2" style={{ color: fontColor, fontWeight: 400 }}>{patient.status}</td>
                       <td className="px-4 py-2">
                         <button
-                          className="px-3 py-1 border rounded transition"
+                          className="px-3 py-1 border rounded transition hover:bg-gray-50"
                           style={{ borderColor: mainGreen, color: mainGreen }}
+                          onClick={() => {
+                            // Navigate to specific assessment form based on therapy type
+                            const therapyType = activeTab.toLowerCase().replace(/\s*\([^)]*\)/, '').trim();
+                            window.location.href = `/terapis/asessment/${therapyType}?patient=${encodeURIComponent(patient.nama)}&usia=${encodeURIComponent(patient.usia)}&jenisKelamin=${encodeURIComponent(patient.jenisKelamin)}`;
+                          }}
                         >
-                          Aksi
+                          {activeFilter === "Terjadwal" ? "Mulai Assessment" : "Lihat Hasil"}
                         </button>
                       </td>
                     </motion.tr>

@@ -116,6 +116,49 @@ export default function RiwayatObservasiComponent() {
             Riwayat Observasi
           </h2>
 
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Total Observasi</p>
+                  <p className="text-2xl font-bold text-[#36315B]">{data.length}</p>
+                </div>
+                <div className="text-2xl">📊</div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Observasi Selesai</p>
+                  <p className="text-2xl font-bold text-green-600">{data.filter(d => d.status === "completed").length}</p>
+                </div>
+                <div className="text-2xl">✅</div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Rata-rata Skor</p>
+                  <p className="text-2xl font-bold text-blue-600">75</p>
+                </div>
+                <div className="text-2xl">📈</div>
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-lg shadow-md border border-gray-200">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-600">Terapi Direkomendasikan</p>
+                  <p className="text-2xl font-bold text-purple-600">12</p>
+                </div>
+                <div className="text-2xl">🏥</div>
+              </div>
+            </div>
+          </div>
+
           {/* Tab Kategori Usia */}
           <div className="relative flex flex-wrap border-b border-gray-300 mb-4">
             {kategori.map((kat, idx) => (

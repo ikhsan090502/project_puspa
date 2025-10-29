@@ -186,12 +186,13 @@ export default function FormObservasiComponent() {
         const pertanyaanKategori = groupedQuestions[k];
         const sudahDiisi = pertanyaanKategori.every((q: Question) => answers[q.id]?.jawaban !== undefined);
         const isActive = activeTab === k;
+        const categoryScore = pertanyaanKategori.reduce((sum, q) => sum + (answers[q.id]?.jawaban ? q.score : 0), 0);
 
         return (
           <div key={k} className="relative flex flex-col items-center flex-shrink-0">
             <button
               onClick={() => setActiveTab(k)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${
+              className={`w-12 h-12 rounded-full flex flex-col items-center justify-center font-bold cursor-pointer transition ${
                 isActive
                   ? "bg-[#5F52BF] text-white"
                   : sudahDiisi
@@ -199,14 +200,15 @@ export default function FormObservasiComponent() {
                   : "bg-gray-300 text-black"
               }`}
             >
-              {i + 1}
+              <span className="text-xs">{i + 1}</span>
+              <span className="text-xs">{categoryScore}</span>
             </button>
             {i < kategoriList.length - 1 && (
               <div
-                className="absolute top-5 h-1"
+                className="absolute top-6 h-1"
                 style={{
                   width: "80px",
-                  left: "85px",
+                  left: "90px",
                   backgroundColor: sudahDiisi ? "#81B7A9" : "#E0E0E0",
                 }}
               />
@@ -214,11 +216,14 @@ export default function FormObservasiComponent() {
             <span className="mt-3 text-sm font-medium text-center w-28 whitespace-nowrap">
               {k}
             </span>
+            <span className="text-xs text-gray-500">
+              {sudahDiisi ? "Selesai" : `${pertanyaanKategori.filter(q => answers[q.id]?.jawaban !== undefined).length}/${pertanyaanKategori.length}`}
+            </span>
           </div>
         );
       })}
     </div>
-    <div className="text-sl font-bold text-[#36315B] bg-[#E7E4FF] px-3 py-1 rounded-full shadow-sm">
+    <div className="text-sl font-bold text-[#36315B] bg-[#E7E4FF] px-4 py-2 rounded-full shadow-sm">
       Total Skor : {totalScore}
     </div>
   </div>
