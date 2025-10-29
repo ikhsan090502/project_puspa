@@ -76,13 +76,15 @@ export async function POST(request: NextRequest) {
     console.log("🍪 Cookie token & role berhasil diset.");
     return res;
   } catch (error: any) {
-    console.error("🔥 Proxy login error:", error);
-    return NextResponse.json(
-      {
-        success: false,
-        message: "Kesalahan server internal: " + error.message,
-      },
-      { status: 500 }
-    );
-  }
+  console.error("🔥 Proxy login error:", error);
+  return NextResponse.json(
+    {
+      success: false,
+      message:
+        "Kesalahan server internal: " +
+        (error?.cause?.message || error?.message || "Unknown error"),
+    },
+    { status: 500 }
+  );
+}
 }
