@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
       data: data.data,
     });
 
-    // ✅ Token HARUS diset dengan `sameSite: "lax"` dan `secure: true` agar terbaca di middleware Vercel
+    // ✅ Token HARUS diset dengan `sameSite: "lax"` dan `secure: process.env.NODE_ENV === "production"` untuk Vercel
     if (data?.data?.token) {
       res.cookies.set("token", data.data.token, {
         httpOnly: true,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax", // <— penting, jangan pakai strict
         path: "/",
         maxAge: 60 * 60 * 4, // 4 jam
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     if (data?.data?.role) {
       res.cookies.set("role", data.data.role, {
         httpOnly: false,
-        secure: true,
+        secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
         maxAge: 60 * 60 * 4,
