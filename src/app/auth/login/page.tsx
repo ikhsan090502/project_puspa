@@ -51,10 +51,20 @@ if (token) {
   await new Promise((r) => setTimeout(r, 800));
 
   // 🔀 Arahkan sesuai role
-  if (role === "admin") router.push("/admin/dashboard");
-  else if (role === "terapis") router.push("/terapis/dashboard");
-  else if (role === "orangtua") router.push("/orangtua/dashboard");
-  else router.push("/");
+  console.log("🔀 Redirecting based on role:", role);
+  if (role === "admin") {
+    console.log("➡️ Redirecting to admin dashboard");
+    router.push("/admin/dashboard");
+  } else if (role === "terapis" || role === "asesor") {
+    console.log("➡️ Redirecting to therapist dashboard");
+    router.push("/terapis/dashboard");
+  } else if (role === "orangtua") {
+    console.log("➡️ Redirecting to parent dashboard");
+    router.push("/orangtua/dashboard");
+  } else {
+    console.log("➡️ Redirecting to home (unknown role)");
+    router.push("/");
+  }
 } else {
         alert("Login gagal: token tidak diterima dari server");
       }

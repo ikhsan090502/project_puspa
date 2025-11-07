@@ -26,7 +26,7 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  if (url.startsWith("/terapis") && role !== "terapis") {
+  if (url.startsWith("/terapis") && role !== "terapis" && role !== "asesor") {
     console.log("❌ Terapis access denied for role:", role);
     return NextResponse.redirect(new URL("/", req.url));
   }
