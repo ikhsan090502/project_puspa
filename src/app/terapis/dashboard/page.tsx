@@ -85,7 +85,7 @@ export default function TerapisDashboard() {
       const auth = await checkAuth();
       console.log("✅ Auth result (Terapis):", auth);
 
-      if (!auth.success || auth.role !== "terapis") {
+      if (!auth.success || (auth.role !== "terapis" && auth.role !== "asesor")) {
         console.warn("🚫 Tidak diizinkan, redirect ke login");
         router.replace("/auth/login");
       } else {

@@ -9,7 +9,7 @@ export default async function TerapisRootPage() {
   if (!token) redirect("/auth/login");
 
   const auth = await checkAuth();
-  if (!auth.success || auth.role !== "terapis") redirect("/auth/login");
+  if (!auth.success || (auth.role !== "terapis" && auth.role !== "asesor")) redirect("/auth/login");
 
   redirect("/terapis/dashboard");
 }
