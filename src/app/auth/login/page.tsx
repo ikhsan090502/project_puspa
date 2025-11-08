@@ -61,6 +61,9 @@ if (token) {
   } else if (role === "orangtua") {
     console.log("➡️ Redirecting to parent dashboard");
     router.push("/orangtua/dashboard");
+  } else if (role === "owner") {
+    console.log("➡️ Redirecting to owner dashboard");
+    router.push("/owner/dashboard");
   } else {
     console.log("➡️ Redirecting to home (unknown role)");
     router.push("/");

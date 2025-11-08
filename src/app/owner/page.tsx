@@ -1,0 +1,15 @@
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { checkAuth } from "@/lib/checkAuth";
+
+export default async function OwnerRootPage() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("token")?.value;
+
+  if (!token) redirect("/auth/login");
+
+  const auth = await checkAuth();
+  if (!auth.success || auth.role !== "owner") redirect("/auth/login");
+
+  redirect("/owner/dashboard");
+}

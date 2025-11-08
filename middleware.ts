@@ -36,9 +36,14 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
+  if (url.startsWith("/owner") && role !== "owner") {
+    console.log("❌ Owner access denied for role:", role);
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/terapis/:path*", "/orangtua/:path*"],
+  matcher: ["/admin/:path*", "/terapis/:path*", "/orangtua/:path*", "/owner/:path*"],
 };
