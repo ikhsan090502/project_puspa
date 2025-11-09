@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { logout } from "@/lib/api/logout";
 import {
   LayoutDashboard,
   Users,
@@ -10,7 +11,14 @@ import {
   LogOut,
 } from "lucide-react";
 
-const menuItems = [
+interface MenuItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<any>;
+  action?: () => void;
+}
+
+const menuItems: MenuItem[] = [
   {
     name: "Dashboard",
     href: "/owner/dashboard",
@@ -31,6 +39,12 @@ const menuItems = [
     href: "/owner/pengaturan",
     icon: Settings,
   },
+  {
+    name: "Logout",
+    href: "#",
+    icon: LogOut,
+    action: logout,
+  },
 ];
 
 export default function SidebarOwner() {
@@ -46,35 +60,45 @@ export default function SidebarOwner() {
       {/* Menu */}
       <nav className="flex-1 p-4">
         <ul className="space-y-2">
-          {menuItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
+          {menuItems
+            .filter(item => item.name !== "Logout")
+            .map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
 
-            return (
-              <li key={item.name}>
-                <Link
-                  href={item.href}
-                  className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
-                    isActive
-                      ? "bg-[#81B7A9] text-[#36315B]"
-                      : "hover:bg-[#4A4A4A]"
-                  }`}
-                >
-                  <Icon className="w-5 h-5 mr-3" />
-                  {item.name}
-                </Link>
-              </li>
-            );
-          })}
+              return (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    className={`flex items-center px-4 py-3 rounded-lg transition-colors ${
+                      isActive
+                        ? "bg-[#81B7A9] text-[#36315B]"
+                        : "hover:bg-[#4A4A4A]"
+                    }`}
+                  >
+                    <Icon className="w-5 h-5 mr-3" />
+                    {item.name}
+                  </Link>
+                </li>
+              );
+            })}
         </ul>
       </nav>
 
       {/* Logout */}
       <div className="p-4 border-t border-[#4A4A4A]">
-        <button className="flex items-center w-full px-4 py-3 text-left rounded-lg hover:bg-[#4A4A4A] transition-colors">
-          <LogOut className="w-5 h-5 mr-3" />
-          Logout
-        </button>
+        {menuItems
+          .filter(item => item.name === "Logout")
+          .map((item) => (
+            <button
+              key={item.name}
+              onClick={item.action}
+              className="flex items-center w-full px-4 py-3 text-left rounded-lg hover:bg-[#4A4A4A] transition-colors"
+            >
+              <item.icon className="w-5 h-5 mr-3" />
+              {item.name}
+            </button>
+          ))}
       </div>
     </div>
   );

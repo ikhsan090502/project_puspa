@@ -3,7 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X } from "lucide-react"; 
+import { X, LogOut } from "lucide-react";
+import { logout } from "@/lib/api/logout";
 import {
   LayoutGrid,
   Search,
@@ -14,13 +15,25 @@ import {
   FileCheck,
 } from "lucide-react";
 
+interface MenuItem {
+  name: string;
+  href: string;
+  icon: React.ComponentType<any>;
+  action?: () => void;
+}
+
+interface MenuGroup {
+  section: string | null;
+  items: MenuItem[];
+}
+
 interface SidebarProps {
   activePage?: string;
   isMobile?: boolean;
-  onClose?: () => void; 
+  onClose?: () => void;
 }
 
-export const menu = [
+export const menu: MenuGroup[] = [
   {
     section: null,
     items: [{ name: "Dashboard", href: "/terapis/dashboard", icon: LayoutGrid }],
@@ -37,12 +50,23 @@ export const menu = [
     items: [
       { name: "Konferensi", href: "/terapis/konferensi", icon: Users },
       { name: "Intervensi", href: "/terapis/intervensi", icon: Handshake },
-      { name: "Sinergi Program", href: "/terapis/sinergi", icon: Workflow },
+      { name: "Sinergi Program", href: "/terapis/sinergi-program", icon: Workflow },
     ],
   },
   {
     section: "MONITORING & EVALUASI",
     items: [{ name: "Evaluasi", href: "/terapis/evaluasi", icon: FileCheck }],
+  },
+  {
+    section: "AKUN",
+    items: [
+      {
+        name: "Logout",
+        href: "#",
+        icon: LogOut,
+        action: logout,
+      },
+    ],
   },
 ];
 
@@ -74,6 +98,12 @@ export default function SidebarTerapis({ activePage }: SidebarProps) {
               <Link
                 key={i}
                 href={item.href}
+                onClick={(e) => {
+                  if (item.action) {
+                    e.preventDefault();
+                    item.action();
+                  }
+                }}
                 className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                   isActive
                     ? "bg-[#C0DCD6] text-[#36315B] font-semibold"
