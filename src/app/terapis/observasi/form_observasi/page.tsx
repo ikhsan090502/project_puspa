@@ -7,7 +7,8 @@ import HeaderTerapis from "@/components/layout/header_terapis";
 import { submitObservation, getObservationQuestions } from "@/lib/api/observasiSubmit";
 
 type Question = {
-  id: number;
+  question_id: number;
+  observation_id: number;
   question_text: string;
   score: number;
   question_code: string;
@@ -71,8 +72,6 @@ export default function FormObservasiPage() {
 
       try {
         setLoading(true);
-
-        // Ambil pertanyaan observasi
         const data = await getObservationQuestions(pasien.observation_id);
         if (Array.isArray(data) && data.length > 0) {
           setQuestionsData(data);
@@ -92,6 +91,7 @@ export default function FormObservasiPage() {
     fetchData();
   }, [pasien.observation_id]);
 
+  // 🔹 Kelompokkan pertanyaan per kategori
   const groupedQuestions = questionsData.reduce(
     (acc: Record<string, Question[]>, q: Question) => {
       const prefix = q.question_code.split("-")[0];
@@ -105,8 +105,10 @@ export default function FormObservasiPage() {
 
   const kategoriList = Object.keys(groupedQuestions);
 
+  // ✅ total skor fix (pastikan angka)
   const totalScore = questionsData.reduce((acc, q) => {
-    if (answers[q.id]?.jawaban) return acc + q.score;
+    const score = Number(q.score) || 0;
+    if (answers[q.question_id]?.jawaban) return acc + score;
     return acc;
   }, 0);
 
@@ -119,13 +121,8 @@ export default function FormObservasiPage() {
 
   const handleNext = () => {
     const pertanyaanKategori = groupedQuestions[activeTab];
-    const belumDiisi = pertanyaanKategori.some((q) => answers[q.id]?.jawaban === undefined);
-
-    if (belumDiisi) {
-      alert("Harap isi semua jawaban sebelum lanjut.");
-      return;
-    }
-
+    const belumDiisi = pertanyaanKategori.some((q) => answers[q.question_id]?.jawaban === undefined);
+    if (belumDiisi) return alert("Harap isi semua jawaban sebelum lanjut.");
     const idx = kategoriList.indexOf(activeTab);
     if (idx < kategoriList.length - 1) setActiveTab(kategoriList[idx + 1]);
   };
@@ -137,7 +134,6 @@ export default function FormObservasiPage() {
 
   const handleSimpan = async () => {
     setSubmitting(true);
-
     const payload = {
       answers: Object.entries(answers).map(([id, ans]) => ({
         question_id: parseInt(id),
@@ -178,58 +174,59 @@ export default function FormObservasiPage() {
             </div>
           ) : (
             <>
-              {/* Stepper */}
-{step === "observasi" && kategoriList.length > 0 && (
-  <div className="flex justify-between items-center mb-8">
-    <div className="flex justify-start items-center gap-8 overflow-x-auto relative">
-      {kategoriList.map((k, i) => {
-        const pertanyaanKategori = groupedQuestions[k];
-        const sudahDiisi = pertanyaanKategori.every((q) => answers[q.id]?.jawaban !== undefined);
-        const isActive = activeTab === k;
+              {/* 🔹 Stepper dengan badge warna */}
+              {step === "observasi" && kategoriList.length > 0 && (
+                <div className="flex justify-between items-center mb-8">
+                  <div className="flex justify-start items-center gap-8 overflow-x-auto relative">
+                    {kategoriList.map((k, i) => {
+                      const pertanyaanKategori = groupedQuestions[k];
+                      const sudahDiisi = pertanyaanKategori.every(
+                        (q) => answers[q.question_id]?.jawaban !== undefined
+                      );
+                      const isActive = activeTab === k;
 
-        return (
-          <div key={k} className="relative flex flex-col items-center flex-shrink-0">
-            <button
-              onClick={() => setActiveTab(k)}
-              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${
-                isActive
-                  ? "bg-[#5F52BF] text-white"
-                  : sudahDiisi
-                  ? "bg-[#81B7A9] text-white"
-                  : "bg-gray-300 text-black"
-              }`}
-            >
-              {i + 1}
-            </button>
-            {i < kategoriList.length - 1 && (
-              <div
-                className="absolute top-5 h-1"
-                style={{
-                  width: "80px",
-                  left: "85px",
-                  backgroundColor: sudahDiisi ? "#81B7A9" : "#E0E0E0",
-                }}
-              />
-            )}
-            <span className="mt-3 text-sm font-medium text-center w-28 whitespace-nowrap">
-              {k}
-            </span>
-          </div>
-        );
-      })}
-    </div>
-    <div className="text-sl font-bold text-[#36315B] bg-[#E7E4FF] px-3 py-1 rounded-full shadow-sm">
-      Total Skor : {totalScore}
-    </div>
-  </div>
-)}
+                      return (
+                        <div key={k} className="relative flex flex-col items-center flex-shrink-0">
+                          <button
+                            onClick={() => setActiveTab(k)}
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${
+                              isActive
+                                ? "bg-[#5F52BF] text-white"
+                                : sudahDiisi
+                                ? "bg-[#81B7A9] text-white"
+                                : "bg-gray-300 text-black"
+                            }`}
+                          >
+                            {i + 1}
+                          </button>
+                          {i < kategoriList.length - 1 && (
+                            <div
+                              className="absolute top-5 h-1"
+                              style={{
+                                width: "80px",
+                                left: "85px",
+                                backgroundColor: sudahDiisi ? "#81B7A9" : "#E0E0E0",
+                              }}
+                            />
+                          )}
+                          <span className="mt-3 text-sm font-medium text-center w-28 whitespace-nowrap">
+                            {k}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="text-sl font-bold text-[#36315B] bg-[#E7E4FF] px-3 py-1 rounded-full shadow-sm">
+                    Total Skor : {totalScore}
+                  </div>
+                </div>
+              )}
 
-
-              {/* Step Observasi */}
+              {/* 🔹 Step Observasi */}
               {step === "observasi" && kategoriList.length > 0 && (
                 <div className="space-y-6">
                   {groupedQuestions[activeTab]?.map((q: Question) => (
-                    <div key={q.id}>
+                    <div key={q.question_id} className="p-4 bg-white rounded-lg shadow-sm">
                       <p className="font-medium">
                         {q.question_number}. {q.question_text}{" "}
                         <span className="text-sm text-[#36315B]">(Score {q.score})</span>
@@ -239,27 +236,27 @@ export default function FormObservasiPage() {
                           type="text"
                           placeholder="Keterangan"
                           className="border rounded-md p-2 flex-1"
-                          value={answers[q.id]?.keterangan || ""}
-                          onChange={(e) => handleChange(q.id, "keterangan", e.target.value)}
+                          value={answers[q.question_id]?.keterangan || ""}
+                          onChange={(e) => handleChange(q.question_id, "keterangan", e.target.value)}
                         />
                         <div className="flex items-center gap-4">
                           <label className="flex items-center gap-1">
                             <input
                               type="radio"
-                              name={`jawaban-${q.id}`}
+                              name={`jawaban-${q.question_id}`}
                               value="true"
-                              checked={answers[q.id]?.jawaban === true}
-                              onChange={() => handleChange(q.id, "jawaban", true)}
+                              checked={answers[q.question_id]?.jawaban === true}
+                              onChange={() => handleChange(q.question_id, "jawaban", true)}
                             />
                             Ya
                           </label>
                           <label className="flex items-center gap-1">
                             <input
                               type="radio"
-                              name={`jawaban-${q.id}`}
+                              name={`jawaban-${q.question_id}`}
                               value="false"
-                              checked={answers[q.id]?.jawaban === false}
-                              onChange={() => handleChange(q.id, "jawaban", false)}
+                              checked={answers[q.question_id]?.jawaban === false}
+                              onChange={() => handleChange(q.question_id, "jawaban", false)}
                             />
                             Tidak
                           </label>
@@ -295,13 +292,10 @@ export default function FormObservasiPage() {
                 </div>
               )}
 
-              {/* Step Kesimpulan */}
+              {/* 🔹 Step Kesimpulan */}
               {step === "kesimpulan" && (
                 <div className="bg-white shadow-lg rounded-lg p-8 space-y-6">
-                  <h2 className="text-xl font-semibold">
-                    Silahkan isi kesimpulan Observasi dan Rekomendasi Lanjutan
-                  </h2>
-
+                  <h2 className="text-xl font-semibold">Isi Kesimpulan & Rekomendasi</h2>
                   <div className="flex justify-between text-sm">
                     <p>
                       <b>Pasien:</b> {pasien.nama} | {pasien.tglObservasi}
@@ -366,20 +360,16 @@ export default function FormObservasiPage() {
                 </div>
               )}
 
-              {/* Step Review */}
+              {/* 🔹 Step Review */}
               {step === "review" && (
                 <div className="bg-white shadow-lg rounded-lg p-8 space-y-4">
-                  <h2 className="text-xl font-semibold">
-                    Pastikan Semua Data Sudah Benar Sebelum Menyimpan
-                  </h2>
-
+                  <h2 className="text-xl font-semibold">Review Data</h2>
                   <div className="flex justify-between text-sm">
                     <p>
                       <b>Peserta:</b> {pasien.nama} | {pasien.tglObservasi}
                     </p>
                     <p className="font-bold">Total Skor: {totalScore}</p>
                   </div>
-
                   <p>
                     <b>Kesimpulan:</b> {kesimpulan || "-"}
                   </p>

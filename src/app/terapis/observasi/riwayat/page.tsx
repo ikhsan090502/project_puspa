@@ -17,6 +17,7 @@ interface Anak {
   usia: string;
   sekolah: string;
   tglObservasi: string;
+  waktu: string; // ← tambahan field waktu
   status?: string;
 }
 
@@ -48,7 +49,6 @@ export default function RiwayatObservasiPage() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
-  // State untuk atur tanggal asesmen
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedPasien, setSelectedPasien] = useState<Anak | null>(null);
 
@@ -60,17 +60,19 @@ export default function RiwayatObservasiPage() {
 
       const mapped =
         result?.map((item: any) => ({
-          observation_id: item.id.toString(),
+          observation_id: item.observation_id?.toString() || item.id?.toString(),
           nama: item.child_name,
           observer: item.observer,
           usia: item.child_age,
           sekolah: item.child_school,
           tglObservasi: item.scheduled_date,
+          waktu: item.time || "-", // ← tambahkan waktu observasi
           status: item.status,
         })) || [];
 
       setData(mapped);
-    } catch {
+    } catch (err) {
+      console.error(err);
       alert("Gagal mengambil riwayat observasi.");
     } finally {
       setLoading(false);
@@ -82,12 +84,6 @@ export default function RiwayatObservasiPage() {
   }, []);
 
   const filtered = data.filter((d) => kategori[activeKategori].filter(d));
-
-  // ==================== Handlers ====================
-  const handleAturAssessment = (pasien: Anak) => {
-    setSelectedPasien(pasien);
-    setShowDatePicker(true);
-  };
 
   const handleRiwayatJawaban = (id: string) => {
     router.push(`/terapis/riwayat-hasil?id=${id}`);
@@ -155,7 +151,7 @@ export default function RiwayatObservasiPage() {
                 transition={{ duration: 0.3 }}
                 className="bg-white shadow-md rounded-lg p-3 sm:p-4 border border-[#E4E4E4] overflow-x-auto"
               >
-                <table className="w-full text-xs sm:text-sm table-auto border-collapse min-w-[600px]">
+                <table className="w-full text-xs sm:text-sm table-auto border-collapse min-w-[700px]">
                   <thead>
                     <tr className="border-b border-[#81B7A9] bg-gray-100">
                       <th className="text-center py-2 px-2 sm:px-4">Nama</th>
@@ -163,6 +159,7 @@ export default function RiwayatObservasiPage() {
                       <th className="text-center py-2 px-2 sm:px-4">Usia</th>
                       <th className="text-center py-2 px-2 sm:px-4">Sekolah</th>
                       <th className="text-center py-2 px-2 sm:px-4">Tanggal Observasi</th>
+                      <th className="text-center py-2 px-2 sm:px-4">Waktu</th>
                       <th className="text-center py-2 px-2 sm:px-4">Status</th>
                       <th className="text-center py-2 px-2 sm:px-4">Aksi</th>
                     </tr>
@@ -175,7 +172,8 @@ export default function RiwayatObservasiPage() {
                           <td className="py-2 px-2 sm:px-4 text-center">{d.observer}</td>
                           <td className="py-2 px-2 sm:px-4 text-center">{d.usia}</td>
                           <td className="py-2 px-2 sm:px-4 text-center">{d.sekolah}</td>
-                          <td className="py-2 px-2 sm:px-4 text-center">{d.tglObservasi}</td>
+                           <td className="py-2 px-2 sm:px-4 text-center">{d.tglObservasi}</td>
+                            <td className="py-2 px-2 sm:px-4 text-center">{d.waktu}</td>
                           <td className="py-2 px-2 sm:px-4 text-center capitalize">{d.status}</td>
                           <td className="py-2 px-2 sm:px-4 text-center relative">
                             <div className="relative inline-block text-left">
@@ -211,13 +209,6 @@ export default function RiwayatObservasiPage() {
                               >
                                 <div className="py-1 text-[#5F52BF]">
                                   <button
-                                    onClick={() => handleAturAssessment(d)}
-                                    className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
-                                  >
-                                    <Settings size={16} className="mr-2" />
-                                    Atur Assessment
-                                  </button>
-                                  <button
                                     onClick={() => handleRiwayatJawaban(d.observation_id)}
                                     className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
                                   >
@@ -251,20 +242,6 @@ export default function RiwayatObservasiPage() {
           )}
         </main>
       </div>
-
-      {/* Modal DatePicker */}
-      {showDatePicker && selectedPasien && (
-        <DatePicker
-          pasien={{
-            id: parseInt(selectedPasien.observation_id),
-            observation_id: selectedPasien.observation_id,
-            nama: selectedPasien.nama,
-          }}
-          initialDate={selectedPasien.tglObservasi}
-          onClose={() => setShowDatePicker(false)}
-          onUpdate={fetchObservasi} // refresh data setelah berhasil update
-        />
-      )}
     </div>
   );
 }

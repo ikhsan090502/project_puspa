@@ -1,8 +1,7 @@
-import axiosInstance from "../axios"; // pastikan file axios.ts ada di /lib atau /src
+import axiosInstance from "@/lib/axios";
 
-// 🔹 Interface untuk detail observasi
 export interface CompletedObservationDetail {
-  id: number;
+  observation_id: number;
   child_name: string;
   child_birth_place_date: string;
   child_age: string;
@@ -11,61 +10,30 @@ export interface CompletedObservationDetail {
   child_address: string;
   parent_name: string;
   parent_type: string;
-  scheduled_date: string; // ✅ tambahkan scheduled_date
   total_score: number;
   recommendation: string;
   conclusion: string;
+  scheduled_date?: string;
 }
 
-// 🔹 Ambil header token
+// ==================== Header Token ====================
 const getAuthHeaders = (): Record<string, string> => {
   const token = localStorage.getItem("token");
   const tokenType = localStorage.getItem("tokenType") || "Bearer";
-
-  if (!token) console.warn("⚠️ Token tidak ditemukan di localStorage");
-
   return {
     Authorization: `${tokenType} ${token}`,
     "Content-Type": "application/json",
   };
 };
 
-// 🟡 Get Questions
-export const getObservationQuestions = async (observation_id: string): Promise<any[]> => {
-  if (!observation_id) {
-    console.warn("⚠️ Observation ID kosong — tidak memanggil API pertanyaan.");
-    return [];
-  }
+// ==================== Observations API ====================
 
-  try {
-    const url = `/observations/${observation_id}?type=question`;
-    const res = await axiosInstance.get(url, { headers: getAuthHeaders() });
-    return res.data.data;
-  } catch (err: any) {
-    console.error("❌ Gagal ambil pertanyaan:", err);
-    throw err;
-  }
-};
-
-// 🟢 Submit Observation
-export const submitObservation = async (observation_id: string, payload: any): Promise<any> => {
-  if (!observation_id) return;
-
-  try {
-    const url = `/observations/${observation_id}/submit`;
-    const res = await axiosInstance.post(url, payload, { headers: getAuthHeaders() });
-    return res.data;
-  } catch (err: any) {
-    console.error("❌ Gagal submit observasi:", err);
-    throw err;
-  }
-};
-
-// 🟢 Get Completed Observations
+// 🟢 Ambil daftar observasi dengan status 'completed'
 export const getCompletedObservations = async (): Promise<any[]> => {
   try {
-    const url = `/observations?status=completed`;
-    const res = await axiosInstance.get(url, { headers: getAuthHeaders() });
+    const res = await axiosInstance.get(`/observations?status=completed`, {
+      headers: getAuthHeaders(),
+    });
     return res.data.data;
   } catch (err: any) {
     console.error("❌ Gagal mengambil data completed:", err);
@@ -73,7 +41,7 @@ export const getCompletedObservations = async (): Promise<any[]> => {
   }
 };
 
-
+// 🟢 Ambil detail observasi completed
 export const getCompletedObservationDetail = async (
   observation_id: string
 ): Promise<CompletedObservationDetail | null> => {
@@ -88,7 +56,7 @@ export const getCompletedObservationDetail = async (
     if (!d) return null;
 
     return {
-      id: d.id,
+      observation_id: d.observation_id,
       child_name: d.child_name || "-",
       child_birth_place_date: d.child_birth_place_date || "-",
       child_age: d.child_age || "-",
@@ -97,10 +65,10 @@ export const getCompletedObservationDetail = async (
       child_address: d.child_address || "-",
       parent_name: d.parent_name || "-",
       parent_type: d.parent_type || "-",
-      scheduled_date: d.scheduled_date || "-",
-      total_score: d.total_score ?? 0,
+      total_score: Number(d.total_score) ?? 0,
       recommendation: d.recommendation || "-",
       conclusion: d.conclusion || "-",
+      scheduled_date: d.scheduled_date || "-",
     };
   } catch (err: any) {
     console.error("❌ Gagal ambil detail observasi:", err);
@@ -108,14 +76,40 @@ export const getCompletedObservationDetail = async (
   }
 };
 
+// 🟢 Ambil pertanyaan observasi
+export const getObservationQuestions = async (observation_id: string): Promise<any[]> => {
+  if (!observation_id) return [];
+  try {
+    const res = await axiosInstance.get(`/observations/${observation_id}?type=question`, {
+      headers: getAuthHeaders(),
+    });
+    return res.data.data;
+  } catch (err: any) {
+    console.error("❌ Gagal ambil pertanyaan:", err);
+    throw err;
+  }
+};
 
-// 🟢 Get Observation Answer (Riwayat Jawaban)
+// 🟢 Submit hasil observasi
+export const submitObservation = async (observation_id: string, payload: any): Promise<any> => {
+  try {
+    const res = await axiosInstance.post(`/observations/${observation_id}/submit`, payload, {
+      headers: getAuthHeaders(),
+    });
+    return res.data;
+  } catch (err: any) {
+    console.error("❌ Gagal submit observasi:", err);
+    throw err;
+  }
+};
+
+// 🟢 Ambil riwayat jawaban observasi
 export const getObservationAnswer = async (observation_id: string): Promise<any | null> => {
   if (!observation_id) return null;
-
   try {
-    const url = `/observations/${observation_id}?type=answer`;
-    const res = await axiosInstance.get(url, { headers: getAuthHeaders() });
+    const res = await axiosInstance.get(`/observations/${observation_id}?type=answer`, {
+      headers: getAuthHeaders(),
+    });
     return res.data.data;
   } catch (err: any) {
     console.error("❌ Gagal ambil riwayat jawaban:", err);
@@ -123,23 +117,16 @@ export const getObservationAnswer = async (observation_id: string): Promise<any 
   }
 };
 
-// 🔹 Update Tanggal Asesmen (PATCH / PUT Agreement)
+
+
+// 🟢 Update tanggal asesmen
 export const updateAssessmentDate = async (observation_id: string, date: string): Promise<any> => {
-  if (!observation_id) {
-    console.warn("⚠️ Observation ID kosong — tidak bisa update tanggal asesmen.");
-    return;
-  }
-
+  if (!observation_id) return;
   try {
-    const payload = {
-      scheduled_date: date,
-      _method: "PUT",
-    };
-
+    const payload = { scheduled_date: date, _method: "PUT" };
     const res = await axiosInstance.post(`/observations/${observation_id}/agreement`, payload, {
       headers: getAuthHeaders(),
     });
-
     return res.data;
   } catch (err: any) {
     console.error("❌ Gagal update tanggal asesmen:", err);
@@ -147,33 +134,17 @@ export const updateAssessmentDate = async (observation_id: string, date: string)
   }
 };
 
+// 🟢 Ambil nama observer berdasarkan ID terapis
 export const getObserverNameByTherapistId = async (therapistId: string) => {
   try {
     const token = localStorage.getItem("token");
-    if (!token) {
-      console.warn("Token tidak ditemukan di localStorage");
-      return "";
-    }
-
+    if (!token) return "";
     const res = await axiosInstance.get("/therapists", {
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    console.log("Respon /therapists:", res.data);
-
     const data = res.data?.data;
-    if (!data || !Array.isArray(data)) {
-      console.warn("Data terapis tidak valid:", data);
-      return "";
-    }
-
     const therapist = data.find((t: any) => t.id === therapistId);
-    if (!therapist) {
-      console.warn("Terapis dengan id", therapistId, "tidak ditemukan");
-      return "";
-    }
-
-    return therapist.therapist_name || "";
+    return therapist?.therapist_name || "";
   } catch (error: any) {
     console.error("Error ambil nama observer:", error.response || error);
     return "";

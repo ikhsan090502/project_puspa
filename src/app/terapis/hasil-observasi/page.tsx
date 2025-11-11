@@ -30,7 +30,7 @@ export default function HasilObservasiFrame() {
       try {
         const detail = await getCompletedObservationDetail(observationId);
         const list = await getCompletedObservations();
-        const scheduleItem = list.find(item => item.id.toString() === observationId);
+        const scheduleItem = list.find((item) => item.observation_id?.toString() === observationId);
 
         if (!detail) {
           setError("Data hasil observasi tidak ditemukan.");
@@ -38,7 +38,7 @@ export default function HasilObservasiFrame() {
         } else {
           setData({
             ...detail,
-            scheduled_date: scheduleItem?.scheduled_date || "-"
+            scheduled_date: scheduleItem?.scheduled_date || "-",
           });
           setError(null);
         }
@@ -55,7 +55,7 @@ export default function HasilObservasiFrame() {
   }, [observationId]);
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex min-h-screen bg-gray-50 text-[#36315B] font-playpen">
       <SidebarTerapis />
       <div className="flex-1 flex flex-col overflow-auto">
         <HeaderTerapis />
@@ -65,9 +65,7 @@ export default function HasilObservasiFrame() {
               Memuat hasil observasi...
             </div>
           ) : error ? (
-            <div className="flex items-center justify-center h-96 text-gray-500">
-              {error}
-            </div>
+            <div className="flex items-center justify-center h-96 text-gray-500">{error}</div>
           ) : !data ? (
             <div className="flex items-center justify-center h-96 text-gray-500">
               Data hasil observasi tidak ditemukan.
@@ -78,10 +76,9 @@ export default function HasilObservasiFrame() {
                 HASIL OBSERVASI
               </h1>
 
+              {/* Informasi Anak */}
               <section className="mb-10">
-                <h2 className="text-xl font-semibold text-gray-800 mb-3">
-                  Informasi Anak
-                </h2>
+                <h2 className="text-xl font-semibold text-gray-800 mb-3">Informasi Anak</h2>
                 <hr className="border-gray-300 mb-6" />
                 <div className="grid grid-cols-2 md:grid-cols-2 gap-y-4 text-sm">
                   <div>
@@ -90,7 +87,9 @@ export default function HasilObservasiFrame() {
                   </div>
                   <div>
                     <p className="text-[#36315B] font-semibold">Tempat, Tanggal Lahir</p>
-                    <p className="font-medium text-[#36315B]">{data.child_birth_place_date}</p>
+                    <p className="font-medium text-[#36315B]">
+                      {data.child_birth_place_date}
+                    </p>
                   </div>
                   <div>
                     <p className="text-[#36315B] font-semibold">Usia</p>
@@ -123,13 +122,16 @@ export default function HasilObservasiFrame() {
                 </div>
               </section>
 
+              {/* Ringkasan Observasi */}
               <section>
                 <h2 className="text-xl font-semibold text-gray-800 mb-3">Ringkasan Observasi</h2>
                 <hr className="border-gray-300 mb-6" />
 
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex justify-between items-center mb-5">
                   <span className="font-semibold text-[#36315B]">Total Skor</span>
-                  <span className="text-[#36315B] font-bold text-lg">{data.total_score ?? 0}</span>
+                  <span className="text-[#36315B] font-bold text-lg">
+                    {data.total_score ?? 0}
+                  </span>
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-xl p-4 mb-4 shadow-sm">
@@ -138,7 +140,9 @@ export default function HasilObservasiFrame() {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm">
-                  <p className="text-ms text-[#36315B] mb-1 font-semibold">Kesimpulan Observasi</p>
+                  <p className="text-ms text-[#36315B] mb-1 font-semibold">
+                    Kesimpulan Observasi
+                  </p>
                   <p className="text-[#36315B] font-medium">{data.conclusion}</p>
                 </div>
               </section>
@@ -146,7 +150,7 @@ export default function HasilObservasiFrame() {
               <div className="mt-10 flex justify-end">
                 <button
                   onClick={() => history.back()}
-                  className="px-6 py-2 bg-[#81B7A9] hover:bg-[#36315B] text-[#FFFFFF] font-semibold rounded-lg transition"
+                  className="px-6 py-2 bg-[#81B7A9] hover:bg-[#36315B] text-white font-semibold rounded-lg transition"
                 >
                   Kembali
                 </button>
@@ -158,3 +162,4 @@ export default function HasilObservasiFrame() {
     </div>
   );
 }
+

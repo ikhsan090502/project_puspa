@@ -10,7 +10,7 @@ export interface Admin {
   diubah: string;
 }
 
-// 🔹 Ambil semua admin
+
 export async function getAdmins(): Promise<Admin[]> {
   const res = await api.get("/admins");
   return res.data.data.map((item: any) => ({

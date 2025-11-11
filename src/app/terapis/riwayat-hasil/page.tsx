@@ -9,17 +9,25 @@ import { getObservationAnswer } from "@/lib/api/observasiSubmit";
 
 type Question = {
   id: number;
-  question_code: string;
-  age_category: string;
+  question_code?: string;
+  age_category?: string;
   question_number: number;
   question_text: string;
-  score: number;
+  score?: number;
+};
+
+type AnswerDetailRaw = {
+  question_number: string | number;
+  question_text: string;
+  answer: string | number;
+  score_earned: string | number;
+  note: string | null;
 };
 
 type AnswerDetail = {
   question_number: number;
   question_text: string;
-  answer: 0 | 1;
+  answer: number; // 0 | 1 but use number
   score_earned: number;
   note: string | null;
   question_code: string;
@@ -38,18 +46,18 @@ const kategoriFullMap: Record<string, string> = {
   AFM: "Fungsi Motorik",
   ABB: "Bahasa & Bicara",
   AKA: "Kognitif & Atensi",
-  AS:  "Sosial & Emosi",
+  AS: "Sosial & Emosi",
 
   // Remaja
   RPE: "Perilaku & Emosi",
   RFM: "Fungsi Motorik",
   RBB: "Bahasa & Bicara",
   RKA: "Kognitif & Atensi",
-  RS:  "Sosial & Emosi",
+  RS: "Sosial & Emosi",
   RK: "Kemandirian",
 };
 
-// API untuk pertanyaan
+// API untuk pertanyaan (tetap seperti semula)
 const getObservationQuestions = async (observation_id: string) => {
   const res = await axiosInstance.get(`/observations/${observation_id}?type=question`);
   return res.data.data as Question[];
@@ -64,6 +72,11 @@ export default function RiwayatJawabanPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("");
 
+  // optional: show total score from API if provided
+  const [apiTotalScore, setApiTotalScore] = useState<number | null>(null);
+  const [conclusion, setConclusion] = useState<string>("");
+  const [recommendation, setRecommendation] = useState<string>("");
+
   useEffect(() => {
     const fetchData = async () => {
       if (!observation_id) {
@@ -75,32 +88,52 @@ export default function RiwayatJawabanPage() {
       try {
         setLoading(true);
 
+        // ambil question + answer (answerData kemungkinan berisi total_score dll)
         const [questionData, answerDataRaw] = await Promise.all([
           getObservationQuestions(observation_id),
           getObservationAnswer(observation_id),
         ]);
 
-        setQuestions(questionData);
+        setQuestions(questionData || []);
 
-        const answerData = answerDataRaw?.answer_details || [];
+        // answerDataRaw mungkin null
+        const answerDetailsRaw: AnswerDetailRaw[] = (answerDataRaw?.answer_details as AnswerDetailRaw[]) || [];
 
-        const merged: AnswerDetail[] = questionData.map((q) => {
-          const ans = answerData.find((a: any) => a.question_number === q.question_number);
+        // jika API mengembalikan total_score, ambil dan parse
+        const totScoreFromApi = answerDataRaw?.total_score ?? null;
+        setApiTotalScore(totScoreFromApi !== null ? Number(totScoreFromApi) : null);
+
+        setConclusion(answerDataRaw?.conclusion ?? "");
+        setRecommendation(answerDataRaw?.recommendation ?? "");
+
+        // map questions -> merged answers
+        // cocokkan question_number dengan aman (API answer_details bisa string)
+        const merged: AnswerDetail[] = (questionData || []).map((q) => {
+          // temukan jawaban yang cocok (cocokkan numerik)
+          const ans = answerDetailsRaw.find((a) => {
+            const aNum = Number(a.question_number);
+            return !Number.isNaN(aNum) ? aNum === Number(q.question_number) : String(a.question_number) === String(q.question_number);
+          });
+
           return {
-            question_number: q.question_number,
+            question_number: Number(q.question_number),
             question_text: q.question_text,
-            score_earned: ans?.score_earned ?? 0,
-            answer: ans?.answer ?? 0,
+            score_earned: ans ? Number(ans.score_earned ?? 0) : 0,
+            answer: ans ? Number(ans.answer ?? 0) : 0,
             note: ans?.note ?? null,
-            question_code: q.question_code,
+            question_code: q.question_code ?? "UNK-0",
           };
         });
 
         setAnswers(merged);
 
-        // Tab aktif pertama
-        const firstPrefix = merged[0].question_code.split("-")[0];
-        setActiveTab(kategoriFullMap[firstPrefix] || firstPrefix);
+        // set active tab ke prefix pertama jika ada
+        if (merged.length > 0) {
+          const firstPrefix = (merged[0].question_code || "UNK-0").split("-")[0];
+          setActiveTab(kategoriFullMap[firstPrefix] || firstPrefix);
+        } else {
+          setActiveTab("");
+        }
       } catch (err) {
         console.error("Gagal ambil data observasi:", err);
         alert("Terjadi kesalahan saat memuat data.");
@@ -115,7 +148,7 @@ export default function RiwayatJawabanPage() {
   // Group pertanyaan berdasarkan kategori lengkap
   const groupedQuestions = answers.reduce(
     (acc: Record<string, AnswerDetail[]>, q: AnswerDetail) => {
-      const prefix = q.question_code.split("-")[0];
+      const prefix = (q.question_code || "UNK-0").split("-")[0];
       const kategori = kategoriFullMap[prefix] || prefix;
       if (!acc[kategori]) acc[kategori] = [];
       acc[kategori].push(q);
@@ -125,7 +158,10 @@ export default function RiwayatJawabanPage() {
   );
 
   const kategoriList = Object.keys(groupedQuestions);
-  const totalScore = answers.reduce((acc, q) => acc + (q.score_earned ?? 0), 0);
+
+  // hitung totalScore: jika API menyediakan total_score gunakan itu, kalau tidak hitung dari answers
+  const computedTotalScore = answers.reduce((acc, q) => acc + (Number(q.score_earned) || 0), 0);
+  const totalScoreToDisplay = apiTotalScore !== null ? apiTotalScore : computedTotalScore;
 
   const isKategoriComplete = (k: string) =>
     groupedQuestions[k]?.every((q) => q.answer !== null && q.answer !== undefined);
@@ -142,9 +178,7 @@ export default function RiwayatJawabanPage() {
               <p className="text-sm">Memuat jawaban...</p>
             </div>
           ) : answers.length === 0 ? (
-            <p className="text-center mt-20 text-gray-500">
-              Tidak ada jawaban untuk observasi ini.
-            </p>
+            <p className="text-center mt-20 text-gray-500">Tidak ada jawaban untuk observasi ini.</p>
           ) : (
             <>
               {/* Stepper + Total Score */}
@@ -159,29 +193,23 @@ export default function RiwayatJawabanPage() {
                         <div
                           onClick={() => setActiveTab(k)}
                           className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${
-                            isActive
-                              ? "bg-[#5F52BF] text-white"
-                              : sudahDiisi
-                              ? "bg-[#81B7A9] text-white"
-                              : "bg-gray-300 text-black"
+                            isActive ? "bg-[#5F52BF] text-white" : sudahDiisi ? "bg-[#81B7A9] text-white" : "bg-gray-300 text-black"
                           }`}
                         >
                           {i + 1}
                         </div>
 
-                         {i < kategoriList.length - 1 && (
-                            <div
-                              className="absolute top-5 h-1"
-                              style={{
-                                width: "80px",
-                                left: "85px",
-                                backgroundColor: sudahDiisi ? "#81B7A9" : "#E0E0E0",
-                              }}
-                            />
-                          )}
-                        <span className="mt-3 text-sm font-medium text-center w-28 whitespace-nowrap">
-                          {k}
-                        </span>
+                        {i < kategoriList.length - 1 && (
+                          <div
+                            className="absolute top-5 h-1"
+                            style={{
+                              width: "80px",
+                              left: "85px",
+                              backgroundColor: sudahDiisi ? "#81B7A9" : "#E0E0E0",
+                            }}
+                          />
+                        )}
+                        <span className="mt-3 text-sm font-medium text-center w-28 whitespace-nowrap">{k}</span>
                       </div>
                     );
                   })}
@@ -189,7 +217,7 @@ export default function RiwayatJawabanPage() {
 
                 {/* Total Skor */}
                 <div className="text-sl font-bold text-[#36315B] bg-[#E7E4FF] px-3 py-1 rounded-full shadow-sm">
-                  Total Skor: {totalScore}
+                  Total Skor: {totalScoreToDisplay}
                 </div>
               </div>
 
@@ -198,27 +226,18 @@ export default function RiwayatJawabanPage() {
                 {groupedQuestions[activeTab]?.map((q: AnswerDetail) => (
                   <div key={q.question_number}>
                     <p className="font-medium">
-                      {q.question_number}. {q.question_text}{" "}
-                      <span className="text-sm text-[#36315B]">
-                        (Score {q.score_earned})
-                      </span>
+                      {q.question_number}. {q.question_text} <span className="text-sm text-[#36315B]">(Score {q.score_earned})</span>
                     </p>
 
                     <div className="flex gap-4 mt-2 items-center">
-                      <input
-                        type="text"
-                        placeholder="Keterangan"
-                        className="border rounded-md p-2 flex-1 bg-gray-100"
-                        value={q.note || ""}
-                        readOnly
-                      />
+                      <input type="text" placeholder="Keterangan" className="border rounded-md p-2 flex-1 bg-gray-100" value={q.note || ""} readOnly />
                       <div className="flex items-center gap-2">
                         <label className="flex items-center gap-1">
-                          <input type="radio" checked={q.answer === 1} readOnly />
+                          <input type="radio" checked={Number(q.answer) === 1} readOnly />
                           Ya
                         </label>
                         <label className="flex items-center gap-1">
-                          <input type="radio" checked={q.answer === 0} readOnly />
+                          <input type="radio" checked={Number(q.answer) === 0} readOnly />
                           Tidak
                         </label>
                       </div>
@@ -226,30 +245,15 @@ export default function RiwayatJawabanPage() {
                   </div>
                 ))}
               </div>
-
               {/* Navigasi */}
               <div className="flex justify-end items-center mt-8 gap-4">
                 {kategoriList.indexOf(activeTab) > 0 && (
-                  <button
-                    onClick={() =>
-                      setActiveTab(
-                        kategoriList[kategoriList.indexOf(activeTab) - 1]
-                      )
-                    }
-                    className="bg-white text-[#81B7A9] px-4 py-2 rounded-md border-2 border-[#81B7A9] hover:bg-[#81B7A9] hover:text-white transition"
-                  >
+                  <button onClick={() => setActiveTab(kategoriList[kategoriList.indexOf(activeTab) - 1])} className="bg-white text-[#81B7A9] px-4 py-2 rounded-md border-2 border-[#81B7A9] hover:bg-[#81B7A9] hover:text-white transition">
                     Sebelumnya
                   </button>
                 )}
                 {kategoriList.indexOf(activeTab) < kategoriList.length - 1 && (
-                  <button
-                    onClick={() =>
-                      setActiveTab(
-                        kategoriList[kategoriList.indexOf(activeTab) + 1]
-                      )
-                    }
-                    className="bg-[#81B7A9] text-white px-4 py-2 rounded-md"
-                  >
+                  <button onClick={() => setActiveTab(kategoriList[kategoriList.indexOf(activeTab) + 1])} className="bg-[#81B7A9] text-white px-4 py-2 rounded-md">
                     Lanjutkan
                   </button>
                 )}

@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
@@ -23,7 +22,6 @@ export default function LoginPage() {
     mutationFn: (payload: LoginPayload) => login(payload),
 
     onSuccess: (data) => {
-      // Simpan user ke localStorage
       localStorage.setItem("user", JSON.stringify(data));
 
       switch (data.role) {
@@ -31,6 +29,7 @@ export default function LoginPage() {
           router.push("/admin/dashboard");
           break;
         case "terapis":
+        case "asesor": // ✅ Asesor diarahkan ke halaman terapis
           router.push("/terapis/observasi");
           break;
         case "orangtua":
@@ -43,7 +42,7 @@ export default function LoginPage() {
     },
 
     onError: (error: LoginErrorResponse) => {
-      setFieldError(error); 
+      setFieldError(error);
     },
   });
 
@@ -55,10 +54,12 @@ export default function LoginPage() {
 
   return (
     <main className="layout-main min-h-screen bg-[#B8E8DB] flex flex-col">
+      {/* Header */}
       <header className="w-full flex justify-start p-4">
         <Image src="/logo.png" alt="Logo Puspa" width={160} height={50} priority />
       </header>
 
+      {/* Content */}
       <div className="flex flex-1 justify-center items-center px-4">
         <motion.div
           initial={{ opacity: 0, y: 40 }}
@@ -74,6 +75,7 @@ export default function LoginPage() {
           </p>
 
           <form onSubmit={handleLogin}>
+            {/* Username / Email */}
             <div className="mb-4">
               <label className="block text-sm font-medium text-[#36315B] mb-2">
                 Username atau Email
@@ -91,6 +93,7 @@ export default function LoginPage() {
               )}
             </div>
 
+            {/* Password */}
             <div className="mb-3">
               <label className="block text-sm font-medium text-[#36315B] mb-2">
                 Password
@@ -117,16 +120,19 @@ export default function LoginPage() {
               )}
             </div>
 
+            {/* General Error */}
             {fieldError.general && (
               <p className="text-[#AD3113] text-sm mb-3 text-left">{fieldError.general}</p>
             )}
 
+            {/* Forgot Password */}
             <div className="text-right w-full mb-4">
               <Link href="/auth/lupa_password" className="text-[13px] text-[#AD3113] underline">
                 Lupa Password?
               </Link>
             </div>
 
+            {/* Login Button */}
             <button
               type="submit"
               disabled={loginMutation.isPending || !isFilled}
@@ -142,6 +148,7 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {/* Register Link */}
           <div className="text-center mt-4">
             <p className="text-[#8D8D8D] text-[15px] mb-1">Belum punya akun?</p>
             <p className="text-[#EDB720] text-[16px] font-semibold">

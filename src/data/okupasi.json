@@ -1,0 +1,147 @@
+{
+  "A": {
+    "title": "Mengukur kemampuan sense of bodily self",
+    "items": [
+      {
+        "no": 1,
+        "aspect": "State & Temperamen",
+        "sub": [
+          "Kesiapan",
+          "Kooperatif",
+          "Pemalu (Shyness)",
+          "Mudah Tersinggung",
+          "Happiness",
+          "Physically Fit"
+        ]
+      },
+      {
+        "no": 2,
+        "aspect": "Perilaku",
+        "sub": [
+          "Aktif/Normob",
+          "Agresif/Melawan",
+          "Temper Tantrum",
+          "Mengasingkan Diri",
+          "Impulsif"
+        ]
+      },
+      {
+        "no": 3,
+        "aspect": "Identitas",
+        "sub": [
+          "Nama Panggilan",
+          "Nama Lengkap",
+          "Usia"
+        ]
+      }
+    ]
+  },
+  "B": {
+    "title": "Mengukur kemampuan dalam memposisikan diri, keseimbangan diri di lingkungan dan kemampuan perencanaan gerak",
+    "items": [
+      {
+        "no": 1,
+        "aspect": "Diskriminasi kanan/kiri",
+        "sub": [
+          "Memakai sepatu / sandal",
+          "Identifikasi kanan/kiri"
+        ]
+      },
+      {
+        "no": 2,
+        "aspect": "Posisi dalam ruang",
+        "sub": [
+          "Atas-bawah",
+          "Luar-dalam",
+          "Depan-belakang",
+          "Tengah",
+          "Pinggir"
+        ]
+      },
+      {
+        "no": 3,
+        "aspect": "Motorik Kasar",
+        "sub": [
+          "Berjalan ke depan",
+          "Berjalan ke belakang",
+          "Berjalan menyamping",
+          "Meriti",
+          "Berlari",
+          "Berdiri pada satu kaki",
+          "Melompat dengan satu kaki"
+        ]
+      }
+    ]
+  },
+  "C": {
+    "title": "Mengetahui kemampuan konsentrasi, pemahaman instruksi dan penyelesaian masalah",
+    "items": [
+      {
+        "no": 1,
+        "aspect": "Konsentrasi dan atensi",
+        "sub": [
+          "Mengikuti perintah (2 perintah)",
+          "3 Perintah",
+          "4 Perintah",
+          "Mencari kelonggaran dalam gambar"
+        ]
+      },
+      {
+        "no": 2,
+        "aspect": "Problem solving (puzzle)",
+        "sub": [
+          "Puzzle matching 4,8,12",
+          "Soal cerita"
+        ]
+      },
+      {
+        "no": 3,
+        "aspect": "Pemahaman ukuran",
+        "sub": [
+          "Ukuran besar/kecil",
+          "Tinggi/rendah",
+          "Banyak/sedikit",
+          "Panjang/pendek"
+        ]
+      },
+      {
+        "no": 4,
+        "aspect": "Pengenalan angka",
+        "sub": [
+          "Menghitung maju",
+          "Menghitung mundur",
+          "Pengenalan simbol",
+          "Pengenalan konsep"
+        ]
+      }
+    ]
+  },
+  "D": {
+    "title": "Mengetahui kemampuan koordinasi mata-tangan, bilateral skill, kekuatan dan control motor (aspek motorik halus), memori dan ekspresi",
+    "items": [
+      {
+        "no": 1,
+        "aspect": "Bilateral skill",
+        "sub": [
+          "Meronce manik-manik",
+          "Membalik halaman buku",
+          "Menjahit",
+          "Menggunting",
+          "Menggunting tanpa pola",
+          "Menggunting garis lurus",
+          "Menggunting zig-zag",
+          "Menggunting ombak",
+          "Menggunting kotak"
+        ]
+      },
+      {
+        "no": 2,
+        "aspect": "Memori",
+        "sub": [
+          "Mengingat ≥5 objek setelah diperlihatkan selama 10 detik",
+          "Menyanyi"
+        ]
+      }
+    ]
+  }
+}

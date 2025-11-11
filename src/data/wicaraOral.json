@@ -1,0 +1,150 @@
+[
+  {
+    "title": "Evaluasi Wajah",
+    "questions": [
+      {
+        "label": "Kesimetrisan",
+        "options": ["normal", "turun pada sebelah kanan", "turun pada sebelah kiri"]
+      },
+      {
+        "label": "Gerakan abnormal",
+        "options": ["none", "menyeringai", "kedutan"]
+      },
+      {
+        "label": "Pernapasan mulut",
+        "options": ["ya", "tidak"]
+      }
+    ]
+  },
+  {
+    "title": "Evaluasi Rahang dan Gigi",
+    "questions": [
+      {
+        "label": "Range of motion",
+        "options": ["normal", "kurang"]
+      },
+      {
+        "label": "Kesimetrisan",
+        "options": ["normal", "miring ke kanan", "miring ke kiri"]
+      },
+      {
+        "label": "Movement",
+        "options": ["normal", "tersentak-sentak", "groping", "lambat", "tidak simetris"]
+      },
+      {
+        "label": "TMJ noises",
+        "options": ["absent", "keretak gigi", "bermunculan"]
+      }
+    ]
+  },
+  {
+    "title": "Observasi Gigi",
+    "questions": [
+      {
+        "label": "Oklusi (hubungan gigi geraham)",
+        "options": [
+          "normal",
+          "neutroclusion (Class I)",
+          "distoclusion (Class II)",
+          "mesioclusion (Class III)"
+        ]
+      },
+      {
+        "label": "Oklusi (hubungan gigi taring)",
+        "options": ["normal", "overbite", "underbite", "crossbite"]
+      },
+      {
+        "label": "Gigi",
+        "options": ["semua ada", "gigi palsu", "gigi yang hilang (spesifik)"]
+      },
+      {
+        "label": "Susunan gigi",
+        "options": ["normal", "bertumpuk", "beruang", "tidak beraturan"]
+      },
+      {
+        "label": "Kebersihan",
+        "options": ["baik", "buruk"]
+      }
+    ]
+  },
+  {
+    "title": "Evaluasi Bibir",
+    "questions": [
+      {
+        "label": "Range of motion (memonyongkan bibir)",
+        "options": ["normal", "kurang"]
+      },
+      {
+        "label": "Kesimetrisan (memonyongkan bibir)",
+        "options": [
+          "normal",
+          "turun pada kedua sisi",
+          "turun pada sebelah kanan",
+          "turun pada sebelah kiri"
+        ]
+      },
+      {
+        "label": "Kekuatan (melawan tongue spatel)",
+        "options": ["normal", "lemah"]
+      },
+      {
+        "label": "Range of motion (tersenyum)",
+        "options": ["normal", "kurang"]
+      },
+      {
+        "label": "Kesimetrisan (tersenyum)",
+        "options": [
+          "normal",
+          "turun pada kedua sisi",
+          "turun pada sebelah kanan",
+          "turun pada sebelah kiri"
+        ]
+      }
+    ]
+  },
+  {
+    "title": "Evaluasi Lidah",
+    "questions": [
+      { "label": "Warna lidah", "options": ["normal", "abnormal (spesifik)"] },
+      { "label": "Gerakan abnormal", "options": ["tidak ada", "tersentak-sentak", "fascikulasi"] },
+      { "label": "Size", "options": ["normal", "kecil", "besar"] },
+      { "label": "Frenum", "options": ["normal", "pendek"] },
+      { "label": "Kesimetrisan saat mengeluarkan lidah", "options": ["normal", "miring ke kanan", "miring ke kiri"] },
+      { "label": "Range of motion lidah keluar", "options": ["normal", "kurang"] },
+      { "label": "Kecepatan lidah keluar", "options": ["normal", "lambat"] },
+      { "label": "Kekuatan lidah keluar", "options": ["normal", "lemah"] },
+      { "label": "Kesimetrisan menarik lidah kembali", "options": ["normal", "miring ke kanan", "miring ke kiri"] },
+      { "label": "Range of motion lidah masuk", "options": ["normal", "kurang"] },
+      { "label": "Kecepatan lidah masuk", "options": ["normal", "lambat"] },
+      { "label": "Gerakan lidah ke kiri", "options": ["normal", "lambat"] },
+      { "label": "Gerakan lidah ke kanan", "options": ["normal", "lambat"] },
+      { "label": "Gerakan lidah ke atas", "options": ["normal", "lambat"] },
+      { "label": "Gerakan lidah ke bawah", "options": ["normal", "lambat"] },
+      { "label": "Gerakan lidah ke kanan-kiri bergantian", "options": ["normal", "lambat", "menurun bertahap"] }
+    ]
+  },
+  {
+    "title": "Evaluasi Faring",
+    "questions": [
+      { "label": "Warna", "options": ["normal", "abnormal"] },
+      { "label": "Tonsil", "options": ["tidak ada", "normal", "membesar"] }
+    ]
+  },
+  {
+    "title": "Evaluasi Langit-langit Keras dan Langit-langit Lunak",
+    "questions": [
+      { "label": "Warna", "options": ["normal", "abnormal"] },
+      { "label": "Rugae", "options": ["ada", "tidak ada"] },
+      { "label": "Tinggi langit-langit", "options": ["normal", "tinggi", "rendah"] },
+      { "label": "Lebar langit-langit", "options": ["normal", "sempit", "lebar"] },
+      { "label": "Growths", "options": ["ada", "tidak ada"] },
+      { "label": "Fistula", "options": ["ada", "tidak ada"] },
+      { "label": "Kesimetrisan saat istirahat", "options": ["normal", "kanan lebih rendah", "kiri lebih rendah"] },
+      { "label": "Tinggi langit-langit posterior", "options": ["normal", "tidak ada", "hiperensitif", "hiposensitif"] },
+      { "label": "Kesimetrisan gerakan (forasi / fonasi)", "options": ["miring ke kanan", "miring ke kiri"] },
+      { "label": "Gerakan posterior", "options": ["ada", "tidak ada"] },
+      { "label": "Uvula", "options": ["normal", "tidak ada", "miring ke kanan", "miring ke kiri"] },
+      { "label": "Nasalisasi", "options": ["tidak ada", "hipernasal"] }
+    ]
+  }
+]
