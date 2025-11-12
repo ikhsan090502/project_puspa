@@ -20,8 +20,6 @@ const AsesmenPage = () => {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
   const data = activeTab === "Oral Fasial" ? oralFasial : kemampuanBahasa;
-
-  // 🔹 Handle jawaban
   const handleResponse = (questionKey: string, value: string) => {
     setResponses((prev) => ({ ...prev, [questionKey]: value }));
   };
@@ -214,11 +212,9 @@ const AsesmenPage = () => {
       const res = await submitAssessment("1", "wicara", payload);
       console.log("✅ SUCCESS:", res);
 
-      // 🔹 ubah status menjadi completed setelah submit sukses
       await completeAssessment("1", "wicara");
       console.log("✅ Status pasien diubah ke completed");
 
-      // 🔹 tampilkan popup sukses
       setShowSuccessPopup(true);
     } catch (error) {
       console.error("❌ Gagal submit:", error);
@@ -227,7 +223,6 @@ const AsesmenPage = () => {
     }
   };
 
-  // =============================================================
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -235,7 +230,6 @@ const AsesmenPage = () => {
       <div className="flex-1">
         <HeaderTerapis />
         <div className="p-6">
-          {/* 🔹 Info awal */}
           {activeTab === "Oral Fasial" && (
             <div className="bg-white p-4 rounded-xl mb-8 text-[#36315B] shadow-md">
               <strong>Instruksi:</strong> Beri tanda cek pada sebelah kiri apabila Anda melakukan pengamatan
@@ -243,7 +237,6 @@ const AsesmenPage = () => {
             </div>
           )}
 
-          {/* 🔹 Tab navigasi */}
           <div className="flex gap-3 mb-6 border-b border-gray-200">
             {tabs.map((tab) => (
               <button
@@ -263,7 +256,6 @@ const AsesmenPage = () => {
             ))}
           </div>
 
-          {/* 🔹 Section */}
           {data.map((section, i) => {
             const complete = isSectionComplete(section);
             return (
@@ -344,7 +336,6 @@ const AsesmenPage = () => {
             );
           })}
 
-          {/* 🔹 Tombol Simpan */}
           <div className="flex justify-end mt-6 gap-3">
             {activeTab === "Oral Fasial" ? (
               <>
@@ -371,7 +362,6 @@ const AsesmenPage = () => {
         </div>
       </div>
 
-      {/* 🔹 POPUP SUKSES */}
       {showSuccessPopup && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-2xl shadow-lg text-center max-w-sm">

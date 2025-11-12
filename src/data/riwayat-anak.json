@@ -1,0 +1,151 @@
+{
+  "riwayat_psikososial": [
+    {
+      "question": "Ananda anak ke berapa?",
+      "type": "text"
+    },
+    {
+      "question": "Saudara (Nama dan Usia):",
+      "fields": ["Nama", "Usia"],
+      "type": "multi"
+    },
+    {
+      "question": "Orang-orang yang tinggal serumah dengan anak:",
+      "placeholder": "Contoh: Ayah, Ibu",
+      "type": "text"
+    },
+    {
+      "question": "Status pernikahan orang tua terkini:",
+      "options": ["Menikah", "Cerai Hidup", "Cerai Mati"],
+      "type": "select"
+    },
+    {
+      "question": "Bahasa sehari-hari:",
+      "placeholder": "Contoh: Indonesia",
+      "type": "text"
+    }
+  ],
+
+  "riwayat_kehamilan": [
+    {
+      "question": "Selama kehamilan, apakah ibu mengalami komplikasi?",
+      "type": "textarea"
+    },
+    {
+      "question": "Apakah ibu mengonsumsi obat-obatan tertentu saat hamil?",
+      "type": "textarea"
+    },
+    {
+      "question": "Apakah ibu mengalami stres berat saat hamil?",
+      "options": ["Ya", "Tidak"],
+      "type": "radio"
+    },
+    {
+      "question": "Apakah ibu rutin melakukan kontrol kehamilan?",
+      "options": ["Ya", "Tidak"],
+      "type": "radio"
+    }
+  ],
+
+  "riwayat_kelahiran": [
+    {
+      "question": "a. Lahir persalinan normal / operasi caesar / vakum",
+      "options": ["Normal", "Operasi Caesar", "Vakum"],
+      "type": "radio"
+    },
+    {
+      "question": "b. Jika lahir normal posisi lahir kepala dulu / kaki dulu / pantat dulu",
+      "options": ["Kepala dulu", "Kaki dulu", "Pantat dulu"],
+      "type": "radio"
+    },
+    {
+      "question": "c. Alasan lahir dengan persalinan operasi caesar / vakum",
+      "type": "textarea"
+    },
+    {
+      "question": "d. Lahir langsung menangis?",
+      "options": ["Ya", "Tidak"],
+      "type": "radio"
+    },
+    {
+      "question": "e. Saat lahir ada riwayat bayi biru / kuning / kejang?",
+      "options": ["Biru", "Kuning", "Kejang"],
+      "type": "checkbox"
+    },
+    {
+      "question": "f. Pernah masuk inkubator?",
+      "options": ["Ya", "Tidak"],
+      "type": "radio"
+    },
+    {
+      "question": "g. Berat Anak (kg)",
+      "type": "number"
+    },
+    {
+      "question": "h. Panjang Anak (cm)",
+      "type": "number"
+    },
+    {
+      "question": "i. Lingkar Kepala (cm)",
+      "type": "number"
+    },
+    {
+      "question": "j. Komplikasi lainnya ketika kelahiran",
+      "type": "textarea"
+    },
+    {
+      "question": "k. Apakah ibu menderita sindrom depresi pasca melahirkan?",
+      "options": ["Ya", "Tidak"],
+      "type": "radio"
+    }
+  ],
+
+  "riwayat_setelah_kelahiran": [
+    {
+      "question": "a. Anak mengalami biru / kuning / kejang?",
+      "options": ["Biru", "Kuning", "Kejang"],
+      "type": "checkbox"
+    },
+    {
+      "question": "b. Anak pernah jatuh / tidak",
+      "options": ["Ya", "Tidak"],
+      "type": "radio"
+    },
+    {
+      "question": "Bagian tubuh yang terbentur?",
+      "type": "text"
+    },
+    {
+      "question": "d. Pada bagian ini, diisi dengan usia anak saat mampu melakukannya:",
+      "type": "table",
+      "rows": [
+        "Angkat kepala",
+        "Tengkurap",
+        "Berguling",
+        "Duduk mandiri",
+        "Merangkak",
+        "Merambat",
+        "Berdiri mandiri",
+        "Berjalan mandiri"
+      ]
+    },
+    {
+      "question": "e. Bagaimana riwayat imunisasi anak?",
+      "options": ["Lengkap", "Tidak"],
+      "type": "radio"
+    },
+    {
+      "question": "f. Apakah anak mendapat ASI eksklusif?",
+      "options": ["Ya", "Tidak"],
+      "type": "radio"
+    },
+    {
+      "question": "Jika Ya, sampai usia berapa anak minum ASI (Tahun)",
+      "type": "number"
+    },
+    {
+      "question": "g. Sejak usia berapa anak makan nasi tim / nasi biasa (Tahun)",
+      "type": "number"
+    }
+  ]
+}

@@ -61,7 +61,7 @@ export default function Page() {
   const SectionCard: React.FC<{ sectionId: string }> = ({ sectionId }) => {
     const section = (questionsData as any)[sectionId];
     return (
-      <div className="bg-white rounded-2xl shadow-md overflow-hidden">
+      <div className="flex flex-col flex-1 bg-gray-50">
         {/* Header */}
         <div
           className={`w-full flex items-center justify-between px-6 py-4 ${

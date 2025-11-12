@@ -55,10 +55,11 @@ export default function HasilObservasiFrame() {
   }, [observationId]);
 
   return (
-    <div className="flex min-h-screen bg-gray-50 text-[#36315B] font-playpen">
-      <SidebarTerapis />
-      <div className="flex-1 flex flex-col overflow-auto">
-        <HeaderTerapis />
+        <div className="flex h-screen text-[#36315B] font-playpen">
+              <SidebarTerapis />
+              <div className="flex flex-col flex-1 bg-gray-50">
+                <HeaderTerapis />
+                <main className="p-6 overflow-y-auto"></main>
         <main className="p-10 bg-white m-4 rounded-xl shadow-md overflow-auto">
           {loading ? (
             <div className="flex items-center justify-center h-96 text-gray-500">

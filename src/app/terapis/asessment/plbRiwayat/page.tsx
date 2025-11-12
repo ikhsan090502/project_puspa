@@ -113,10 +113,11 @@ export default function RiwayatJawabanPLBPage() {
   const currentQuestions = allQuestions[activeAspek] || [];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <SidebarTerapis />
-      <div className="flex-1 flex flex-col">
-        <HeaderTerapis />
+  <div className="flex h-screen text-[#36315B] font-playpen">
+                    <SidebarTerapis />
+                    <div className="flex flex-col flex-1 bg-gray-50">
+                      <HeaderTerapis />
+                      <main className="p-6 overflow-y-auto"></main>
 
         <main className="flex-1 p-6 flex flex-col overflow-hidden">
           <h1 className="text-2xl font-bold text-[#36315B] mb-4 text-center">
