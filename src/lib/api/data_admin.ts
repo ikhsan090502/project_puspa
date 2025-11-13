@@ -1,57 +1,60 @@
 import api from "@/lib/axios";
 
 export interface Admin {
-  id: string;
-  nama: string;
+  admin_id: string;
+  admin_name: string;
   username: string;
   email: string;
-  telepon: string;
-  ditambahkan: string;
-  diubah: string;
+  admin_phone: string;
+  is_active: string;
+  created_at: string;
+  updated_at: string;
 }
 
-
+// 🔹 Ambil semua admin
 export async function getAdmins(): Promise<Admin[]> {
   const res = await api.get("/admins");
   return res.data.data.map((item: any) => ({
-    id: item.id,
-    nama: item.admin_name,
+    admin_id: item.admin_id,
+    admin_name: item.admin_name,
     username: item.username,
     email: item.email,
-    telepon: item.admin_phone,
-    ditambahkan: item.created_at,
-    diubah: item.updated_at,
+    admin_phone: item.admin_phone,
+    is_active: item.is_active,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
   }));
 }
 
-// 🔹 Ambil detail admin
 export async function getAdminById(id: string): Promise<Admin> {
   const res = await api.get(`/admins/${id}`);
   const item = res.data.data;
   return {
-    id: item.id,
-    nama: item.admin_name,
+    admin_id: item.admin_id,
+    admin_name: item.admin_name,
     username: item.username,
     email: item.email,
-    telepon: item.admin_phone,
-    ditambahkan: item.created_at,
-    diubah: item.updated_at,
+    admin_phone: item.admin_phone,
+    is_active: item.is_active,
+    created_at: item.created_at,
+    updated_at: item.updated_at,
   };
 }
 
+
 // 🔹 Tambah admin baru
 export async function addAdmin(data: {
-  nama: string;
+  admin_name: string;
   username: string;
   email: string;
-  telepon: string;
+  admin_phone: string;
   password?: string;
 }) {
   return await api.post("/admins", {
-    admin_name: data.nama,
+    admin_name: data.admin_name,
     username: data.username,
     email: data.email,
-    admin_phone: data.telepon,
+    admin_phone: data.admin_phone,
     password: data.password || "12345678",
     is_active: 1,
   });
@@ -59,16 +62,16 @@ export async function addAdmin(data: {
 
 // 🔹 Ubah admin
 export async function updateAdmin(id: string, data: {
-  nama: string;
+  admin_name: string;
   username: string;
   email: string;
-  telepon: string;
+  admin_phone: string;
 }) {
   return await api.put(`/admins/${id}`, {
-    admin_name: data.nama,
+    admin_name: data.admin_name,
     username: data.username,
     email: data.email,
-    admin_phone: data.telepon,
+    admin_phone: data.admin_phone,
   });
 }
 

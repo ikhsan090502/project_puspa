@@ -6,12 +6,27 @@ import { motion } from "framer-motion";
 interface FormUbahAdminProps {
   open: boolean;
   onClose: () => void;
-  onUpdate: (data: { nama: string; email: string; telepon: string; username: string }) => void;
-  initialData?: { nama: string; email: string; telepon: string; username: string };
+  onUpdate: (data: {
+    admin_name: string;
+    email: string;
+    admin_phone: string;
+    username: string;
+  }) => void;
+  initialData?: {
+    admin_name: string;
+    email: string;
+    admin_phone: string;
+    username: string;
+  };
 }
 
 export default function FormUbahAdmin({ open, onClose, onUpdate, initialData }: FormUbahAdminProps) {
-  const [form, setForm] = useState({ nama: "", email: "", telepon: "", username: "" });
+  const [form, setForm] = useState({
+    admin_name: "",
+    email: "",
+    admin_phone: "",
+    username: "",
+  });
 
   useEffect(() => {
     if (initialData) {
@@ -44,12 +59,13 @@ export default function FormUbahAdmin({ open, onClose, onUpdate, initialData }: 
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#36315B] mb-1">Nama</label>
+            <label className="block text-sm font-medium text-[#36315B] mb-1">Nama Lengkap</label>
             <input
               type="text"
-              value={form.nama}
-              onChange={(e) => setForm({ ...form, nama: e.target.value })}
+              value={form.admin_name}
+              onChange={(e) => setForm({ ...form, admin_name: e.target.value })}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#81B7A9] outline-none"
+              required
             />
           </div>
 
@@ -60,6 +76,7 @@ export default function FormUbahAdmin({ open, onClose, onUpdate, initialData }: 
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#81B7A9] outline-none"
+              required
             />
           </div>
 
@@ -67,9 +84,10 @@ export default function FormUbahAdmin({ open, onClose, onUpdate, initialData }: 
             <label className="block text-sm font-medium text-[#36315B] mb-1">Telepon</label>
             <input
               type="text"
-              value={form.telepon}
-              onChange={(e) => setForm({ ...form, telepon: e.target.value })}
+              value={form.admin_phone}
+              onChange={(e) => setForm({ ...form, admin_phone: e.target.value })}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#81B7A9] outline-none"
+              required
             />
           </div>
 
@@ -77,10 +95,10 @@ export default function FormUbahAdmin({ open, onClose, onUpdate, initialData }: 
             <label className="block text-sm font-medium text-[#36315B] mb-1">Nama Pengguna</label>
             <input
               type="text"
-              placeholder='Buat nama pengguna “admin.(nama)”'
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#81B7A9] outline-none"
+              required
             />
           </div>
 

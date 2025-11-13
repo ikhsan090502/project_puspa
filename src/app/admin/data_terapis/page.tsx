@@ -4,38 +4,19 @@ import { useState, useEffect } from "react";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import { Pencil, Trash2, Plus, Search, Eye } from "lucide-react";
-import api from "@/lib/axios";
 
 import FormTambahTerapis from "@/components/form/FormTambahTerapis";
 import FormUbahTerapis from "@/components/form/FormUbahTerapis";
 import FormHapusTerapis from "@/components/form/FormHapusAdmin";
 
-// ================== INTERFACE ==================
-interface Terapis {
-  id: string;
-  nama: string;
-  bidang: string;
-  username: string;
-  email: string;
-  telepon: string;
-  ditambahkan: string;
-  diubah: string;
-}
-
-// ================== HELPER MAPPING ==================
-const bidangMap: Record<string, string> = {
-  fisio: "Fisioterapi",
-  okupasi: "Okupasi Terapi",
-  wicara: "Terapi Wicara",
-  paedagog: "Paedagog",
-};
-
-const reverseBidangMap: Record<string, string> = {
-  "Fisioterapi": "fisio",
-  "Okupasi Terapi": "okupasi",
-  "Terapi Wicara": "wicara",
-  "Paedagog": "paedagog",
-};
+import {
+  getTerapis,
+  addTerapis,
+  updateTerapis,
+  deleteTerapis,
+  getDetailTerapis,
+  Terapis,
+} from "@/lib/api/data_terapis";
 
 // ================== DETAIL MODAL ==================
 function DetailTerapis({
@@ -96,26 +77,10 @@ export default function DataTerapisPage() {
 
   const fetchTerapis = async () => {
     try {
-      const token = localStorage.getItem("token_admin");
-      const res = await api.get("/therapists", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.data.success && Array.isArray(res.data.data)) {
-        setTerapisList(
-          res.data.data.map((t: any) => ({
-            id: t.id,
-            nama: t.therapist_name,
-            bidang: bidangMap[t.therapist_section] || t.therapist_section,
-            username: t.username,
-            email: t.email,
-            telepon: t.therapist_phone,
-            ditambahkan: t.created_at,
-            diubah: t.updated_at,
-          }))
-        );
-      }
-    } catch (error: any) {
-      console.error("Gagal mengambil data terapis:", error.response?.data || error);
+      const data = await getTerapis();
+      setTerapisList(data);
+    } catch (err) {
+      console.error("❌ Gagal mengambil data terapis:", err);
     }
   };
 
@@ -129,25 +94,17 @@ export default function DataTerapisPage() {
     password: string;
   }) => {
     try {
-      const token = localStorage.getItem("token_admin");
-      await api.post(
-        "/therapists",
-        {
-          therapist_name: data.nama,
-          therapist_section: reverseBidangMap[data.bidang] || data.bidang,
-          username: data.username,
-          email: data.email,
-          therapist_phone: data.telepon,
-          password: data.password,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("✅ Terapis berhasil ditambahkan!");
-      setShowTambah(false);
-      fetchTerapis();
-    } catch (error: any) {
-      console.error("Gagal menambah terapis:", error.response?.data || error);
-      alert(JSON.stringify(error.response?.data || error, null, 2));
+      const res = await addTerapis(data);
+      if (res.data.success) {
+        alert("✅ Terapis berhasil ditambahkan!");
+        setShowTambah(false);
+        fetchTerapis(); // fetch ulang supaya tabel otomatis update
+      } else {
+        alert("❌ Gagal menambah terapis");
+      }
+    } catch (err: any) {
+      console.error("❌ Gagal menambah terapis:", err.response?.data || err);
+      alert("❌ Gagal menambah terapis");
     }
   };
 
@@ -161,67 +118,48 @@ export default function DataTerapisPage() {
   }) => {
     if (!selectedTerapis) return;
     try {
-      const token = localStorage.getItem("token_admin");
-      await api.put(
-        `/therapists/${selectedTerapis.id}`,
-        {
-          therapist_name: data.nama,
-          therapist_section: reverseBidangMap[data.bidang] || data.bidang,
-          username: data.username,
-          email: data.email,
-          therapist_phone: data.telepon,
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      alert("✅ Data terapis berhasil diperbarui!");
-      setShowUbah(false);
-      fetchTerapis();
-    } catch (error: any) {
-      console.error("Gagal memperbarui:", error.response?.data || error);
-      alert(JSON.stringify(error.response?.data || error, null, 2));
+      const res = await updateTerapis(selectedTerapis.id, data);
+      if (res.data.success) {
+        alert("✅ Data terapis berhasil diperbarui!");
+        setShowUbah(false);
+        fetchTerapis(); // fetch ulang untuk update tabel
+      } else {
+        alert("❌ Gagal memperbarui data terapis");
+      }
+    } catch (err: any) {
+      console.error("❌ Gagal memperbarui terapis:", err.response?.data || err);
+      alert("❌ Gagal memperbarui data terapis");
     }
   };
 
   // ================== HAPUS ==================
   const handleHapus = async (id: string) => {
     try {
-      const token = localStorage.getItem("token_admin");
-      await api.delete(`/therapists/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      alert("🗑️ Terapis berhasil dihapus!");
-      setShowHapus(false);
-      fetchTerapis();
-    } catch (error: any) {
-      console.error("Gagal menghapus:", error.response?.data || error);
-      alert(JSON.stringify(error.response?.data || error, null, 2));
+      const res = await deleteTerapis(id);
+      if (res.data.success) {
+        alert("🗑️ Terapis berhasil dihapus!");
+        setShowHapus(false);
+        fetchTerapis(); // fetch ulang untuk update tabel
+      } else {
+        alert("❌ Gagal menghapus terapis");
+      }
+    } catch (err: any) {
+      console.error("❌ Gagal menghapus terapis:", err.response?.data || err);
+      alert("❌ Gagal menghapus terapis");
     }
   };
 
   // ================== DETAIL ==================
   const handleDetail = async (id: string) => {
     try {
-      const token = localStorage.getItem("token_admin");
-      const res = await api.get(`/therapists/${id}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.data.success && res.data.data) {
-        const t = res.data.data;
-        setSelectedTerapis({
-          id: t.id,
-          nama: t.therapist_name,
-          bidang: bidangMap[t.therapist_section] || t.therapist_section,
-          username: t.username,
-          email: t.email,
-          telepon: t.therapist_phone,
-          ditambahkan: t.created_at,
-          diubah: t.updated_at,
-        });
+      const data = await getDetailTerapis(id);
+      if (data) {
+        setSelectedTerapis(data);
         setShowDetail(true);
       }
-    } catch (error: any) {
-      console.error("Gagal mengambil detail:", error.response?.data || error);
-      alert("Gagal menampilkan detail terapis");
+    } catch (err) {
+      console.error("❌ Gagal menampilkan detail:", err);
+      alert("❌ Gagal menampilkan detail terapis");
     }
   };
 
@@ -282,7 +220,10 @@ export default function DataTerapisPage() {
               </thead>
               <tbody>
                 {filtered.map((terapis, i) => (
-                  <tr key={terapis.id} className="border-b border-[#81B7A9] hover:bg-gray-50">
+                  <tr
+                    key={terapis.id}
+                    className="border-b border-[#81B7A9] hover:bg-gray-50"
+                  >
                     <td className="p-3">{i + 1}</td>
                     <td className="p-3">{terapis.nama}</td>
                     <td className="p-3 text-[#757575]">{terapis.bidang}</td>
@@ -324,7 +265,11 @@ export default function DataTerapisPage() {
       </div>
 
       {/* ================== MODALS ================== */}
-      <FormTambahTerapis open={showTambah} onClose={() => setShowTambah(false)} onSave={handleTambah} />
+      <FormTambahTerapis
+        open={showTambah}
+        onClose={() => setShowTambah(false)}
+        onSave={handleTambah}
+      />
       <FormUbahTerapis
         open={showUbah}
         onClose={() => setShowUbah(false)}
@@ -336,7 +281,11 @@ export default function DataTerapisPage() {
         onClose={() => setShowHapus(false)}
         onConfirm={() => deleteId && handleHapus(deleteId)}
       />
-      <DetailTerapis open={showDetail} onClose={() => setShowDetail(false)} terapis={selectedTerapis} />
+      <DetailTerapis
+        open={showDetail}
+        onClose={() => setShowDetail(false)}
+        terapis={selectedTerapis}
+      />
     </div>
   );
 }

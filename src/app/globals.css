@@ -87,6 +87,19 @@ html, body {
   justify-content: center;
 }
 
+.react-calendar {
+  border: none !important;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  font-family: 'Poppins', sans-serif;
+}
 
+.react-calendar__tile--active {
+  background: #81B7A9 !important;
+  color: white !important;
+}
 
-
+.react-calendar__tile--now {
+  background: #E7F3F0 !important;
+}

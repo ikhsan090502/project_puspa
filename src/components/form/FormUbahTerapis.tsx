@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 
 interface FormUbahTerapisProps {
@@ -21,12 +20,7 @@ interface FormUbahTerapisProps {
   };
 }
 
-const bidangOptions = [
-  "Fisioterapi",
-  "Okupasi Terapi",
-  "Terapi Wicara",
-  "Paedagog",
-];
+const bidangOptions = ["Fisioterapi", "Okupasi Terapi", "Terapi Wicara", "Paedagog"];
 
 export default function FormUbahTerapis({
   open,
@@ -42,20 +36,17 @@ export default function FormUbahTerapis({
     telepon: "",
   });
 
-
   useEffect(() => {
-  if (initialData) {
-    setFormData({
-      nama: initialData.nama || "",
-      bidang: initialData.bidang || "",
-      username: initialData.username || "",
-      email: initialData.email || "",
-      telepon: initialData.telepon || "",
-    });
-  }
-}, [initialData]);
-
-  
+    if (initialData && open) {
+      setFormData({
+        nama: initialData.nama || "",
+        bidang: initialData.bidang || "",
+        username: initialData.username || "",
+        email: initialData.email || "",
+        telepon: initialData.telepon || "",
+      });
+    }
+  }, [initialData, open]);
 
   if (!open) return null;
 
@@ -68,16 +59,37 @@ export default function FormUbahTerapis({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Validasi sederhana
+    if (
+      !formData.nama ||
+      !formData.bidang ||
+      !formData.username ||
+      !formData.email ||
+      !formData.telepon
+    ) {
+      alert("Semua field wajib diisi!");
+      return;
+    }
+
     onUpdate(formData);
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-opacity-40">
-      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg">
+    <div className="fixed inset-0 flex items-center justify-center bg-transparents z-50">
+      <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-lg relative">
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 text-[#36315B] hover:text-[#81B7A9]"
+        >
+          ✕
+        </button>
+
         <h2 className="text-xl font-semibold mb-4 text-[#36315B]">
           Ubah Data Terapis
         </h2>
+
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Nama */}
           <div>
             <label className="block text-sm font-medium text-[#36315B] mb-1">
               Nama
@@ -91,6 +103,7 @@ export default function FormUbahTerapis({
             />
           </div>
 
+          {/* Bidang */}
           <div>
             <label className="block text-sm font-medium text-[#36315B] mb-1">
               Bidang
@@ -99,7 +112,7 @@ export default function FormUbahTerapis({
               name="bidang"
               value={formData.bidang}
               onChange={handleChange}
-              className={`w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#81B7A9]`}
+              className="w-full border rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#81B7A9]"
             >
               <option value="">Pilih bidang</option>
               {bidangOptions.map((option) => (
@@ -110,6 +123,7 @@ export default function FormUbahTerapis({
             </select>
           </div>
 
+          {/* Username */}
           <div>
             <label className="block text-sm font-medium text-[#36315B] mb-1">
               Username
@@ -123,6 +137,7 @@ export default function FormUbahTerapis({
             />
           </div>
 
+          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-[#36315B] mb-1">
               Email
@@ -136,6 +151,7 @@ export default function FormUbahTerapis({
             />
           </div>
 
+          {/* Telepon */}
           <div>
             <label className="block text-sm font-medium text-[#36315B] mb-1">
               Telepon
@@ -149,6 +165,7 @@ export default function FormUbahTerapis({
             />
           </div>
 
+          {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"

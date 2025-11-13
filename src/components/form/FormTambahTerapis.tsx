@@ -29,7 +29,7 @@ export default function FormTambahTerapis({
     password: "",
   });
 
-  const [showPassword, setShowPassword] = useState(false); 
+  const [showPassword, setShowPassword] = useState(false);
 
   if (!open) return null;
 
@@ -40,11 +40,34 @@ export default function FormTambahTerapis({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Validasi sederhana
+    if (
+      !formData.nama ||
+      !formData.bidang ||
+      !formData.username ||
+      !formData.email ||
+      !formData.telepon ||
+      !formData.password
+    ) {
+      alert("Semua field wajib diisi!");
+      return;
+    }
+
     onSave(formData);
+
+    // Reset form setelah submit
+    setFormData({
+      nama: "",
+      bidang: "",
+      username: "",
+      email: "",
+      telepon: "",
+      password: "",
+    });
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center bg-opacity-30 z-50">
+    <div className="fixed inset-0 flex items-center justify-center bg-transparent z-50">
       <div className="bg-white rounded-lg shadow-lg w-[400px] p-6 relative">
         <button
           onClick={onClose}
@@ -56,6 +79,7 @@ export default function FormTambahTerapis({
         <h2 className="text-xl font-semibold text-[#36315B] mb-4">Tambah Data Terapis</h2>
 
         <form onSubmit={handleSubmit} className="space-y-3">
+          {/* Nama */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Nama</label>
             <input
@@ -68,6 +92,7 @@ export default function FormTambahTerapis({
             />
           </div>
 
+          {/* Bidang */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Bidang</label>
             <select
@@ -85,6 +110,7 @@ export default function FormTambahTerapis({
             </select>
           </div>
 
+          {/* Username */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Nama Pengguna</label>
             <input
@@ -97,6 +123,7 @@ export default function FormTambahTerapis({
             />
           </div>
 
+          {/* Email */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Email</label>
             <input
@@ -109,6 +136,7 @@ export default function FormTambahTerapis({
             />
           </div>
 
+          {/* Telepon */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Telepon</label>
             <input
@@ -121,11 +149,12 @@ export default function FormTambahTerapis({
             />
           </div>
 
+          {/* Password */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Password</label>
             <div className="relative">
               <input
-                type={showPassword ? "text" : "password"} 
+                type={showPassword ? "text" : "password"}
                 name="password"
                 placeholder="Buat Password"
                 value={formData.password}
@@ -142,6 +171,7 @@ export default function FormTambahTerapis({
             </div>
           </div>
 
+          {/* Buttons */}
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"

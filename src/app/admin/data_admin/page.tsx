@@ -44,12 +44,13 @@ function DetailAdmin({
 
         <p className="text-sm font-medium text-[#36315B]">Informasi Admin</p>
         <ul className="text-sm text-[#36315B] space-y-1 mt-2">
-          <li>• Nama Lengkap : {admin.nama}</li>
+          <li>• Nama Lengkap : {admin.admin_name}</li>
           <li>• Nama Pengguna : {admin.username}</li>
           <li>• Email : {admin.email}</li>
-          <li>• Telepon : {admin.telepon}</li>
-          <li>• Tanggal Ditambahkan : {admin.ditambahkan}</li>
-          <li>• Tanggal Diubah : {admin.diubah}</li>
+          <li>• Telepon : {admin.admin_phone}</li>
+          <li>• Tanggal Ditambahkan : {admin.created_at}</li>
+          <li>• Tanggal Diubah : {admin.updated_at}</li>
+          <li>• Status : {admin.is_active === "1" ? "Aktif" : "Nonaktif"}</li>
         </ul>
       </div>
     </div>
@@ -66,24 +67,23 @@ export default function AdminPage() {
   const [showDetail, setShowDetail] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // 🔹 Ambil daftar admin
   const fetchAdmins = async () => {
     try {
-      const data = await getAdmins();
-      setAdmins(data);
+      const res = await getAdmins();
+      setAdmins(res); // langsung set array Admin yang sudah di-map
     } catch (error) {
       console.error("Gagal mengambil data admin:", error);
     }
   };
 
+
   useEffect(() => {
     fetchAdmins();
   }, []);
 
-  // 🔹 Lihat detail admin
-  const handleDetail = async (id: string) => {
+  const handleDetail = async (admin_id: string) => {
     try {
-      const item = await getAdminById(id);
+      const item = await getAdminById(admin_id);
       setSelectedAdmin(item);
       setShowDetail(true);
     } catch (error) {
@@ -91,17 +91,15 @@ export default function AdminPage() {
     }
   };
 
-  // 🔹 Tambah admin
   const handleTambah = async (data: {
-    nama: string;
+    admin_name: string;
     username: string;
     email: string;
-    telepon: string;
+    admin_phone: string;
     password?: string;
   }) => {
     try {
       await addAdmin(data);
-      alert("Admin berhasil ditambahkan!");
       setShowTambah(false);
       fetchAdmins();
     } catch (error) {
@@ -109,16 +107,15 @@ export default function AdminPage() {
     }
   };
 
-  // 🔹 Ubah admin
   const handleUbah = async (data: {
-    nama: string;
+    admin_name: string;
     username: string;
     email: string;
-    telepon: string;
+    admin_phone: string;
   }) => {
     if (!selectedAdmin) return;
     try {
-      await updateAdmin(selectedAdmin.id, data);
+      await updateAdmin(selectedAdmin.admin_id, data);
       setShowUbah(false);
       setSelectedAdmin(null);
       fetchAdmins();
@@ -127,10 +124,9 @@ export default function AdminPage() {
     }
   };
 
-  // 🔹 Hapus admin
-  const handleHapus = async (id: string) => {
+  const handleHapus = async (admin_id: string) => {
     try {
-      await deleteAdmin(id);
+      await deleteAdmin(admin_id);
       setShowHapus(false);
       setDeleteId(null);
       fetchAdmins();
@@ -141,8 +137,8 @@ export default function AdminPage() {
 
   const filtered = admins.filter(
     (a) =>
-      a.nama.toLowerCase().includes(search.toLowerCase()) ||
-      a.username.toLowerCase().includes(search.toLowerCase())
+      (a.admin_name ?? "").toLowerCase().includes(search.toLowerCase()) ||
+      (a.username ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
   return (
@@ -184,20 +180,24 @@ export default function AdminPage() {
                   <th className="p-3 text-left">Nama Pengguna</th>
                   <th className="p-3 text-left">Email</th>
                   <th className="p-3 text-left">Telepon</th>
+                  <th className="p-3 text-left">Status</th>
                   <th className="p-3 text-center">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((admin, i) => (
-                  <tr key={admin.id} className="border-b border-[#81B7A9] hover:bg-gray-50">
+                  <tr key={admin.admin_id} className="border-b border-[#81B7A9] hover:bg-gray-50">
                     <td className="p-3">{i + 1}</td>
-                    <td className="p-3">{admin.nama}</td>
+                    <td className="p-3">{admin.admin_name}</td>
                     <td className="p-3 font-medium text-[#757575]">{admin.username}</td>
                     <td className="p-3 font-medium text-[#757575]">{admin.email}</td>
-                    <td className="p-3 font-medium text-[#757575]">{admin.telepon}</td>
+                    <td className="p-3 font-medium text-[#757575]">{admin.admin_phone}</td>
+                    <td className="p-3 font-medium text-[#757575]">
+                      {admin.is_active === "1" ? "Terverifikasi" : "Belum Terverifikasi"}
+                    </td>
                     <td className="p-3 flex justify-center gap-3">
                       <button
-                        onClick={() => handleDetail(admin.id)}
+                        onClick={() => handleDetail(admin.admin_id)}
                         className="hover:scale-110 transition text-[#36315B]"
                       >
                         <Eye size={18} />
@@ -213,7 +213,7 @@ export default function AdminPage() {
                       </button>
                       <button
                         onClick={() => {
-                          setDeleteId(admin.id);
+                          setDeleteId(admin.admin_id);
                           setShowHapus(true);
                         }}
                         className="hover:scale-110 transition text-red-600"
@@ -224,6 +224,8 @@ export default function AdminPage() {
                   </tr>
                 ))}
               </tbody>
+
+
             </table>
           </div>
         </main>

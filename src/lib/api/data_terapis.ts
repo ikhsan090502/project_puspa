@@ -1,0 +1,137 @@
+import api from "@/lib/axios";
+
+// ================== INTERFACE ==================
+export interface Terapis {
+  id: string; // therapist_id
+  nama: string;
+  bidang: string;
+  username: string;
+  email: string;
+  telepon: string;
+  ditambahkan: string;
+  diubah: string;
+  is_active?: string; // optional, untuk status
+}
+
+// ================== MAPPING ==================
+const bidangMap: Record<string, string> = {
+  fisio: "Fisioterapi",
+  okupasi: "Okupasi Terapi",
+  wicara: "Terapi Wicara",
+  paedagog: "Paedagog",
+};
+
+const reverseBidangMap: Record<string, string> = {
+  "Fisioterapi": "fisio",
+  "Okupasi Terapi": "okupasi",
+  "Terapi Wicara": "wicara",
+  "Paedagog": "paedagog",
+};
+
+// ================== API FUNCTIONS ==================
+
+// 🔹 Ambil semua terapis
+export async function getTerapis(): Promise<Terapis[]> {
+  const token = localStorage.getItem("token_admin");
+  const res = await api.get("/therapists", {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (res.data.success && Array.isArray(res.data.data)) {
+    return res.data.data.map((t: any) => ({
+      id: t.therapist_id, // pakai therapist_id
+      nama: t.therapist_name,
+      bidang: bidangMap[t.therapist_section] || t.therapist_section,
+      username: t.username,
+      email: t.email,
+      telepon: t.therapist_phone,
+      ditambahkan: t.created_at,
+      diubah: t.updated_at,
+      is_active: t.is_active,
+    }));
+  }
+
+  return [];
+}
+
+// 🔹 Tambah terapis baru
+export async function addTerapis(data: {
+  nama: string;
+  bidang: string;
+  username: string;
+  email: string;
+  telepon: string;
+  password: string;
+}) {
+  const token = localStorage.getItem("token_admin");
+  return api.post(
+    "/therapists",
+    {
+      therapist_name: data.nama,
+      therapist_section: reverseBidangMap[data.bidang] || data.bidang,
+      username: data.username,
+      email: data.email,
+      therapist_phone: data.telepon,
+      password: data.password,
+    },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+}
+
+// 🔹 Ubah data terapis
+export async function updateTerapis(
+  id: string,
+  data: {
+    nama: string;
+    bidang: string;
+    username: string;
+    email: string;
+    telepon: string;
+  }
+) {
+  const token = localStorage.getItem("token_admin");
+  return api.put(
+    `/therapists/${id}`,
+    {
+      therapist_name: data.nama,
+      therapist_section: reverseBidangMap[data.bidang] || data.bidang,
+      username: data.username,
+      email: data.email,
+      therapist_phone: data.telepon,
+    },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+}
+
+// 🔹 Hapus terapis
+export async function deleteTerapis(id: string) {
+  const token = localStorage.getItem("token_admin");
+  return api.delete(`/therapists/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+}
+
+// 🔹 Ambil detail terapis
+export async function getDetailTerapis(id: string): Promise<Terapis | null> {
+  const token = localStorage.getItem("token_admin");
+  const res = await api.get(`/therapists/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (res.data.success && res.data.data) {
+    const t = res.data.data;
+    return {
+      id: t.therapist_id,
+      nama: t.therapist_name,
+      bidang: bidangMap[t.therapist_section] || t.therapist_section,
+      username: t.username,
+      email: t.email,
+      telepon: t.therapist_phone,
+      ditambahkan: t.created_at,
+      diubah: t.updated_at,
+      is_active: t.is_active,
+    };
+  }
+
+  return null;
+}

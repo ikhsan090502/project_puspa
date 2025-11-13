@@ -7,19 +7,19 @@ interface FormTambahAdminProps {
   open: boolean;
   onClose: () => void;
   onSave: (data: {
-    nama: string;
+    admin_name: string;
     email: string;
-    telepon: string;
+    admin_phone: string;
     username: string;
-    password: string;
+    password?: string;
   }) => void;
 }
 
 export default function FormTambahAdmin({ open, onClose, onSave }: FormTambahAdminProps) {
   const [form, setForm] = useState({
-    nama: "",
+    admin_name: "",
     email: "",
-    telepon: "",
+    admin_phone: "",
     username: "",
     password: "",
   });
@@ -29,7 +29,7 @@ export default function FormTambahAdmin({ open, onClose, onSave }: FormTambahAdm
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     onSave(form);
-    setForm({ nama: "", email: "", telepon: "", username: "", password: "" });
+    setForm({ admin_name: "", email: "", admin_phone: "", username: "", password: "" });
   };
 
   return (
@@ -47,13 +47,14 @@ export default function FormTambahAdmin({ open, onClose, onSave }: FormTambahAdm
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[#36315B] mb-1">Nama</label>
+            <label className="block text-sm font-medium text-[#36315B] mb-1">Nama Lengkap</label>
             <input
               type="text"
-              placeholder="Masukkan nama"
-              value={form.nama}
-              onChange={(e) => setForm({ ...form, nama: e.target.value })}
+              placeholder="Masukkan nama lengkap"
+              value={form.admin_name}
+              onChange={(e) => setForm({ ...form, admin_name: e.target.value })}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#81B7A9] outline-none"
+              required
             />
           </div>
 
@@ -65,6 +66,7 @@ export default function FormTambahAdmin({ open, onClose, onSave }: FormTambahAdm
               value={form.email}
               onChange={(e) => setForm({ ...form, email: e.target.value })}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#81B7A9] outline-none"
+              required
             />
           </div>
 
@@ -73,9 +75,10 @@ export default function FormTambahAdmin({ open, onClose, onSave }: FormTambahAdm
             <input
               type="text"
               placeholder="Masukkan nomor telepon"
-              value={form.telepon}
-              onChange={(e) => setForm({ ...form, telepon: e.target.value })}
+              value={form.admin_phone}
+              onChange={(e) => setForm({ ...form, admin_phone: e.target.value })}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#81B7A9] outline-none"
+              required
             />
           </div>
 
@@ -87,6 +90,7 @@ export default function FormTambahAdmin({ open, onClose, onSave }: FormTambahAdm
               value={form.username}
               onChange={(e) => setForm({ ...form, username: e.target.value })}
               className="w-full border border-gray-300 rounded-lg p-2 focus:ring-2 focus:ring-[#81B7A9] outline-none"
+              required
             />
           </div>
 

@@ -30,16 +30,16 @@ export default function DatePicker({
   const handleSave = async () => {
     setSaving(true);
     try {
-      const formattedDate = date.toISOString().split("T")[0];
+const formattedDate = date.toLocaleDateString("en-CA");
 
       // ✅ kalau punya observation_id → kirim ke API
       if (pasien.observation_id) {
         const res = await updateAssessmentDate(pasien.observation_id, formattedDate);
         if (res.success) {
-          alert(`Tanggal asesmen untuk ${pasien.nama} berhasil diperbarui ✅`);
+          alert(`Tanggal observasi untuk ${pasien.nama} berhasil diperbarui ✅`);
           onUpdate?.(); // refresh data
         } else {
-          alert("Gagal memperbarui tanggal asesmen ❌");
+          alert("Gagal memperbarui tanggal obervasi ❌");
         }
       } 
       // ✅ kalau tidak punya observation_id → simpan lokal (jadwal page)
