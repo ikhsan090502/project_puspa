@@ -1,75 +1,89 @@
 "use client";
-import { useEffect, useState } from "react";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
-import { Search as SearchIcon, Settings, ChevronDown, Eye, Clock3 } from "lucide-react";
-import Calendar from "react-calendar";
-import "react-calendar/dist/Calendar.css";
-import { format } from "date-fns";
-import { id } from "date-fns/locale";
-import { getObservations, Jadwal } from "@/lib/api/jadwal_observasi";
+
 import { useRouter } from "next/navigation";
-import FormAturAsesmen from "@/components/form/FormAturAsesmen";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import SidebarTerapis from "@/components/layout/sidebar_terapis";
+import HeaderTerapis from "@/components/layout/header_terapis";
+import { ChevronDown, Settings, Clock3, Eye } from "lucide-react";
+import { getCompletedObservations } from "@/lib/api/observasiSubmit";
+import DatePicker from "@/components/dashboard/datepicker";
 
-export default function JadwalPage() {
+// ==================== Interface ====================
+interface Anak {
+  observation_id: string;
+  nama: string;
+  observer: string;
+  usia: string;
+  sekolah: string;
+  tglObservasi: string;
+  waktu: string; // ← tambahan field waktu
+  status?: string;
+}
+
+interface Kategori {
+  title: string;
+  filter: (d: Anak) => boolean;
+}
+
+// ==================== Util ====================
+const getTahun = (usia: string): number => {
+  const parts = usia.split(" ");
+  return parseInt(parts[0], 10) || 0;
+};
+
+// ==================== Kategori Usia ====================
+const kategori: Kategori[] = [
+  { title: "Usia 0–5 Tahun", filter: (d) => getTahun(d.usia) <= 5 },
+  { title: "Usia 6–12 Tahun", filter: (d) => getTahun(d.usia) >= 6 && getTahun(d.usia) <= 12 },
+  { title: "Usia 13–17 Tahun", filter: (d) => getTahun(d.usia) >= 13 && getTahun(d.usia) <= 17 },
+  { title: "Usia 17+ Tahun", filter: (d) => getTahun(d.usia) > 17 },
+];
+
+// ==================== Komponen Utama ====================
+export default function RiwayatObservasiPage() {
   const router = useRouter();
-  const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"menunggu" | "terjadwal" | "selesai">("menunggu");
-  const [jadwalList, setJadwalList] = useState<Jadwal[]>([]);
-  const [originalList, setOriginalList] = useState<Jadwal[]>([]);
-  const [selectedPasien, setSelectedPasien] = useState<Jadwal | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
+  const [activeKategori, setActiveKategori] = useState(0);
+  const [data, setData] = useState<Anak[]>([]);
+  const [loading, setLoading] = useState(true);
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
-  const [openAsesmen, setOpenAsesmen] = useState(false);
 
-  /** Ambil data dari API sesuai tab */
-  const fetchJadwal = async () => {
-    setLoading(true);
-    setError(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [selectedPasien, setSelectedPasien] = useState<Anak | null>(null);
+
+  // ==================== Fetch Data ====================
+  const fetchObservasi = async () => {
     try {
-      let status = "";
-      if (tab === "menunggu") status = "pending";
-      else if (tab === "terjadwal") status = "scheduled";
-      else if (tab === "selesai") status = "completed";
+      setLoading(true);
+      const result = await getCompletedObservations();
 
-      const data = await getObservations(status);
-      setJadwalList(data);
-      setOriginalList(data);
+      const mapped =
+        result?.map((item: any) => ({
+          observation_id: item.observation_id?.toString() || item.id?.toString(),
+          nama: item.child_name,
+          observer: item.observer,
+          usia: item.child_age,
+          sekolah: item.child_school,
+          tglObservasi: item.scheduled_date,
+          waktu: item.time || "-", // ← tambahkan waktu observasi
+          status: item.status,
+        })) || [];
+
+      setData(mapped);
     } catch (err) {
-      console.error("Gagal memuat data jadwal:", err);
-      setError("Gagal memuat data jadwal");
+      console.error(err);
+      alert("Gagal mengambil riwayat observasi.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchJadwal();
-    setSelectedDate(null); // reset selectedDate saat ganti tab
-  }, [tab]);
+    fetchObservasi();
+  }, []);
 
-  /** Filter pencarian */
-  const filtered = jadwalList.filter((j) => {
-    const nama = j.nama?.toLowerCase() || "";
-    const sekolah = j.sekolah?.toLowerCase() || "";
-    const orangtua = j.orangtua?.toLowerCase() || "";
-    const q = search.toLowerCase();
-    return nama.includes(q) || sekolah.includes(q) || orangtua.includes(q);
-  });
-
-  /** Handler pilih tanggal */
-  const handleDateSelect = (date: Date) => {
-    const formatted = format(date, "yyyy-MM-dd", { locale: id });
-    setSelectedDate(formatted);
-    const filteredData = originalList.filter(
-      (j) => j.tanggalObservasi === formatted
-    );
-    setJadwalList(filteredData);
-  };
+  const filtered = data.filter((d) => kategori[activeKategori].filter(d));
 
   const handleRiwayatJawaban = (id: string) => {
     router.push(`/terapis/riwayat-hasil?id=${id}`);
@@ -79,254 +93,155 @@ export default function JadwalPage() {
     router.push(`/terapis/hasil-observasi?id=${id}`);
   };
 
-  const handleAturAsesmen = (pasien: Jadwal) => {
-    setSelectedPasien(pasien);
-    setOpenAsesmen(true);
-    setOpenDropdown(null);
-  };
-
-  /** Calendar untuk tab terjadwal */
-  const DualCalendar = () => {
-    const today = selectedDate ? new Date(selectedDate) : new Date();
-    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
-
-    return (
-      <div className="flex justify-center gap-6 bg-[#F9FAFB] p-4 rounded-lg">
-        <Calendar
-          onChange={handleDateSelect}
-          locale="id-ID"
-          showNeighboringMonth={false}
-          next2Label={null}
-          prev2Label={null}
-          value={today}
-        />
-        <Calendar
-          onChange={handleDateSelect}
-          locale="id-ID"
-          showNeighboringMonth={false}
-          next2Label={null}
-          prev2Label={null}
-          value={nextMonth}
-        />
-      </div>
-    );
-  };
-
-
+  // ==================== UI ====================
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
-      <div className="flex flex-col flex-1">
-        <Header />
+    <div className="flex h-screen text-[#36315B] font-playpen">
+      <SidebarTerapis />
+      <div className="flex flex-col flex-1 bg-gray-50">
+        <HeaderTerapis />
 
-        <main className="p-6 space-y-6">
-          <h1 className="text-2xl font-semibold text-[#36315B] mb-2">Observasi</h1>
-
-          {tab === "terjadwal" && <DualCalendar />}
-
-          <div className="flex justify-between items-center mt-2">
-            <div className="flex gap-6">
-              {["menunggu", "terjadwal", "selesai"].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTab(t as any)}
-                  className={`relative pb-2 text-sm font-medium ${tab === t
-                      ? "text-[#36315B] border-b-2 border-[#81B7A9] font-semibold"
-                      : "text-gray-500 hover:text-gray-700"
-                    }`}
-                >
-                  {t === "menunggu"
-                    ? "Menunggu"
-                    : t === "terjadwal"
-                      ? "Terjadwal"
-                      : "Selesai"}
-                </button>
-              ))}
-            </div>
-
-            <div className="relative w-64">
-              <input
-                type="text"
-                placeholder="Cari Pasien"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full border border-[#ADADAD] rounded-full pl-3 pr-9 py-2 text-sm outline-none focus:ring-2 focus:ring-[#81B7A9]"
-              />
-              <SearchIcon size={16} className="absolute right-3 top-2.5 text-gray-400" />
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
-            {loading ? (
-              <p className="text-center text-gray-500 py-10">Memuat data...</p>
-            ) : error ? (
-              <p className="text-center text-red-500 py-10">{error}</p>
-            ) : filtered.length === 0 ? (
-              selectedDate && tab === "terjadwal" ? (
-                <p className="text-center text-gray-500 py-10">
-                  Tidak ada jadwal untuk tanggal{" "}
-                  {format(new Date(selectedDate), "dd MMMM yyyy", { locale: id })}
-                </p>
-              ) : (
-                <p className="text-center text-gray-500 py-10">Tidak ada data.</p>
-              )
-            ) : tab === "selesai" ? (
-              /* ================== TABEL SELESAI ================== */
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-200 text-[#36315B] bg-gray-50">
-                    <th className="p-3 text-left">Nama Pasien</th>
-                    <th className="p-3 text-left">Nama Orangtua</th>
-                    <th className="p-3 text-left">Observer</th>
-                    <th className="p-3 text-left">Status</th>
-                    <th className="p-3 text-left">Tanggal Observasi</th>
-                    <th className="p-3 text-left">Waktu</th>
-                    <th className="p-3 text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-  {filtered.map((j) => (
-    <tr key={j.id} className="border-b border-gray-100 hover:bg-gray-50">
-      <td className="p-3">{j.nama}</td>
-      <td className="p-3">{j.orangtua}</td>
-      <td className="p-3">{j.observer || "-"}</td>
-      <td className="p-3 capitalize">{j.status || "completed"}</td>
-      <td className="p-3">{j.tanggalObservasi || "-"}</td>
-      <td className="p-3">{j.waktu || "-"}</td>
-      <td className="p-3 text-center relative">
-        <div className="inline-block relative text-left">
+        <main className="p-4 sm:p-6 overflow-y-auto">
           <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              // toggle dropdown hanya untuk baris ini
-              setOpenDropdown(openDropdown === j.id ? null : j.id);
-              // set pasien yang sesuai baris ini
-              setSelectedPasien(j);
-            }}
-            className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+            onClick={() => router.back()}
+            className="mb-4 px-4 py-2 text-sm font-semibold text-[#36315B] border border-[#81B7A9] rounded hover:bg-[#81B7A9] hover:text-white transition"
           >
-            <Settings size={14} className="mr-1" />
-            Aksi
-            <ChevronDown size={12} className="ml-1" />
+            Kembali
           </button>
 
-          {openDropdown === j.id && (
-            <div
-              className="absolute z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-md border border-[#80C2B0]"
-            >
-              <div className="py-1 text-[#5F52BF]">
-                <button
-                  onClick={() => {
-                    setOpenAsesmen(true);
-                    setOpenDropdown(null); // tutup dropdown setelah klik
-                  }}
-                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
-                >
-                  <Settings size={16} className="mr-2" />
-                  Atur Asesmen
-                </button>
-                <button
-                  onClick={() => handleRiwayatJawaban(j.id)}
-                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
-                >
-                  <Clock3 size={16} className="mr-2" />
-                  Riwayat Jawaban
-                </button>
-                <button
-                  onClick={() => handleLihatHasil(j.id)}
-                  className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
-                >
-                  <Eye size={16} className="mr-2" />
-                  Lihat Hasil
-                </button>
-              </div>
-            </div>
-          )}
-        </div>
-      </td>
-    </tr>
-  ))}
-</tbody>
+          <h2 className="text-lg sm:text-2xl font-bold text-center mb-6">
+            Riwayat Observasi
+          </h2>
 
-              </table>
-            ) : (
-              /* ================== TABEL MENUNGGU / TERJADWAL ================== */
-              <table className="w-full text-sm border-collapse">
-                <thead>
-                  <tr className="border-b border-gray-200 text-[#36315B]">
-                    <th className="p-3 text-left">Nama Pasien</th>
-                    <th className="p-3 text-left">Usia</th>
-                    <th className="p-3 text-left">Jenis Kelamin</th>
-                    <th className="p-3 text-left">Sekolah</th>
-                    <th className="p-3 text-left">Nama Orangtua</th>
-                    <th className="p-3 text-left">Telepon</th>
-                    {tab !== "menunggu" && <th className="p-3 text-left">Tanggal Observasi</th>}
-                    <th className="p-3 text-center">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map((j) => (
-                    <tr key={j.id} className="border-b border-gray-100">
-                      <td className="p-3">{j.nama || "-"}</td>
-                      <td className="p-3">{j.usia || "-"}</td>
-                      <td className="p-3">{j.jenisKelamin || "-"}</td>
-                      <td className="p-3">{j.sekolah || "-"}</td>
-                      <td className="p-3">{j.orangtua || "-"}</td>
-                      <td className="p-3">{j.telepon || "-"}</td>
-                      {tab !== "menunggu" && <td className="p-3">{j.tanggalObservasi || "-"}</td>}
-                      <td className="p-3 text-center">
-                        <button
-                          onClick={() => {
-                            setSelectedPasien(j);
-                            setOpenAsesmen(true);
-                          }}
-                          className="px-4 py-1 text-sm rounded bg-[#81B7A9] hover:bg-[#36315B] text-white transition"
-                        >
-                          {tab === "menunggu"
-                            ? "Atur Observasi"
-                            : tab === "terjadwal"
-                              ? "Edit Observasi"
-                              : "Atur Asesmen"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
+          {/* Tab Kategori Usia */}
+          <div className="relative flex flex-wrap border-b border-gray-300 mb-4">
+            {kategori.map((kat, idx) => (
+              <button
+                key={idx}
+                onClick={() => setActiveKategori(idx)}
+                className={`relative px-3 sm:px-4 py-2 text-sm sm:text-base font-medium transition-colors ${
+                  activeKategori === idx
+                    ? "text-[#36315B]"
+                    : "text-gray-500 hover:text-[#36315B]"
+                }`}
+              >
+                {kat.title}
+                {activeKategori === idx && (
+                  <motion.div
+                    layoutId="underline-riwayat"
+                    className="absolute left-0 right-0 -bottom-[1px] h-[2px] bg-[#81B7A9]"
+                  />
+                )}
+              </button>
+            ))}
           </div>
+
+          {/* Loading State */}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center mt-10 text-gray-500">
+              <div className="w-10 h-10 border-4 border-[#81B7A9] border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p>Memuat riwayat observasi...</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeKategori}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.3 }}
+                className="bg-white shadow-md rounded-lg p-3 sm:p-4 border border-[#E4E4E4] overflow-x-auto"
+              >
+                <table className="w-full text-xs sm:text-sm table-auto border-collapse min-w-[700px]">
+                  <thead>
+                    <tr className="border-b border-[#81B7A9] bg-gray-100">
+                      <th className="text-center py-2 px-2 sm:px-4">Nama</th>
+                      <th className="text-center py-2 px-2 sm:px-4">Observer</th>
+                      <th className="text-center py-2 px-2 sm:px-4">Usia</th>
+                      <th className="text-center py-2 px-2 sm:px-4">Sekolah</th>
+                      <th className="text-center py-2 px-2 sm:px-4">Tanggal Observasi</th>
+                      <th className="text-center py-2 px-2 sm:px-4">Waktu</th>
+                      <th className="text-center py-2 px-2 sm:px-4">Status</th>
+                      <th className="text-center py-2 px-2 sm:px-4">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.length > 0 ? (
+                      filtered.map((d, i) => (
+                        <tr key={i} className="border-b border-[#81B7A9] hover:bg-gray-50">
+                          <td className="py-2 px-2 sm:px-4 text-center">{d.nama}</td>
+                          <td className="py-2 px-2 sm:px-4 text-center">{d.observer}</td>
+                          <td className="py-2 px-2 sm:px-4 text-center">{d.usia}</td>
+                          <td className="py-2 px-2 sm:px-4 text-center">{d.sekolah}</td>
+                           <td className="py-2 px-2 sm:px-4 text-center">{d.tglObservasi}</td>
+                            <td className="py-2 px-2 sm:px-4 text-center">{d.waktu}</td>
+                          <td className="py-2 px-2 sm:px-4 text-center capitalize">{d.status}</td>
+                          <td className="py-2 px-2 sm:px-4 text-center relative">
+                            <div className="relative inline-block text-left">
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  setOpenDropdown(openDropdown === d.observation_id ? null : d.observation_id);
+                                  if (openDropdown !== d.observation_id) {
+                                    setDropdownPosition({
+                                      top: rect.bottom + window.scrollY + 6,
+                                      left: rect.left + window.scrollX - 120,
+                                    });
+                                  }
+                                }}
+                                className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+                              >
+                                <Settings size={14} className="mr-1" />
+                                Aksi
+                                <ChevronDown size={12} className="ml-1" />
+                              </button>
+                            </div>
+
+                            {/* Dropdown fixed */}
+                            {openDropdown === d.observation_id && dropdownPosition && (
+                              <div
+                                className="fixed z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-md border border-[#80C2B0]"
+                                style={{
+                                  top: dropdownPosition.top,
+                                  left: dropdownPosition.left,
+                                }}
+                                onMouseLeave={() => setOpenDropdown(null)}
+                              >
+                                <div className="py-1 text-[#5F52BF]">
+                                  <button
+                                    onClick={() => handleRiwayatJawaban(d.observation_id)}
+                                    className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
+                                  >
+                                    <Clock3 size={16} className="mr-2" />
+                                    Riwayat Jawaban
+                                  </button>
+                                  <button
+                                    onClick={() => handleLihatHasil(d.observation_id)}
+                                    className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
+                                  >
+                                    <Eye size={16} className="mr-2" />
+                                    Lihat Hasil
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="text-center py-3 px-4 text-gray-500 text-sm">
+                          Tidak ada data observasi completed.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </motion.div>
+            </AnimatePresence>
+          )}
         </main>
       </div>
-
-      {/* 🔹 Popup serbaguna */}
-      {openAsesmen && selectedPasien && (
-        <FormAturAsesmen
-          title={
-            tab === "menunggu"
-              ? "Atur Observasi"
-              : tab === "terjadwal"
-                ? "Edit Observasi"
-                : "Atur Asesmen"
-          }
-          pasienName={selectedPasien.nama}
-          initialDate={selectedPasien.tanggalObservasi || ""}
-          initialTime={selectedPasien.waktu || ""}
-          onClose={() => {
-            setOpenAsesmen(false);
-            setSelectedPasien(null);
-          }}
-          onSave={(date, time) => {
-            console.log(
-              tab === "selesai" ? "🔹 Simpan Asesmen:" : "🔹 Simpan Observasi:",
-              "\nTanggal:", date,
-              "\nWaktu:", time,
-              "\nPasien:", selectedPasien.nama
-            );
-            // nanti panggil API sesuai tab
-          }}
-        />
-      )}
     </div>
   );
 }
