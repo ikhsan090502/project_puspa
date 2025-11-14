@@ -7,7 +7,7 @@ import { Pencil, Trash2, Search, Eye } from "lucide-react";
 
 import FormUbahPasien from "@/components/form/FormUbahPasien";
 import FormDetailPasien from "@/components/form/FormDetailPasien";
-import FormHapusTerapis from "@/components/form/FormHapusAdmin";
+import FormHapusPasien from "@/components/form/FormHapusAdmin";
 
 import {
   getAllPasien,
@@ -17,12 +17,9 @@ import {
   Pasien,
 } from "@/lib/api/data_pasien";
 
-/* =============================
-   Komponen utama
-============================= */
 export default function DataPasienPage() {
   const [search, setSearch] = useState("");
-  const [PasienList, setPasienList] = useState<Pasien[]>([]);
+  const [pasienList, setPasienList] = useState<Pasien[]>([]);
   const [selectedPasien, setSelectedPasien] = useState<Pasien | null>(null);
 
   const [showUbah, setShowUbah] = useState(false);
@@ -32,15 +29,11 @@ export default function DataPasienPage() {
 
   const [loading, setLoading] = useState(false);
 
-  /* =============================
-     Ambil semua pasien dari API
-  ============================= */
   useEffect(() => {
     async function fetchPasien() {
       try {
         setLoading(true);
         const data = await getAllPasien();
-        // Pastikan data-nya sesuai struktur
         setPasienList(data || []);
       } catch (err) {
         console.error("Gagal memuat data pasien:", err);
@@ -48,63 +41,55 @@ export default function DataPasienPage() {
         setLoading(false);
       }
     }
-
     fetchPasien();
   }, []);
 
-  /* =============================
-     Filter pencarian (berdasar nama anak)
-  ============================= */
-  const filtered = PasienList.filter((p) =>
-    (p?.child_name || "").toLowerCase().includes(search.toLowerCase())
+  const filtered = pasienList.filter((p) =>
+    (p.child_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  /* =============================
-     Detail pasien
-  ============================= */
-  const handleDetail = async (id: string) => {
+  
+  const handleDetail = async (childId: string) => {
     try {
       setLoading(true);
-      const data = await getDetailPasien(id);
+      const data = await getDetailPasien(childId);
       setSelectedPasien(data);
       setShowDetail(true);
     } catch (err) {
-      console.error(err);
       alert("Gagal mengambil detail pasien");
     } finally {
       setLoading(false);
     }
   };
 
-  /* =============================
-     Ubah data pasien
-  ============================= */
+  
   const handleUbah = async (data: Partial<Pasien>) => {
     if (!selectedPasien) return;
+
     try {
-      await updatePasien(selectedPasien.id, data);
+      await updatePasien(selectedPasien.child_id, data);
+
       const refreshed = await getAllPasien();
       setPasienList(refreshed);
+
       setShowUbah(false);
       setSelectedPasien(null);
     } catch (err) {
-      console.error(err);
       alert("Gagal memperbarui data pasien");
     }
   };
 
-  /* =============================
-     Hapus pasien
-  ============================= */
-  const handleHapus = async (id: string) => {
+  
+  const handleHapus = async (childId: string) => {
     try {
-      await deletePasien(id);
+      await deletePasien(childId);
+
       const refreshed = await getAllPasien();
       setPasienList(refreshed);
+
       setShowHapus(false);
       setDeleteId(null);
     } catch (err) {
-      console.error(err);
       alert("Gagal menghapus data pasien");
     }
   };
@@ -117,9 +102,7 @@ export default function DataPasienPage() {
         <Header />
 
         <main className="p-6 space-y-6">
-          {/* ============================= */}
-          {/* Pencarian */}
-          {/* ============================= */}
+          {/* Search */}
           <div className="flex justify-between items-center">
             <div className="relative w-64">
               <Search
@@ -136,9 +119,6 @@ export default function DataPasienPage() {
             </div>
           </div>
 
-          {/* ============================= */}
-          {/* Tabel Data Pasien */}
-          {/* ============================= */}
           <div className="bg-white rounded-lg shadow-md shadow-[#ADADAD] p-4">
             {loading ? (
               <p className="text-center text-gray-500">Memuat data...</p>
@@ -157,33 +137,34 @@ export default function DataPasienPage() {
                     <th className="p-3 text-center">Aksi</th>
                   </tr>
                 </thead>
+
                 <tbody>
                   {filtered.map((pasien, i) => (
                     <tr
-                      key={pasien.id}
+                      key={pasien.child_id}
                       className="border-b border-[#81B7A9] hover:bg-gray-50"
                     >
                       <td className="p-3">{i + 1}</td>
                       <td className="p-3">{pasien.child_name}</td>
-                      <td className="p-3 !text-[#757575]">
+                      <td className="p-3 text-[#757575]">
                         {pasien.child_birth_date}
                       </td>
-                      <td className="p-3 font-medium !text-[#757575]">
-                        {pasien.child_age}
-                      </td>
-                      <td className="p-3 font-medium !text-[#757575]">
+                      <td className="p-3 text-[#757575]">{pasien.child_age}</td>
+                      <td className="p-3 text-[#757575]">
                         {pasien.child_gender}
                       </td>
-                      <td className="p-3 font-medium !text-[#757575]">
-                        {pasien.child_school}
+                      <td className="p-3 text-[#757575]">
+                        {pasien.child_school ?? "-"}
                       </td>
+
                       <td className="p-3 flex justify-center gap-3">
                         <button
-                          onClick={() => handleDetail(pasien.id)}
+                          onClick={() => handleDetail(pasien.child_id)}
                           className="hover:scale-110 transition text-[#36315B]"
                         >
                           <Eye size={18} />
                         </button>
+
                         <button
                           onClick={() => {
                             setSelectedPasien(pasien);
@@ -193,9 +174,10 @@ export default function DataPasienPage() {
                         >
                           <Pencil size={18} />
                         </button>
+
                         <button
                           onClick={() => {
-                            setDeleteId(pasien.id);
+                            setDeleteId(pasien.child_id);
                             setShowHapus(true);
                           }}
                           className="hover:scale-110 transition text-red-600"
@@ -212,20 +194,19 @@ export default function DataPasienPage() {
         </main>
       </div>
 
-      {/* ============================= */}
-      {/* Modal Form */}
-      {/* ============================= */}
       <FormUbahPasien
         open={showUbah}
         onClose={() => setShowUbah(false)}
         onUpdate={handleUbah}
         initialData={selectedPasien || undefined}
       />
-      <FormHapusTerapis
+
+      <FormHapusPasien
         open={showHapus}
         onClose={() => setShowHapus(false)}
         onConfirm={() => deleteId && handleHapus(deleteId)}
       />
+
       <FormDetailPasien
         open={showDetail}
         onClose={() => setShowDetail(false)}

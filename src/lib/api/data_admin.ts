@@ -42,7 +42,6 @@ export async function getAdminById(id: string): Promise<Admin> {
 }
 
 
-// 🔹 Tambah admin baru
 export async function addAdmin(data: {
   admin_name: string;
   username: string;
@@ -60,7 +59,6 @@ export async function addAdmin(data: {
   });
 }
 
-// 🔹 Ubah admin
 export async function updateAdmin(id: string, data: {
   admin_name: string;
   username: string;
@@ -75,7 +73,6 @@ export async function updateAdmin(id: string, data: {
   });
 }
 
-// 🔹 Hapus admin
 export async function deleteAdmin(id: string) {
   return await api.delete(`/admins/${id}`);
 }

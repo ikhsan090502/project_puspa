@@ -34,7 +34,6 @@ export default function JadwalPage() {
   const [openDropdown, setOpenDropdown] = useState(false);
   const [openAsesmen, setOpenAsesmen] = useState(false);
 
-  /** Ambil data dari API sesuai tab */
   const fetchJadwal = async () => {
     setLoading(true);
     setError(null);
@@ -60,7 +59,6 @@ export default function JadwalPage() {
     setSelectedDate(null);
   }, [tab]);
 
-  /** Filter pencarian */
   const filtered = jadwalList.filter((j) => {
     const nama = j.nama?.toLowerCase() || "";
     const sekolah = j.sekolah?.toLowerCase() || "";
@@ -69,7 +67,6 @@ export default function JadwalPage() {
     return nama.includes(q) || sekolah.includes(q) || orangtua.includes(q);
   });
 
-  /** Pilih tanggal di kalender */
   const handleDateSelect = (date: Date) => {
     const formatted = format(date, "yyyy-MM-dd", { locale: id });
     setSelectedDate(formatted);
@@ -93,14 +90,12 @@ export default function JadwalPage() {
     setOpenDropdown(false);
   };
 
-  /** Tutup dropdown saat klik di luar */
   useEffect(() => {
     const handleClickOutside = () => setOpenDropdown(false);
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-  /** Komponen kalender */
   const DualCalendar = () => {
     const today = selectedDate ? new Date(selectedDate) : new Date();
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
@@ -140,7 +135,6 @@ export default function JadwalPage() {
 
           {tab === "terjadwal" && <DualCalendar />}
 
-          {/* Tabs + Search */}
           <div className="flex justify-between items-center mt-2">
             <div className="flex gap-6">
               {["menunggu", "terjadwal", "selesai"].map((t) => (
@@ -177,7 +171,6 @@ export default function JadwalPage() {
             </div>
           </div>
 
-          {/* Kontainer tabel */}
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
             {loading ? (
               <p className="text-center text-gray-500 py-10">Memuat data...</p>
@@ -193,7 +186,6 @@ export default function JadwalPage() {
                 <p className="text-center text-gray-500 py-10">Tidak ada data.</p>
               )
             ) : tab === "selesai" ? (
-              /* ================== TAB SELESAI ================== */
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200 text-[#36315B] bg-gray-50">
@@ -237,7 +229,6 @@ export default function JadwalPage() {
                 </tbody>
               </table>
             ) : (
-              /* ================== TAB MENUNGGU / TERJADWAL ================== */
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200 text-[#36315B]">
@@ -287,7 +278,6 @@ export default function JadwalPage() {
             )}
           </div>
 
-          {/* 🔹 Dropdown global (muncul di bawah header) */}
           {openDropdown && selectedPasien && (
             <div
               className="fixed top-[100px] left-1/2 -translate-x-1/2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64 text-[#5F52BF]"
@@ -327,7 +317,6 @@ export default function JadwalPage() {
         </main>
       </div>
 
-      {/* 🔹 Popup form atur asesmen */}
       {openAsesmen && selectedPasien && (
         <FormAturAsesmen
           title={

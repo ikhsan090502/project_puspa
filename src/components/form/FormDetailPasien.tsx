@@ -1,66 +1,5 @@
 "use client";
 
-import React from "react";
-
-interface Pendamping {
-  nama: string;
-  hubungan: "Ayah" | "Ibu" | "Wali";
-  usia: string;
-  pekerjaan: string;
-  telepon: string;
-}
-
-interface Pasien {
-  id: number;
-  nama: string;
-  agama: string;
-  tanggal_lahir: string;
-  jenis_kelamin: string;
-  alamat: string;
-  asal_sekolah: string;
-  ditambahkan: string;
-  diubah: string;
-  pendamping?: Pendamping[]; // ubah jadi optional
-  keluhan?: string;
-  layanan?: string[];
-}
-
-/* =============================
-   Fungsi bantu
-============================= */
-function hitungUsia(tanggalLahir: string): string {
-  if (!tanggalLahir) return "-";
-
-  const lahir = new Date(tanggalLahir);
-  const sekarang = new Date();
-
-  let tahun = sekarang.getFullYear() - lahir.getFullYear();
-  let bulan = sekarang.getMonth() - lahir.getMonth();
-
-  if (bulan < 0) {
-    tahun--;
-    bulan += 12;
-  }
-
-  return `${tahun} Tahun ${bulan} Bulan`;
-}
-
-function formatTanggal(tanggal: string): string {
-  if (!tanggal) return "-";
-
-  const d = new Date(tanggal);
-  const options: Intl.DateTimeFormatOptions = {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  };
-
-  return d.toLocaleDateString("id-ID", options);
-}
-
-/* =============================
-   Komponen utama
-============================= */
 export default function FormDetailPasien({
   open,
   onClose,
@@ -68,33 +7,50 @@ export default function FormDetailPasien({
 }: {
   open: boolean;
   onClose: () => void;
-  pasien: Pasien | null;
+  pasien: any | null; 
 }) {
   if (!open || !pasien) return null;
 
-  // Gunakan optional chaining agar aman
-  const pendampingList = pasien.pendamping || [];
-
-  const ayah = pendampingList.find((p) => p.hubungan === "Ayah");
-  const ibu = pendampingList.find((p) => p.hubungan === "Ibu");
-  const wali = pendampingList.find((p) => p.hubungan === "Wali");
-
-  const renderPendamping = (label: string, data?: Pendamping) => (
-    <div className="mt-2">
+  const renderOrangTua = (label: string, data: any) => (
+    <div className="mt-3">
       <p className="font-medium">{label}</p>
       <ul className="text-sm text-[#36315B] space-y-1 ml-3">
-        <li>• Nama {label} : {data?.nama || "-"}</li>
-        <li>• Hubungan : {data?.hubungan || "-"}</li>
-        <li>• Usia : {data?.usia || "-"}</li>
-        <li>• Pekerjaan : {data?.pekerjaan || "-"}</li>
-        <li>• Nomor Telpon : {data?.telepon || "-"}</li>
+        <li>• Nama : {data?.name || "-"}</li>
+        <li>• Usia : {data?.age || "-"}</li>
+        <li>• Pekerjaan : {data?.occupation || "-"}</li>
+        <li>• Telepon : {data?.phone || "-"}</li>
+        <li>• Hubungan : {data?.relationship || "-"}</li>
       </ul>
     </div>
   );
 
+  const ayah = {
+    name: pasien.father_name,
+    phone: pasien.father_phone,
+    age: pasien.father_age,
+    occupation: pasien.father_occupation,
+    relationship: pasien.father_relationship,
+  };
+
+  const ibu = {
+    name: pasien.mother_name,
+    phone: pasien.mother_phone,
+    age: pasien.mother_age,
+    occupation: pasien.mother_occupation,
+    relationship: pasien.mother_relationship,
+  };
+
+  const wali = {
+    name: pasien.guardian_name,
+    phone: pasien.guardian_phone,
+    age: pasien.guardian_age,
+    occupation: pasien.guardian_occupation,
+    relationship: pasien.guardian_relationship,
+  };
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
-      <div className="bg-white rounded-lg shadow-lg w-[450px] max-h-[90vh] overflow-y-auto p-6 relative">
+      <div className="bg-white rounded-lg shadow-lg w-[480px] max-h-[90vh] overflow-y-auto p-6 relative">
         <button
           onClick={onClose}
           className="absolute right-3 top-3 text-gray-600 hover:text-[#81B7A9]"
@@ -107,45 +63,46 @@ export default function FormDetailPasien({
         </h2>
         <hr className="border-t border-[#81B7A9] mb-3" />
 
-        {/* Informasi Pasien */}
         <p className="text-sm font-medium text-[#36315B]">Informasi Anak</p>
         <ul className="text-sm text-[#36315B] space-y-1 mt-2">
-          <li>• Nama Lengkap : {pasien.nama}</li>
-          <li>• Tempat, Tanggal Lahir : {formatTanggal(pasien.tanggal_lahir)}</li>
-          <li>• Usia : {hitungUsia(pasien.tanggal_lahir)}</li>
-          <li>• Jenis Kelamin : {pasien.jenis_kelamin}</li>
-          <li>• Agama : {pasien.agama}</li>
-          <li>• Asal Sekolah : {pasien.asal_sekolah}</li>
-          <li>• Alamat : {pasien.alamat}</li>
-          <li>• Tanggal Ditambahkan : {pasien.ditambahkan}</li>
-          <li>• Tanggal Diubah : {pasien.diubah}</li>
+          <li>• Nama Lengkap : {pasien.child_name}</li>
+          <li>• Tempat, Tanggal Lahir : {pasien.child_birth_info || "-"}</li>
+          <li>• Usia : {pasien.child_age}</li>
+          <li>• Jenis Kelamin : {pasien.child_gender}</li>
+          <li>• Agama : {pasien.child_religion}</li>
+          <li>• Asal Sekolah : {pasien.child_school}</li>
+          <li>• Alamat : {pasien.child_address}</li>
+          <li>• Tanggal Ditambahkan : {pasien.created_at}</li>
+          <li>• Tanggal Diubah : {pasien.updated_at}</li>
         </ul>
 
-        {/* Informasi Orangtua / Wali */}
-        <div className="mt-4">
-          <p className="text-sm font-medium text-[#36315B]">Informasi Orangtua / Wali</p>
-          {renderPendamping("Ayah", ayah)}
-          {renderPendamping("Ibu", ibu)}
-          {renderPendamping("Wali (Jika Ada)", wali)}
+        <div className="mt-5">
+          <p className="text-sm font-medium text-[#36315B]">
+            Informasi Orangtua / Wali
+          </p>
+
+          {renderOrangTua("Ayah", ayah)}
+          {renderOrangTua("Ibu", ibu)}
+          {renderOrangTua("Wali (Jika Ada)", wali)}
         </div>
 
-        {/* Keluhan */}
-        {pasien.keluhan && (
+        {pasien.child_complaint && (
           <div className="mt-4">
             <p className="text-sm font-medium text-[#36315B]">Keluhan</p>
-            <p className="text-sm text-[#36315B] mt-1">{pasien.keluhan}</p>
+            <p className="text-sm text-[#36315B] mt-1">
+              {pasien.child_complaint}
+            </p>
           </div>
         )}
 
-        {/* Layanan Terpilih */}
-        {pasien.layanan && pasien.layanan.length > 0 && (
-          <div className="mt-4">
-            <p className="text-sm font-medium text-[#36315B]">Layanan Terpilih</p>
-            <ul className="text-sm text-[#36315B] space-y-1 mt-1 ml-3">
-              {pasien.layanan.map((layanan, i) => (
-                <li key={i}>• {layanan}</li>
-              ))}
-            </ul>
+        {pasien.child_service_choice && (
+          <div className="mt-4 mb-3">
+            <p className="text-sm font-medium text-[#36315B]">
+              Layanan Terpilih
+            </p>
+            <p className="text-sm text-[#36315B] mt-1">
+              • {pasien.child_service_choice}
+            </p>
           </div>
         )}
       </div>

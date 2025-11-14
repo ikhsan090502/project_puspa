@@ -59,7 +59,6 @@ export default function FormUbahTerapis({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Validasi sederhana
     if (
       !formData.nama ||
       !formData.bidang ||
@@ -89,7 +88,6 @@ export default function FormUbahTerapis({
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {/* Nama */}
           <div>
             <label className="block text-sm font-medium text-[#36315B] mb-1">
               Nama
@@ -103,7 +101,6 @@ export default function FormUbahTerapis({
             />
           </div>
 
-          {/* Bidang */}
           <div>
             <label className="block text-sm font-medium text-[#36315B] mb-1">
               Bidang
@@ -123,7 +120,6 @@ export default function FormUbahTerapis({
             </select>
           </div>
 
-          {/* Username */}
           <div>
             <label className="block text-sm font-medium text-[#36315B] mb-1">
               Username
@@ -137,7 +133,6 @@ export default function FormUbahTerapis({
             />
           </div>
 
-          {/* Email */}
           <div>
             <label className="block text-sm font-medium text-[#36315B] mb-1">
               Email
@@ -151,7 +146,6 @@ export default function FormUbahTerapis({
             />
           </div>
 
-          {/* Telepon */}
           <div>
             <label className="block text-sm font-medium text-[#36315B] mb-1">
               Telepon
@@ -165,7 +159,6 @@ export default function FormUbahTerapis({
             />
           </div>
 
-          {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <button
               type="button"

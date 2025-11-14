@@ -1,8 +1,7 @@
 import api from "@/lib/axios";
 
-// ================== INTERFACE ==================
 export interface Terapis {
-  id: string; // therapist_id
+  id: string; 
   nama: string;
   bidang: string;
   username: string;
@@ -10,10 +9,9 @@ export interface Terapis {
   telepon: string;
   ditambahkan: string;
   diubah: string;
-  is_active?: string; // optional, untuk status
+  is_active?: string; 
 }
 
-// ================== MAPPING ==================
 const bidangMap: Record<string, string> = {
   fisio: "Fisioterapi",
   okupasi: "Okupasi Terapi",
@@ -28,9 +26,7 @@ const reverseBidangMap: Record<string, string> = {
   "Paedagog": "paedagog",
 };
 
-// ================== API FUNCTIONS ==================
 
-// 🔹 Ambil semua terapis
 export async function getTerapis(): Promise<Terapis[]> {
   const token = localStorage.getItem("token_admin");
   const res = await api.get("/therapists", {
@@ -39,7 +35,7 @@ export async function getTerapis(): Promise<Terapis[]> {
 
   if (res.data.success && Array.isArray(res.data.data)) {
     return res.data.data.map((t: any) => ({
-      id: t.therapist_id, // pakai therapist_id
+      id: t.therapist_id, 
       nama: t.therapist_name,
       bidang: bidangMap[t.therapist_section] || t.therapist_section,
       username: t.username,
@@ -54,7 +50,6 @@ export async function getTerapis(): Promise<Terapis[]> {
   return [];
 }
 
-// 🔹 Tambah terapis baru
 export async function addTerapis(data: {
   nama: string;
   bidang: string;
@@ -78,7 +73,6 @@ export async function addTerapis(data: {
   );
 }
 
-// 🔹 Ubah data terapis
 export async function updateTerapis(
   id: string,
   data: {
@@ -103,7 +97,6 @@ export async function updateTerapis(
   );
 }
 
-// 🔹 Hapus terapis
 export async function deleteTerapis(id: string) {
   const token = localStorage.getItem("token_admin");
   return api.delete(`/therapists/${id}`, {
@@ -111,7 +104,6 @@ export async function deleteTerapis(id: string) {
   });
 }
 
-// 🔹 Ambil detail terapis
 export async function getDetailTerapis(id: string): Promise<Terapis | null> {
   const token = localStorage.getItem("token_admin");
   const res = await api.get(`/therapists/${id}`, {

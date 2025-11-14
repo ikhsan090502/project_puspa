@@ -18,7 +18,6 @@ import {
   Terapis,
 } from "@/lib/api/data_terapis";
 
-// ================== DETAIL MODAL ==================
 function DetailTerapis({
   open,
   onClose,
@@ -53,13 +52,14 @@ function DetailTerapis({
           <li>• Telepon : {terapis.telepon}</li>
           <li>• Ditambahkan : {terapis.ditambahkan}</li>
           <li>• Diubah : {terapis.diubah}</li>
+                    <li>• Status : {terapis.is_active === "1" ? "Terverifikasi" : "Belum Terferivikasi"}</li>
+
         </ul>
       </div>
     </div>
   );
 }
 
-// ================== MAIN PAGE ==================
 export default function DataTerapisPage() {
   const [search, setSearch] = useState("");
   const [terapisList, setTerapisList] = useState<Terapis[]>([]);
@@ -70,7 +70,6 @@ export default function DataTerapisPage() {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showDetail, setShowDetail] = useState(false);
 
-  // ================== FETCH DATA ==================
   useEffect(() => {
     fetchTerapis();
   }, []);
@@ -80,11 +79,10 @@ export default function DataTerapisPage() {
       const data = await getTerapis();
       setTerapisList(data);
     } catch (err) {
-      console.error("❌ Gagal mengambil data terapis:", err);
+      console.error("Gagal mengambil data terapis:", err);
     }
   };
 
-  // ================== TAMBAH ==================
   const handleTambah = async (data: {
     nama: string;
     bidang: string;
@@ -96,19 +94,18 @@ export default function DataTerapisPage() {
     try {
       const res = await addTerapis(data);
       if (res.data.success) {
-        alert("✅ Terapis berhasil ditambahkan!");
+        alert("Terapis berhasil ditambahkan!");
         setShowTambah(false);
-        fetchTerapis(); // fetch ulang supaya tabel otomatis update
+        fetchTerapis(); 
       } else {
-        alert("❌ Gagal menambah terapis");
+        alert("Gagal menambah terapis");
       }
     } catch (err: any) {
-      console.error("❌ Gagal menambah terapis:", err.response?.data || err);
-      alert("❌ Gagal menambah terapis");
+      console.error(" Gagal menambah terapis:", err.response?.data || err);
+      alert(" Gagal menambah terapis");
     }
   };
 
-  // ================== UBAH ==================
   const handleUbah = async (data: {
     nama: string;
     bidang: string;
@@ -120,36 +117,34 @@ export default function DataTerapisPage() {
     try {
       const res = await updateTerapis(selectedTerapis.id, data);
       if (res.data.success) {
-        alert("✅ Data terapis berhasil diperbarui!");
+        alert(" Data terapis berhasil diperbarui!");
         setShowUbah(false);
-        fetchTerapis(); // fetch ulang untuk update tabel
+        fetchTerapis();
       } else {
-        alert("❌ Gagal memperbarui data terapis");
+        alert(" Gagal memperbarui data terapis");
       }
     } catch (err: any) {
-      console.error("❌ Gagal memperbarui terapis:", err.response?.data || err);
-      alert("❌ Gagal memperbarui data terapis");
+      console.error(" Gagal memperbarui terapis:", err.response?.data || err);
+      alert(" Gagal memperbarui data terapis");
     }
   };
 
-  // ================== HAPUS ==================
   const handleHapus = async (id: string) => {
     try {
       const res = await deleteTerapis(id);
       if (res.data.success) {
         alert("🗑️ Terapis berhasil dihapus!");
         setShowHapus(false);
-        fetchTerapis(); // fetch ulang untuk update tabel
+        fetchTerapis(); 
       } else {
-        alert("❌ Gagal menghapus terapis");
+        alert(" Gagal menghapus terapis");
       }
     } catch (err: any) {
-      console.error("❌ Gagal menghapus terapis:", err.response?.data || err);
-      alert("❌ Gagal menghapus terapis");
+      console.error(" Gagal menghapus terapis:", err.response?.data || err);
+      alert(" Gagal menghapus terapis");
     }
   };
 
-  // ================== DETAIL ==================
   const handleDetail = async (id: string) => {
     try {
       const data = await getDetailTerapis(id);
@@ -158,12 +153,11 @@ export default function DataTerapisPage() {
         setShowDetail(true);
       }
     } catch (err) {
-      console.error("❌ Gagal menampilkan detail:", err);
-      alert("❌ Gagal menampilkan detail terapis");
+      console.error(" Gagal menampilkan detail:", err);
+      alert(" Gagal menampilkan detail terapis");
     }
   };
 
-  // ================== FILTER ==================
   const filtered = terapisList.filter(
     (t) =>
       (t.nama?.toLowerCase() || "").includes(search.toLowerCase()) ||
@@ -171,7 +165,6 @@ export default function DataTerapisPage() {
       (t.bidang?.toLowerCase() || "").includes(search.toLowerCase())
   );
 
-  // ================== RENDER ==================
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -179,7 +172,7 @@ export default function DataTerapisPage() {
         <Header />
 
         <main className="p-6 space-y-6">
-          {/* Header Table */}
+          
           <div className="flex justify-between items-center">
             <button
               onClick={() => setShowTambah(true)}
@@ -204,7 +197,6 @@ export default function DataTerapisPage() {
             </div>
           </div>
 
-          {/* Table */}
           <div className="bg-white rounded-lg shadow-md shadow-[#ADADAD] p-4">
             <table className="w-full text-sm border-collapse">
               <thead>
@@ -215,6 +207,7 @@ export default function DataTerapisPage() {
                   <th className="p-3 text-left">Nama Pengguna</th>
                   <th className="p-3 text-left">Email</th>
                   <th className="p-3 text-left">Telepon</th>
+                  <th className="p-3 text-left">Status</th>
                   <th className="p-3 text-center">Aksi</th>
                 </tr>
               </thead>
@@ -230,6 +223,9 @@ export default function DataTerapisPage() {
                     <td className="p-3 text-[#757575]">{terapis.username}</td>
                     <td className="p-3 text-[#757575]">{terapis.email}</td>
                     <td className="p-3 text-[#757575]">{terapis.telepon}</td>
+                    <td className="p-3 font-medium text-[#757575]">
+                      {terapis.is_active === "1" ? "Terverifikasi" : "Belum Terverifikasi"}
+                    </td>
                     <td className="p-3 flex justify-center gap-3">
                       <button
                         onClick={() => handleDetail(terapis.id)}
@@ -264,7 +260,6 @@ export default function DataTerapisPage() {
         </main>
       </div>
 
-      {/* ================== MODALS ================== */}
       <FormTambahTerapis
         open={showTambah}
         onClose={() => setShowTambah(false)}

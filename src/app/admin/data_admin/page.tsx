@@ -50,7 +50,7 @@ function DetailAdmin({
           <li>• Telepon : {admin.admin_phone}</li>
           <li>• Tanggal Ditambahkan : {admin.created_at}</li>
           <li>• Tanggal Diubah : {admin.updated_at}</li>
-          <li>• Status : {admin.is_active === "1" ? "Aktif" : "Nonaktif"}</li>
+          <li>• Status : {admin.is_active === "1" ? "Terverifikasi" : "Belum Terferivikasi"}</li>
         </ul>
       </div>
     </div>
@@ -70,7 +70,7 @@ export default function AdminPage() {
   const fetchAdmins = async () => {
     try {
       const res = await getAdmins();
-      setAdmins(res); // langsung set array Admin yang sudah di-map
+      setAdmins(res);
     } catch (error) {
       console.error("Gagal mengambil data admin:", error);
     }

@@ -79,7 +79,6 @@ export default function FormTambahTerapis({
         <h2 className="text-xl font-semibold text-[#36315B] mb-4">Tambah Data Terapis</h2>
 
         <form onSubmit={handleSubmit} className="space-y-3">
-          {/* Nama */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Nama</label>
             <input
@@ -92,7 +91,6 @@ export default function FormTambahTerapis({
             />
           </div>
 
-          {/* Bidang */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Bidang</label>
             <select
@@ -110,7 +108,6 @@ export default function FormTambahTerapis({
             </select>
           </div>
 
-          {/* Username */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Nama Pengguna</label>
             <input
@@ -123,7 +120,6 @@ export default function FormTambahTerapis({
             />
           </div>
 
-          {/* Email */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Email</label>
             <input
@@ -136,7 +132,6 @@ export default function FormTambahTerapis({
             />
           </div>
 
-          {/* Telepon */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Telepon</label>
             <input
@@ -149,7 +144,6 @@ export default function FormTambahTerapis({
             />
           </div>
 
-          {/* Password */}
           <div>
             <label className="block text-sm text-[#36315B] mb-1">Password</label>
             <div className="relative">
@@ -171,7 +165,6 @@ export default function FormTambahTerapis({
             </div>
           </div>
 
-          {/* Buttons */}
           <div className="flex justify-end gap-2 pt-2">
             <button
               type="button"

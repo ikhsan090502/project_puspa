@@ -32,7 +32,6 @@ export default function JadwalAsesmenPage() {
   const [openDropdown, setOpenDropdown] = useState<boolean>(false);
   const [openAsesmen, setOpenAsesmen] = useState(false);
 
-  /** Ambil data dari API sesuai tab */
   const fetchJadwal = async () => {
     setLoading(true);
     setError(null);
@@ -54,7 +53,6 @@ export default function JadwalAsesmenPage() {
     setSelectedDate(null);
   }, [tab]);
 
-  /** Filter pencarian */
   const filtered = jadwalList.filter((j) => {
     const nama = j.nama?.toLowerCase() || "";
     const sekolah = j.sekolah?.toLowerCase() || "";
@@ -63,7 +61,6 @@ export default function JadwalAsesmenPage() {
     return nama.includes(q) || sekolah.includes(q) || orangtua.includes(q);
   });
 
-  /** Handler pilih tanggal */
   const handleDateSelect = (date: Date) => {
     const formatted = format(date, "yyyy-MM-dd", { locale: id });
     setSelectedDate(formatted);
@@ -81,14 +78,12 @@ export default function JadwalAsesmenPage() {
     router.push(`/terapis/hasil-observasi?id=${id}`);
   };
 
-  /** Tutup dropdown kalau klik di luar */
   useEffect(() => {
     const handleClickOutside = () => setOpenDropdown(false);
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-  /** Calendar untuk tab terjadwal */
   const DualCalendar = () => {
     const today = selectedDate ? new Date(selectedDate) : new Date();
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
@@ -179,7 +174,6 @@ export default function JadwalAsesmenPage() {
                 </p>
               )
             ) : tab === "selesai" ? (
-              /* ================== TABEL SELESAI ================== */
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200 text-[#36315B] bg-gray-50">
@@ -224,7 +218,6 @@ export default function JadwalAsesmenPage() {
                 </tbody>
               </table>
             ) : (
-              /* ================== TABEL TERJADWAL ================== */
               <table className="w-full text-sm border-collapse">
                 <thead>
                   <tr className="border-b border-gray-200 text-[#36315B]">
@@ -266,7 +259,6 @@ export default function JadwalAsesmenPage() {
             )}
           </div>
 
-          {/* 🔹 Dropdown global muncul di bawah header */}
           {openDropdown && selectedPasien && (
             <div
               className="fixed top-[100px] left-1/2 -translate-x-1/2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64 text-[#5F52BF]"
@@ -309,7 +301,6 @@ export default function JadwalAsesmenPage() {
         </main>
       </div>
 
-      {/* 🔹 Popup Atur Asesmen */}
       {openAsesmen && selectedPasien && (
         <FormAturAsesmen
           title={tab === "terjadwal" ? "Edit Observasi" : "Atur Asesmen"}
