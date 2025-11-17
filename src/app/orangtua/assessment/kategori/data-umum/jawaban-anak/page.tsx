@@ -7,7 +7,7 @@ import HeaderOrangtua from "@/components/layout/header-orangtua";
 import dataRiwayat from "@/data/riwayat-anak.json";
 import { ChevronDown, Plus, Trash } from "lucide-react";
 
-export default function FormAssessmentOrangtua() {
+export default function RiwayatJawabanAnak() {
   const router = useRouter();
   const pathname = usePathname();
 
@@ -15,7 +15,7 @@ export default function FormAssessmentOrangtua() {
     { key: "riwayat_psikososial", label: "Riwayat Psikososial" },
     { key: "riwayat_kehamilan", label: "Riwayat Kehamilan" },
     { key: "riwayat_kelahiran", label: "Riwayat Kelahiran" },
-    { key: "riwayat_setelah_kelahiran", label: "Riwayat Setelah Kelahiran" }
+    { key: "riwayat_setelah_kelahiran", label: "Riwayat Setelah Kelahiran" },
   ];
 
   const steps = [
@@ -23,7 +23,7 @@ export default function FormAssessmentOrangtua() {
     { label: "Data Fisioterapi", path: "/orangtua/assessment/kategori/fisioterapi" },
     { label: "Data Terapi Okupasi", path: "/orangtua/assessment/kategori/okupasi" },
     { label: "Data Terapi Wicara", path: "/orangtua/assessment/kategori/wicara" },
-    { label: "Data Paedagog", path: "/orangtua/assessment/kategori/paedagog" }
+    { label: "Data Paedagog", path: "/orangtua/assessment/kategori/paedagog" },
   ];
 
   const [activeCategory, setActiveCategory] = useState("riwayat_psikososial");
@@ -35,12 +35,7 @@ export default function FormAssessmentOrangtua() {
 
   const [answers, setAnswers] = useState<any>({});
 
-  const setAnswer = (key: string, value: any) => {
-    setAnswers((prev: any) => ({
-      ...prev,
-      [key]: value
-    }));
-  };
+  const setAnswer = () => {}; // READ ONLY
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -50,16 +45,11 @@ export default function FormAssessmentOrangtua() {
         <HeaderOrangtua />
 
         <main className="flex-1 overflow-y-auto p-8">
-
           {/* STEP NAVIGATION */}
           <div className="flex justify-center mb-12">
             <div className="flex items-center">
               {steps.map((step, i) => (
-                <div
-                  key={i}
-                  className="flex items-center cursor-pointer"
-                  onClick={() => router.push(step.path)}
-                >
+                <div key={i} className="flex items-center">
                   <div className="flex flex-col items-center text-center space-y-2">
                     <div
                       className={`w-9 h-9 flex items-center justify-center rounded-full border-2 text-sm font-semibold ${
@@ -94,11 +84,12 @@ export default function FormAssessmentOrangtua() {
                 I. Data Umum
               </h2>
 
+              {/* 🟢 DROPDOWN SUDAH BISA DIKLIK */}
               <div className="relative inline-block">
                 <select
                   value={activeCategory}
                   onChange={(e) => setActiveCategory(e.target.value)}
-                  className="appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm text-[#36315B] focus:outline-none focus:ring-2 focus:ring-[#6BB1A0] cursor-pointer"
+                  className="appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm text-[#36315B] cursor-pointer"
                 >
                   {categories.map((c) => (
                     <option key={c.key} value={c.key}>
@@ -122,9 +113,9 @@ export default function FormAssessmentOrangtua() {
                   {q.type === "text" && (
                     <input
                       type="text"
+                      readOnly
                       className="border border-gray-300 rounded-md p-2 w-full text-sm"
                       placeholder={q.placeholder || ""}
-                      onChange={(e) => setAnswer(q.id, e.target.value)}
                     />
                   )}
 
@@ -133,8 +124,8 @@ export default function FormAssessmentOrangtua() {
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
+                        readOnly
                         className="border border-gray-300 rounded-md p-2 w-32 text-sm"
-                        onChange={(e) => setAnswer(q.id, e.target.value)}
                       />
                       {q.suffix && <span>{q.suffix}</span>}
                     </div>
@@ -144,19 +135,19 @@ export default function FormAssessmentOrangtua() {
                   {q.type === "textarea" && (
                     <textarea
                       rows={3}
+                      readOnly
                       className="border border-gray-300 rounded-md p-2 w-full text-sm"
                       placeholder={q.placeholder || ""}
-                      onChange={(e) => setAnswer(q.id, e.target.value)}
                     ></textarea>
                   )}
 
                   {/* SELECT */}
                   {q.type === "select" && (
                     <select
-                      className="border border-gray-300 rounded-md p-2 text-sm"
-                      onChange={(e) => setAnswer(q.id, e.target.value)}
+                      disabled
+                      className="border border-gray-300 rounded-md p-2 text-sm disabled:opacity-100 cursor-default"
                     >
-                      <option value="">Pilih salah satu</option>
+                      <option>Pilih salah satu</option>
                       {q.options?.map((opt: string) => (
                         <option key={opt} value={opt}>
                           {opt}
@@ -170,58 +161,31 @@ export default function FormAssessmentOrangtua() {
                     <div className="flex gap-6 mt-2 flex-wrap">
                       {q.options?.map((opt: string, i: number) => (
                         <label key={i} className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name={`radio-${q.id}`}
-                            value={opt}
-                            onChange={(e) => setAnswer(q.id, e.target.value)}
-                          />
+                          <input type="radio" disabled className="cursor-default" />
                           {opt}
                         </label>
                       ))}
                     </div>
                   )}
 
-                  {/* ⬇️ NEW: RADIO WITH TEXT (IMUNISASI) */}
+                  {/* RADIO WITH TEXT */}
                   {q.type === "radio_with_text" && (
                     <div className="space-y-3 mt-2">
-
-                      {/* Radio Options */}
                       <div className="flex gap-6 flex-wrap">
                         {q.options?.map((opt: string, i: number) => (
                           <label key={i} className="flex items-center gap-2">
-                            <input
-                              type="radio"
-                              name={`radio-${q.id}`}
-                              value={opt}
-                              onChange={(e) => {
-                                setAnswer(q.id, {
-                                  value: e.target.value,
-                                  note: "" // reset note jika ganti pilihan
-                                });
-                              }}
-                            />
+                            <input type="radio" disabled className="cursor-default" />
                             {opt}
                           </label>
                         ))}
                       </div>
 
-                      {/* Jika pilih Tidak Lengkap / Belum Imunisasi */}
-                      {(answers[q.id]?.value === "Tidak Lengkap" ||
-                        answers[q.id]?.value === "Belum Imunisasi") && (
-                        <input
-                          type="text"
-                          className="border border-gray-300 rounded-md p-2 w-full text-sm"
-                          placeholder="Keterangan"
-                          value={answers[q.id]?.note || ""}
-                          onChange={(e) =>
-                            setAnswer(q.id, {
-                              ...answers[q.id],
-                              note: e.target.value
-                            })
-                          }
-                        />
-                      )}
+                      <input
+                        type="text"
+                        readOnly
+                        className="border border-gray-300 rounded-md p-2 w-full text-sm"
+                        placeholder="Keterangan"
+                      />
                     </div>
                   )}
 
@@ -230,21 +194,7 @@ export default function FormAssessmentOrangtua() {
                     <div className="flex gap-6 mt-2 flex-wrap">
                       {q.options?.map((opt: string, i: number) => (
                         <label key={i} className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            value={opt}
-                            onChange={(e) => {
-                              const prev = answers[q.id] || [];
-                              if (e.target.checked) {
-                                setAnswer(q.id, [...prev, opt]);
-                              } else {
-                                setAnswer(
-                                  q.id,
-                                  prev.filter((v: string) => v !== opt)
-                                );
-                              }
-                            }}
-                          />
+                          <input type="checkbox" disabled className="cursor-default" />
                           {opt}
                         </label>
                       ))}
@@ -254,74 +204,25 @@ export default function FormAssessmentOrangtua() {
                   {/* MULTI FIELD */}
                   {q.type === "multi" && (
                     <div className="space-y-3">
-                      {(answers[q.id] || [{ Nama: "", Usia: "" }]).map(
-                        (row: any, rowIndex: number) => (
-                          <div key={rowIndex} className="flex items-center gap-4">
-                            {/* Nama */}
-                            <input
-                              type="text"
-                              placeholder="Nama"
-                              className="border border-gray-300 p-2 rounded-md text-sm"
-                              value={row.Nama}
-                              onChange={(e) => {
-                                const updated = [...(answers[q.id] || [])];
-                                updated[rowIndex] = {
-                                  ...updated[rowIndex],
-                                  Nama: e.target.value
-                                };
-                                setAnswer(q.id, updated);
-                              }}
-                            />
-
-                            {/* Usia */}
-                            <input
-                              type="text"
-                              placeholder="Usia"
-                              className="border border-gray-300 p-2 rounded-md text-sm w-24"
-                              value={row.Usia}
-                              onChange={(e) => {
-                                const updated = [...(answers[q.id] || [])];
-                                updated[rowIndex] = {
-                                  ...updated[rowIndex],
-                                  Usia: e.target.value
-                                };
-                                setAnswer(q.id, updated);
-                              }}
-                            />
-
-                            {/* Add row */}
-                            {rowIndex === (answers[q.id]?.length || 1) - 1 && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = answers[q.id] || [];
-                                  updated.push({ Nama: "", Usia: "" });
-                                  setAnswer(q.id, [...updated]);
-                                }}
-                                className="text-[#6BB1A0]"
-                              >
-                                <Plus size={20} />
-                              </button>
-                            )}
-
-                            {/* Delete row */}
-                            {rowIndex > 0 && (
-                              <button
-                                type="button"
-                                className="text-red-500"
-                                onClick={() => {
-                                  const updated = answers[q.id].filter(
-                                    (_: any, i: number) => i !== rowIndex
-                                  );
-                                  setAnswer(q.id, updated);
-                                }}
-                              >
-                                <Trash size={18} />
-                              </button>
-                            )}
-                          </div>
-                        )
-                      )}
+                      {[{ Nama: "", Usia: "" }].map((row: any, rowIndex: number) => (
+                        <div key={rowIndex} className="flex items-center gap-4">
+                          <input
+                            type="text"
+                            placeholder="Nama"
+                            readOnly
+                            className="border border-gray-300 p-2 rounded-md text-sm"
+                          />
+                          <input
+                            type="text"
+                            placeholder="Usia"
+                            readOnly
+                            className="border border-gray-300 p-2 rounded-md text-sm w-24"
+                          />
+                          <button disabled className="text-[#6BB1A0] cursor-default opacity-100">
+                            <Plus size={20} />
+                          </button>
+                        </div>
+                      ))}
                     </div>
                   )}
 
@@ -334,29 +235,23 @@ export default function FormAssessmentOrangtua() {
 
                           <input
                             type="number"
+                            readOnly
                             className="border border-gray-300 rounded-md p-2 w-32 text-sm"
                             placeholder="Usia"
-                            onChange={(e) => {
-                              setAnswer(q.id, {
-                                ...(answers[q.id] || {}),
-                                [row]: e.target.value
-                              });
-                            }}
                           />
-
                           {q.suffix && <span>{q.suffix}</span>}
                         </div>
                       ))}
                     </div>
                   )}
-
                 </div>
               ))}
 
               <div className="flex justify-end pt-6">
                 <button
-                  type="submit"
-                  className="bg-[#6BB1A0] hover:bg-[#5EA391] text-white px-8 py-2 rounded-xl font-medium"
+                  type="button"
+                  disabled
+                  className="bg-[#6BB1A0] text-white px-8 py-2 rounded-xl font-medium cursor-default opacity-100"
                 >
                   Simpan
                 </button>

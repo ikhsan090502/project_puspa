@@ -1,0 +1,200 @@
+{
+  "categories": [
+    {
+      "id": "general_auditory_language",
+      "title": "General — Apakah anak anda ...",
+      "type": "radio3",
+      "questions": [
+        { "id": "g_1", "text": "Terlihat terlalu sensitif terhadap suara?" },
+        { "id": "g_2", "text": "Tidak dapat mengikuti instruksi sederhana?" },
+        { "id": "g_3", "text": "Bingung oleh kata-kata berbunyi sama?" },
+        { "id": "g_4", "text": "Hanya menggunakan bahasa tubuh untuk memperjelas ucapan?" },
+        { "id": "g_5", "text": "Suka menyanyi?" },
+        { "id": "g_6", "text": "Mengalami kesulitan dengan bunyi perkataan?" },
+        { "id": "g_7", "text": "Kelihatan menyimak tetapi tidak mengerti?" },
+        { "id": "g_8", "text": "Ragu-ragu untuk berbicara?" },
+        { "id": "g_9", "text": "Mengerti bahasa tubuh dan ekspresi wajah orang lain?" }
+      ]
+    },
+
+    {
+      "id": "gustatory_olfactory",
+      "title": "Tes Gustatori / Olfaktori",
+      "type": "radio3",
+      "questions": [
+        { "id": "go_1", "text": "Bertingkah seakan-akan semua makanan rasanya sama?" },
+        { "id": "go_2", "text": "Mengunyah benda-benda bukan makanan?" },
+        { "id": "go_3", "text": "Memiliki selera yang tidak biasa kepada makanan tertentu?" },
+        { "id": "go_4", "text": "Tidak menyukai makanan bertekstur tertentu?" },
+        { "id": "go_5", "text": "Mengeksplorasi dengan penciuman?" },
+        { "id": "go_6", "text": "Dapat membedakan bau?" },
+        { "id": "go_7", "text": "Bereaksi negatif terhadap bau?" },
+        { "id": "go_8", "text": "Tidak mempedulikan bau-bau yang tidak menyenangkan?" }
+      ]
+    },
+
+    {
+      "id": "visual",
+      "title": "Visual",
+      "type": "radio3",
+      "questions": [
+        { "id": "v_1", "text": "Tampak lebih senang gelap?" },
+        { "id": "v_2", "text": "Memungut gambar/gambar–objek dan memperhatikannya dengan detail dan teliti?" },
+        { "id": "v_3", "text": "Menjadi senang ketika ada bermacam-macam objek yang bisa dilihat?" },
+        { "id": "v_4", "text": "Sering berputar?" },
+        { "id": "v_5", "text": "Memakai kacamata?" },
+        { "id": "v_6", "text": "Mengalami kesulitan mengikuti objek yang digulirkan kepadanya?" },
+        { "id": "v_7", "text": "Mengalami kesulitan kontak mata dengan orang lain?" },
+        { "id": "v_8", "text": "Berpaling dari satu sisi ke sisi lain untuk melihat sesuatu?" },
+        { "id": "v_9", "text": "Cenderung menjangkau terlalu jauh ketika bermain, makan, dll?" }
+      ]
+    },
+
+    {
+      "id": "tactile",
+      "title": "Taktil / Sensori Sentuhan",
+      "type": "radio3",
+      "questions": [
+        { "id": "t_1", "text": "Tidak mau bermain dengan barang-barang \"kotor\" (cat, lumpur, pasta, pasir, dll)?" },
+        { "id": "t_2", "text": "Tidak suka ketika wajahnya dilap / diseka?" },
+        { "id": "t_3", "text": "Kelihatan terganggu dengan tekstur kain tertentu?" },
+        { "id": "t_4", "text": "Tidak suka disentuh?" },
+        { "id": "t_5", "text": "Tidak suka disentuh secara tiba-tiba?" },
+        { "id": "t_6", "text": "Tidak suka dipeluk?" },
+        { "id": "t_7", "text": "Lebih suka menyentuh daripada disentuh?" },
+        { "id": "t_8", "text": "Menghindari menggunakan tangan untuk jangka waktu tertentu?" },
+        { "id": "t_9", "text": "Cenderung membenturkan kepala dengan sengaja dulu / sekarang?" },
+        { "id": "t_10", "text": "Mencubit, menggigit, atau menyakiti diri sendiri / orang lain?" },
+        { "id": "t_11", "text": "Memeriksa barang dengan memasukkannya ke dalam mulut?" },
+        { "id": "t_12", "text": "Cenderung untuk merasa sakit lebih dari orang lain?" },
+        { "id": "t_13", "text": "Secara berkala membentur dan mendorong anak lain?" },
+        { "id": "t_14", "text": "Tidak suka dikeramas?" },
+        { "id": "t_15", "text": "Tidak suka dipotong kukunya?" }
+      ]
+    },
+
+    {
+      "id": "vestibular",
+      "title": "Vestibular — Keseimbangan & Gerak",
+      "type": "radio3",
+      "questions": [
+        { "id": "vest_1", "text": "Memegang tangannya dalam posisi aneh?" },
+        { "id": "vest_2", "text": "Memegangi tubuhnya dalam posisi aneh?" },
+        { "id": "vest_3", "text": "Memiliki kemampuan baik untuk menirukan hal-hal kecil?" },
+        { "id": "vest_4", "text": "Melakukan gerakan-gerakan cepat dan mengejutkan?" },
+        { "id": "vest_5", "text": "Kesulitan berpindah dari satu posisi ke posisi lain?" },
+        { "id": "vest_6", "text": "Berayun ketika duduk?" },
+        { "id": "vest_7", "text": "Banyak melompat?" },
+        { "id": "vest_8", "text": "Senang dilempar ke udara?" },
+        { "id": "vest_9", "text": "Memiliki keseimbangan yang baik?" },
+        { "id": "vest_10", "text": "Kelihatan takut terhadap ruang (mis: naik dan turun tangga, memasuki ruangan kecil tertutup)?" },
+        { "id": "vest_11", "text": "Suka naik komidi putar?" },
+        { "id": "vest_12", "text": "Berputar-putar lebih dari anak lain?" },
+        { "id": "vest_13", "text": "Mabuk kendaraan?" },
+        { "id": "vest_14", "text": "Senang diayun sekarang / ketika bayi?" },
+        { "id": "vest_15", "text": "Tidak takut bergerak / jatuh?" },
+        { "id": "vest_16", "text": "Menjadi gelisah ketika perjalanan panjang dengan mobil?" }
+      ]
+    },
+
+    {
+      "id": "body_perception_reaction",
+      "title": "Persepsi Tubuh & Reaksi terhadap Lingkungan",
+      "type": "yes_only",
+      "questions": [
+        { "id": "bpr_1", "text": "Terganggu oleh sentuhan fisik dengan orang lain?" },
+        { "id": "bpr_2", "text": "Sangat tidak suka dipotong kukunya?" },
+        { "id": "bpr_3", "text": "Kelihatan takut dalam permainan keseimbangan dan memanjat?" },
+        { "id": "bpr_4", "text": "Berlebihan pada permainan berputar & berayun?" },
+        { "id": "bpr_5", "text": "Pasif saat berada di rumah?" },
+        { "id": "bpr_6", "text": "Sangat suka dipeluk dan dibelai?" },
+        { "id": "bpr_7", "text": "Memasukkan jari-jari / mainan ke mulut?" },
+        { "id": "bpr_8", "text": "Tidak suka tekstur makanan tertentu?" },
+        { "id": "bpr_9", "text": "Terganggu karena suara-suara ribut?" },
+        { "id": "bpr_10", "text": "Sangat suka menyentuh barang?" },
+        { "id": "bpr_11", "text": "Terganggu oleh tekstur tertentu?" },
+        { "id": "bpr_12", "text": "Memiliki ketidaksukaan ekstrim terhadap apapun?" }
+      ]
+    },
+
+    {
+      "id": "daily_living_skills",
+      "title": "Kemampuan Aktivitas Sehari-hari",
+      "type": "yes_only",
+      "questions": [
+        { "id": "dls_1", "text": "Mengatur emosi?" },
+        { "id": "dls_2", "text": "Berpakaian / melepaskan pakaian?" },
+        { "id": "dls_3", "text": "Memakai sepatu / kaos kaki?" },
+        { "id": "dls_4", "text": "Menalikan tali sepatu?" },
+        { "id": "dls_5", "text": "Memasang kancing?" },
+        { "id": "dls_6", "text": "Membersihkan diri (cuci muka, dll)?" },
+        { "id": "dls_7", "text": "Sikat gigi?" },
+        { "id": "dls_8", "text": "Menyisir rambut?" },
+        { "id": "dls_9", "text": "Berdiri di atas satu kaki?" },
+        { "id": "dls_10", "text": "Melompat di tempat?" },
+        { "id": "dls_11", "text": "Lompat tali?" },
+        { "id": "dls_12", "text": "Mengendarai sepeda?" },
+        { "id": "dls_13", "text": "Menggunakan peralatan di taman bermain?" },
+        { "id": "dls_14", "text": "Naik / turun tangga?" }
+      ]
+    },
+
+   {
+  "id": "behavior_social_statements",
+  "title": "Pernyataan Umum & Sosialisasi (pilih satu yang paling sesuai)",
+  "type": "checkbox",
+  "questions": [
+    {
+      "id": "bs_1",
+      "text": "Pernyataan yang menggambarkan anak",
+      "options": [
+        "Diam",
+        "Hiperaktif",
+        "Kesulitan memanajemen frustasi",
+        "Impulsif / tidak punya rasa takut terhadap bahaya",
+        "Tergila-gila pada perhatian",
+        "Menarik diri",
+        "Penasaran",
+        "Agresif",
+        "Pemalu",
+        "Bermasalah dengan sikapnya di rumah",
+        "Bermasalah dengan sikapnya di sekolah",
+        "Emosional",
+        "Memiliki ketakutan yang tidak biasa",
+        "Suka mengamuk",
+        "Memiliki hubungan baik dengan saudara kandungnya",
+        "Mudah berteman",
+        "Mengerti peraturan permainan",
+        "Mengerti lelucon",
+        "Rigid / Kaku / Tidak Fleksibel"
+      ]
+    },
+    {
+      "id": "bermain_anak",
+      "text": "Bermain dengan anak-anak",
+      "options": [
+        "Lebih tua",
+        "Lebih muda",
+        "Seumuran"
+      ]
+    }
+  ]
+}
+,
+    {
+      "id": "frequency_range",
+      "title": "Tingkat Kesesuaian / Frekuensi Perilaku (1 = Tidak Pernah Sama Sekali, 5 = Selalu)",
+      "type": "slider",
+      "questions": [
+        { "id": "f_1", "text": "Mudah menyerah" },
+        { "id": "f_2", "text": "Mudah teralihkan perhatian" },
+        { "id": "f_3", "text": "Mengalami kesulitan duduk diam di kursi selama lebih dari 5 menit" },
+        { "id": "f_4", "text": "Tidak dapat berkonsentrasi lebih dari 20 menit" },
+        { "id": "f_5", "text": "Ceroboh dan sering menghilangkan barang pribadi" },
+        { "id": "f_6", "text": "Mengamuk tanpa alasan yang jelas" },
+        { "id": "f_7", "text": "Menolak mengikuti perintah walaupun tidak mengerti perintah tersebut" },
+        { "id": "f_8", "text": "Tidak sabar menunggu giliran" }
+      ]
+    }
+  ]
+}

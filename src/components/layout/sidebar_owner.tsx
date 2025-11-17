@@ -29,7 +29,7 @@ export const menu = [
       },
       {
         name: "Verifikasi Terapis",
-        href: "/admin/verifikasi_terapis",
+        href: "/owner/verifTerapis",
         icon: ShieldCheck,
       },
     ],

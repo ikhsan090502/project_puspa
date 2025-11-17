@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
@@ -9,7 +9,7 @@ import HeaderTerapis from "@/components/layout/header_terapis";
 import questions from "@/data/plbQuestions.json";
 import { getAssessmentAnswers } from "@/lib/api/asesment";
 
-// 🔹 Type definitions
+// 🔹 Types
 type Answer = {
   keterangan?: string;
   penilaian?: number;
@@ -18,67 +18,59 @@ type Answer = {
 type QuestionsData = Record<string, string[]>;
 type AnswersState = Record<string, Record<number, Answer>>;
 
-// 🔹 Komponen utama
 export default function RiwayatJawabanPLBPage() {
   const params = useSearchParams();
-  const router = useRouter();
   const assessmentId = params.get("assessment_id");
   const type = params.get("type") || "paedagog";
 
   const allQuestions: QuestionsData = questions;
   const aspekTabs = Object.keys(allQuestions);
+
   const [activeAspek, setActiveAspek] = useState<string>(aspekTabs[0]);
   const [answers, setAnswers] = useState<AnswersState>({});
   const [loading, setLoading] = useState(true);
   const [kesimpulan, setKesimpulan] = useState("");
 
-  // 🔹 Ambil data jawaban dari API
+  // 🔹 Ambil data API
   useEffect(() => {
     const fetchAnswers = async () => {
       if (!assessmentId) {
-        console.warn("❌ Tidak ada assessment_id di URL");
         setLoading(false);
         return;
       }
 
       try {
-        console.log(`📥 Mengambil riwayat jawaban untuk ID: ${assessmentId}, type: ${type}`);
         const response = await getAssessmentAnswers(assessmentId, type);
-
         const formattedAnswers: AnswersState = {};
 
-        // Parsing hasil API ke bentuk { aspek: { index: { penilaian, keterangan } } }
-        if (response && typeof response === "object") {
-          Object.entries(response).forEach(([key, value]) => {
-            const matchScore = key.match(/^(.+?)_(\d+)_score$/);
-            const matchDesc = key.match(/^(.+?)_(\d+)_desc$/);
+        Object.entries(response || {}).forEach(([key, value]) => {
+          const matchScore = key.match(/^(.+?)_(\d+)_score$/);
+          const matchDesc = key.match(/^(.+?)_(\d+)_desc$/);
 
-            if (matchScore) {
-              const aspekKey = matchScore[1].replace(/_/g, " ");
-              const idx = Number(matchScore[2]);
-              if (!formattedAnswers[aspekKey]) formattedAnswers[aspekKey] = {};
-              if (!formattedAnswers[aspekKey][idx]) formattedAnswers[aspekKey][idx] = {};
-              formattedAnswers[aspekKey][idx].penilaian = Number(value);
-            }
+          if (matchScore) {
+            const aspekKey = matchScore[1].replace(/_/g, " ");
+            const index = Number(matchScore[2]);
+            if (!formattedAnswers[aspekKey]) formattedAnswers[aspekKey] = {};
+            if (!formattedAnswers[aspekKey][index])
+              formattedAnswers[aspekKey][index] = {};
+            formattedAnswers[aspekKey][index].penilaian = Number(value);
+          }
 
-            if (matchDesc) {
-              const aspekKey = matchDesc[1].replace(/_/g, " ");
-              const idx = Number(matchDesc[2]);
-              if (!formattedAnswers[aspekKey]) formattedAnswers[aspekKey] = {};
-              if (!formattedAnswers[aspekKey][idx]) formattedAnswers[aspekKey][idx] = {};
-              formattedAnswers[aspekKey][idx].keterangan = String(value);
-            }
+          if (matchDesc) {
+            const aspekKey = matchDesc[1].replace(/_/g, " ");
+            const index = Number(matchDesc[2]);
+            if (!formattedAnswers[aspekKey]) formattedAnswers[aspekKey] = {};
+            if (!formattedAnswers[aspekKey][index])
+              formattedAnswers[aspekKey][index] = {};
+            formattedAnswers[aspekKey][index].keterangan = String(value);
+          }
 
-            if (key === "summary" && typeof value === "string") {
-              setKesimpulan(value);
-            }
-          });
-        }
+          if (key === "summary") {
+            setKesimpulan(String(value));
+          }
+        });
 
         setAnswers(formattedAnswers);
-        console.log("✅ Riwayat jawaban berhasil dimuat:", formattedAnswers);
-      } catch (error) {
-        console.error("❌ Gagal memuat riwayat jawaban:", error);
       } finally {
         setLoading(false);
       }
@@ -87,21 +79,20 @@ export default function RiwayatJawabanPLBPage() {
     fetchAnswers();
   }, [assessmentId, type]);
 
-  // 🔹 Hitung status tiap aspek (lengkap/tidak)
-  const validationStatus = useMemo(() => {
-    const statusMap: Record<string, "complete" | "incomplete"> = {};
-    aspekTabs.forEach((aspek) => {
-      const total = allQuestions[aspek]?.length || 0;
-      const answered = Object.values(answers[aspek] || {}).filter(
-        (a) => a.penilaian !== undefined
-      ).length;
-      statusMap[aspek] =
-        total > 0 && answered >= total ? "complete" : "incomplete";
-    });
-    return statusMap;
-  }, [answers, aspekTabs, allQuestions]);
+  const currentQuestions = allQuestions[activeAspek] || [];
+  const aspekTerakhir = aspekTabs[aspekTabs.length - 1];
 
-  // 🔹 Loading state
+  // 🔹 Fungsi tombol Lanjutkan
+  const handleNext = () => {
+    const currentIndex = aspekTabs.indexOf(activeAspek);
+    const nextIndex = currentIndex + 1;
+
+    if (nextIndex < aspekTabs.length) {
+      setActiveAspek(aspekTabs[nextIndex]);
+    }
+  };
+
+  // 🔹 Loading
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center text-[#36315B] font-medium">
@@ -110,32 +101,27 @@ export default function RiwayatJawabanPLBPage() {
     );
   }
 
-  const currentQuestions = allQuestions[activeAspek] || [];
-
   return (
-  <div className="flex h-screen text-[#36315B] font-playpen">
-                    <SidebarTerapis />
-                    <div className="flex flex-col flex-1 bg-gray-50">
-                      <HeaderTerapis />
-                      <main className="p-6 overflow-y-auto"></main>
+    <div className="flex h-screen text-[#36315B] font-playpen">
+      <SidebarTerapis />
+      <div className="flex flex-col flex-1 bg-gray-50">
+        <HeaderTerapis />
 
-        <main className="flex-1 p-6 flex flex-col overflow-hidden">
-          <h1 className="text-2xl font-bold text-[#36315B] mb-4 text-center">
-            📘 Riwayat Jawaban PLB | Aspek {activeAspek}
+        <main className="p-6 overflow-y-auto">
+          <h1 className="text-2xl font-bold text-center mb-6">
+            PLB | Aspek {activeAspek}
           </h1>
 
-          {/* Tabs Aspek */}
-          <div className="flex flex-wrap gap-3 mb-6 justify-center">
+          {/* Tabs */}
+          <div className="flex flex-wrap gap-3 justify-center mb-6">
             {aspekTabs.map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveAspek(tab)}
-                className={`px-4 py-2 rounded-full text-sm font-semibold transition-all border ${
+                className={`px-4 py-2 rounded-full text-sm font-semibold border transition ${
                   activeAspek === tab
-                    ? "bg-[#81B7A9]/20 border-[#81B7A9] text-[#36315B]"
-                    : validationStatus[tab] === "complete"
-                    ? "bg-[#36315B] text-white border-[#36315B]"
-                    : "text-[#36315B]/70 hover:bg-gray-100 border-transparent"
+                    ? "bg-[#81B7A9] text-white border-[#81B7A9]"
+                    : "text-[#36315B] bg-white border-gray-300 hover:bg-gray-100"
                 }`}
               >
                 {tab}
@@ -143,26 +129,47 @@ export default function RiwayatJawabanPLBPage() {
             ))}
           </div>
 
-          {/* Daftar pertanyaan */}
-          <div className="bg-white rounded-xl shadow-md flex-1 overflow-y-auto p-6">
-            {currentQuestions.map((q, i) => {
-              const answer = answers[activeAspek]?.[i];
+          {/* Container Konten */}
+          <div className="bg-white rounded-xl p-2">
+            {currentQuestions.map((question, index) => {
+              const ans = answers[activeAspek]?.[index];
+
               return (
                 <div
-                  key={i}
-                  className="mb-6 pb-5 bg-white rounded-xl shadow-sm p-4 border border-gray-100"
+                  key={index}
+                  className="mb-6 p-5 rounded-xl shadow-md bg-white"
                 >
-                  <p className="font-semibold mb-3 text-[#36315B]">
-                    {i + 1}. {q}
+                  <p className="font-semibold mb-3">
+                    {index + 1}. {question}
                   </p>
-                  <div className="flex flex-col gap-3">
+
+                  {/* Keterangan + Penilaian sejajar */}
+                  <div className="flex gap-4 mb-3 items-start">
+                    {/* Keterangan */}
                     <textarea
                       readOnly
-                      className="w-full resize-none border border-gray-200 rounded-md p-2.5 text-sm bg-gray-100 cursor-not-allowed"
-                      value={answer?.keterangan || ""}
+                      className="flex-[4] border border-gray-300 bg-gray-100 rounded-md p-3 text-sm cursor-not-allowed h-15"
+                      value={ans?.keterangan || ""}
                     />
-                    <div className="w-40 text-center font-semibold text-[#36315B] bg-gray-200 rounded-md py-2 select-none">
-                      Penilaian: {answer?.penilaian ?? "-"}
+
+                    {/* Penilaian */}
+                    <div className="relative flex-[1]">
+                      <select
+                        disabled
+                        className="w-80 border border-gray-300 bg-gray-200 text-gray-600 rounded-md py-4 px-1 cursor-not-allowed appearance-none"
+                        value={ans?.penilaian ?? ""}
+                      >
+                        <option value="">Penilaian</option>
+                        <option value={0}>0 - Tidak Mampu</option>
+                        <option value={1}>1 - Mulai Mampu</option>
+                        <option value={2}>2 - Mampu Dengan Bantuan</option>
+                        <option value={3}>3 - Mampu Mandiri</option>
+                      </select>
+
+                      <ChevronDown
+                        size={18}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                      />
                     </div>
                   </div>
                 </div>
@@ -170,15 +177,27 @@ export default function RiwayatJawabanPLBPage() {
             })}
 
             {/* Kesimpulan */}
-            <div className="mt-10 border-t pt-6">
-              <h2 className="font-bold text-[#36315B] mb-3">Kesimpulan</h2>
-              <textarea
-                readOnly
-                value={kesimpulan}
-                rows={5}
-                className="w-full resize-none border border-gray-300 rounded-md p-3 text-sm bg-gray-100 cursor-not-allowed"
-              />
-            </div>
+            {activeAspek === aspekTerakhir && (
+              <div className="mt-8">
+                <h2 className="font-bold mb-3">Kesimpulan</h2>
+                <textarea
+                  readOnly
+                  rows={4}
+                  className="w-full border border-gray-300 bg-gray-100 rounded-md p-3 cursor-not-allowed"
+                  value={kesimpulan}
+                />
+              </div>
+            )}
+          </div>
+
+          {/* Tombol Lanjutkan */}
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={handleNext}
+              className="bg-[#81B7A9] text-white px-6 py-2 rounded-lg font-semibold shadow"
+            >
+              Lanjutkan
+            </button>
           </div>
         </main>
       </div>

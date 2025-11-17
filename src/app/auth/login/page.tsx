@@ -22,24 +22,32 @@ export default function LoginPage() {
     mutationFn: (payload: LoginPayload) => login(payload),
 
     onSuccess: (data) => {
-      localStorage.setItem("user", JSON.stringify(data));
+  localStorage.setItem("user", JSON.stringify(data));
 
-      switch (data.role) {
-        case "admin":
-          router.push("/admin/dashboard");
-          break;
-        case "terapis":
-        case "asesor": // ✅ Asesor diarahkan ke halaman terapis
-          router.push("/terapis/observasi");
-          break;
-        case "orangtua":
-        case "user":
-          router.push("/orangtua/dashboard");
-          break;
-        default:
-          router.push("/");
-      }
-    },
+  switch (data.role) {
+    case "admin":
+      router.push("/admin/dashboard");
+      break;
+
+    case "owner":  // ✅ ROLE BARU UNTUK OWNER
+      router.push("/owner/dashboard-Owner");
+      break;
+
+    case "terapis":
+    case "asesor": 
+      router.push("/terapis/observasi");
+      break;
+
+    case "orangtua":
+    case "user":
+      router.push("/orangtua/dashboard");
+      break;
+
+    default:
+      router.push("/");
+  }
+},
+
 
     onError: (error: LoginErrorResponse) => {
       setFieldError(error);

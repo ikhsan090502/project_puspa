@@ -1,5 +1,6 @@
 import axiosInstance from "@/lib/axios";
 
+// ==================== Interface ====================
 export interface CompletedObservationDetail {
   observation_id: number;
   child_name: string;
@@ -28,22 +29,30 @@ const getAuthHeaders = (): Record<string, string> => {
 
 // ==================== Observations API ====================
 
-// 🟢 Ambil daftar observasi dengan status 'completed'
+// Cache untuk completed observations
+// Cache untuk completed observations
+let cachedCompleted: any[] = [];
+
+// 🟢 Ambil daftar observasi dengan status 'completed' (pakai cache)
 export const getCompletedObservations = async (): Promise<any[]> => {
+  if (cachedCompleted.length > 0) return cachedCompleted; // gunakan cache bila tersedia
+
   try {
     const res = await axiosInstance.get(`/observations?status=completed`, {
       headers: getAuthHeaders(),
     });
-    return res.data.data;
+    cachedCompleted = res.data?.data ?? [];
+    return cachedCompleted;
   } catch (err: any) {
     console.error("❌ Gagal mengambil data completed:", err);
     throw err;
   }
 };
 
-// 🟢 Ambil detail observasi completed
+// 🟢 Ambil detail observasi completed (dengan retry otomatis jika 429)
 export const getCompletedObservationDetail = async (
-  observation_id: string
+  observation_id: string,
+  retryCount = 0
 ): Promise<CompletedObservationDetail | null> => {
   if (!observation_id) return null;
 
@@ -71,6 +80,13 @@ export const getCompletedObservationDetail = async (
       scheduled_date: d.scheduled_date || "-",
     };
   } catch (err: any) {
+    if (err.response?.status === 429 && retryCount < 3) {
+      const delay = 2000 * (retryCount + 1);
+      console.warn(`⚠️ Rate limit (429). Coba ulang dalam ${delay / 1000} detik...`);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return getCompletedObservationDetail(observation_id, retryCount + 1);
+    }
+
     console.error("❌ Gagal ambil detail observasi:", err);
     return null;
   }
@@ -117,8 +133,6 @@ export const getObservationAnswer = async (observation_id: string): Promise<any 
   }
 };
 
-
-
 // 🟢 Update tanggal asesmen
 export const updateAssessmentDate = async (observation_id: string, date: string): Promise<any> => {
   if (!observation_id) return;
@@ -150,3 +164,4 @@ export const getObserverNameByTherapistId = async (therapistId: string) => {
     return "";
   }
 };
+

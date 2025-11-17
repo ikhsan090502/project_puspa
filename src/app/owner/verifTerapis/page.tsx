@@ -4,38 +4,30 @@ import React from "react";
 import Sidebar from "@/components/layout/sidebar_owner";
 import Header from "@/components/layout/header_owner";
 
-const therapists = [
+const therapists= [
+  
   {
     id: 1,
-    name: "Rani Setiawati",
-    email: "rani.terapis@gmail.com",
-    specialization: "Terapi Okupasi",
+    name: "Agung Hernawan",
+    email: "agung@gmail.com",
     registrationDate: "10/09/2025",
   },
   {
     id: 2,
-    name: "Andi Saputra",
-    email: "andi.speech@gmail.com",
-    specialization: "Terapi Wicara",
-    registrationDate: "10/09/2025",
+    name: "Marlina Ningsih",
+    email: "lina@gmail.com",
+    registrationDate: "11/09/2025",
   },
   {
     id: 3,
-    name: "Nadia Putri",
-    email: "nadia.physio@gmail.com",
-    specialization: "Fisioterapi",
+    name: "Mawar Melati",
+    email: "mawar@gmail.com",
     registrationDate: "11/09/2025",
   },
-  {
-    id: 4,
-    name: "Budi Santoso",
-    email: "budi.paeda@gmail.com",
-    specialization: "PLB (Paedagog)",
-    registrationDate: "11/09/2025",
-  },
+  
 ];
 
-const VerifikasiTerapisPage: React.FC = () => {
+const VerifikasitherapistsPage: React.FC = () => {
   return (
     <div className="flex min-h-screen bg-gray-50 text-[#36315B]">
       <Sidebar />
@@ -45,9 +37,7 @@ const VerifikasiTerapisPage: React.FC = () => {
 
         <main className="p-8">
           <section className="bg-white rounded-xl shadow-lg p-6">
-            <h1 className="text-2xl font-bold mb-3 pb-2">
-              Verifikasi Terapis
-            </h1>
+            <h1 className="text-2xl font-bold mb-3 pb-2">Menunggu Verifikasi</h1>
 
             {/* Search Input */}
             <div className="flex justify-end mb-4 relative w-full max-w-xs ml-auto">
@@ -77,11 +67,10 @@ const VerifikasiTerapisPage: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr>
-                    {[
+                    {[ 
                       { label: "No", width: "w-12" },
                       { label: "Nama Terapis" },
                       { label: "Email" },
-                      { label: "Spesialisasi" },
                       { label: "Tanggal Pendaftaran" },
                       { label: "Aksi", width: "w-48" },
                     ].map(({ label, width }) => (
@@ -97,37 +86,58 @@ const VerifikasiTerapisPage: React.FC = () => {
                 </thead>
 
                 <tbody>
-                  {therapists.map(
-                    ({ id, name, email, specialization, registrationDate }, idx) => (
-                      <tr
-                        key={id}
-                        className={`border-b ${
-                          idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                        }`}
-                        style={{ borderBottomColor: "#81B7A9" }}
-                      >
-                        <td className="py-3 px-4">{id}</td>
-                        <td className="py-3 px-4">{name}</td>
-                        <td className="py-3 px-4 text-[#757575]">{email}</td>
-                        <td className="py-3 px-4 text-[#757575]">{specialization}</td>
-                        <td className="py-3 px-4 text-[#757575]">
-                          {registrationDate}
-                        </td>
+                  {therapists.map(({ id, name, email, registrationDate }, idx) => (
+                    <tr
+                      key={id}
+                      className={`border-b ${
+                        idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                      }`}
+                      style={{ borderBottomColor: "#81B7A9" }}
+                    >
+                      <td className="py-3 px-4">{id}</td>
+                      <td className="py-3 px-4">{name}</td>
+                      <td className="py-3 px-4 text-[#757575]">{email}</td>
+                      <td className="py-3 px-4 text-[#757575]">
+                        {registrationDate}
+                      </td>
 
-                        <td className="py-3 px-4 flex gap-3">
-                          {/* Approve */}
-                          <button className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-green-600 transition">
-                            ✅ Setujui
-                          </button>
+                      <td className="py-3 px-4 flex gap-3">
+                        {/* Approve */}
+                        <button
+                          className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-green-600 transition"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                          Setujui
+                        </button>
 
-                          {/* Reject */}
-                          <button className="bg-red-600 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-red-700 transition">
-                            ❌ Tolak
-                          </button>
-                        </td>
-                      </tr>
-                    )
-                  )}
+                        {/* Reject */}
+                        <button
+                          className="bg-red-600 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-red-700 transition"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-4 w-4"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                            strokeWidth={2}
+                          >
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          Tolak
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -138,4 +148,4 @@ const VerifikasiTerapisPage: React.FC = () => {
   );
 };
 
-export default VerifikasiTerapisPage;
+export default VerifikasitherapistsPage;

@@ -14,9 +14,16 @@ const HeaderOrangtua: React.FC = () => {
     "/orangtua/anak": "Data Anak",
     "/orangtua/assessment": "Assessment",
     "/orangtua/assessment/kategori": "Formulir Assessment Orangtua",
-    "/orangtua/assessment/kategori/data-umum": "Formulir Assessment Orangtua",
+    "/orangtua/assessment/kategori/data-umum": "Data Umum",
+    "/orangtua/assessment/kategori/fisioterapi": "Data Fisioterapi",
+    "/orangtua/assessment/kategori/okupasi": "Data Terapi Okupasi",
+    "/orangtua/assessment/kategori/wicara": "Data Terapi Wicara",
+    "/orangtua/assessment/kategori/paedagog": "Data Paedagog",
     "/orangtua/assessment/riwayat-jawaban": "Riwayat Jawaban",
     "/orangtua/help": "Bantuan",
+    "/orangtua/profil": "Profile",
+    "/orangtua/ubahPassword": "Ubah Password",
+
   };
 
   const title = pageTitles[pathname] || "Dashboard";

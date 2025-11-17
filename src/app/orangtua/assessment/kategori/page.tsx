@@ -20,24 +20,28 @@ export default function AssessmentPage() {
       ],
       status: "aksi",
       link: "/orangtua/assessment/kategori/data-umum",
+      riwayat: "/orangtua/assessment/kategori/data-umum/riwayat-identitas",
     },
     {
       kategori: "II. Data Fisioterapi",
       subkategori: ["A. Keluhan", "B. Riwayat Penyakit"],
-      status: "selesai",
+      status: "aksi",
       link: "/orangtua/assessment/kategori/fisioterapi",
+      riwayat: "/orangtua/assessment/kategori/fisioterapiRiwayat",
     },
     {
       kategori: "III. Terapi Okupasi",
       subkategori: [],
-      status: "selesai",
-      link: "/orangtua/assessment/form/okupasi",
+      status: "aksi",
+      link: "/orangtua/assessment/kategori/okupasi",
+       riwayat: "/orangtua/assessment/kategori/okupasiRiwayat",
     },
     {
       kategori: "IV. Data Terapi Wicara",
       subkategori: [],
-      status: "selesai",
-      link: "/orangtua/assessment/form/wicara",
+      status: "aksi",
+      link: "/orangtua/assessment/kategori/wicara",
+       riwayat: "/orangtua/assessment/kategori/wicaraRiwayat",
     },
     {
       kategori: "V. Data Paedagog",
@@ -47,29 +51,27 @@ export default function AssessmentPage() {
         "C. Aspek Sosialisasi - Komunikasi",
       ],
       status: "aksi",
-      link: "/orangtua/assessment/form/paedagog",
+      link: "/orangtua/assessment/kategori/paedagog",
+       riwayat: "/orangtua/assessment/kategori/paedagogRiwayat",
     },
   ];
 
-  const handleAction = (value: string, link: string) => {
+  const handleAction = (value: string, item: any) => {
     if (value === "mulai") {
-      router.push(link); // langsung ke halaman sesuai link, misal /orangtua/assessment/kategori/data-umum
+      router.push(item.link);
     } else if (value === "riwayat") {
-      router.push("/orangtua/assessment/riwayat");
+      router.push(item.riwayat);
     }
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-          <SidebarOrangtua />
-    
-          <div className="flex-1 flex flex-col ml-64">
-            <HeaderOrangtua />
-    
-    
-        <main className="flex-1 overflow-y-auto p-8">
-          
+      <SidebarOrangtua />
 
+      <div className="flex-1 flex flex-col ml-64">
+        <HeaderOrangtua />
+
+        <main className="flex-1 overflow-y-auto p-8">
           <div className="bg-white shadow rounded-xl border border-gray-200 p-6">
             {/* Header tabel */}
             <div className="flex justify-between border-b pb-3 mb-4">
@@ -103,9 +105,7 @@ export default function AssessmentPage() {
                       <div className="relative">
                         <select
                           className="appearance-none border border-gray-300 rounded-lg bg-[#C0DCD6] text-[#36315B] text-sm font-medium px-4 py-2 pr-8 focus:outline-none cursor-pointer"
-                          onChange={(e) =>
-                            handleAction(e.target.value, item.link)
-                          }
+                          onChange={(e) => handleAction(e.target.value, item)}
                           defaultValue=""
                         >
                           <option value="" disabled hidden>

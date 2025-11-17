@@ -1,0 +1,113 @@
+{
+  "title": "Data Paedagog",
+  "aspects": [
+    {
+      "key": "akademis",
+      "label": "Aspek Akademis",
+      "questions": [
+        { "id": "q1", "label": "Apakah pernah melakukan pengukuran IQ anak", "type": "radio", "options": ["Ya", "Tidak"] },
+        { "id": "q2", "label": "Apakah anak mengikuti jam tambahan yang bersifat akademis di sekolah?", "type": "radio", "options": ["Ya", "Tidak"] },
+        { "id": "q3", "label": "Jika Ya, berapa skor IQ", "type": "text" },
+        { "id": "q4", "label": "Apakah anak mempunyai Guru Pendamping Khusus (GPK) di sekolah?", "type": "radio", "options": ["Ya", "Tidak"] },
+        { "id": "q5", "label": "Apakah ada modifikasi kurikulum dan materi yang dilakukan oleh GPK?", "type": "radio", "options": ["Ya", "Tidak"] },
+        { "id": "q6", "label": "Dimana posisi tempat duduk anak di dalam kelas", "type": "text" },
+        { "id": "q7", "label": "Apa hobi anak?", "type": "text" },
+        { "id": "q8", "label": "Apakah anak mengikuti kegiatan non akademis guna mengembangkan bakatnya (beladiri, renang, sepak bola, dll)", "type": "radio", "options": ["Ya", "Tidak"] },
+        { "id": "q9", "label": "Dimana kegiatan pengembangan diri tersebut dilakukan?", "type": "text" },
+        { "id": "q10", "label": "Kapan pengembangan diri tersebut dilakukan?", "type": "text" },
+        { "id": "q11", "label": "Apakah anak mampu fokus dalam pembelajaran?", "type": "radio", "options": ["Ya", "Tidak"] },
+        { "id": "q12", "label": "Berapa lama ketahanan fokus anak?", "type": "text" },
+        { "id": "q13", "label": "Adakah ketertarikan anak terhadap benda-benda untuk menarik fokus kembali?", "type": "text" },
+        { "id": "q14", "label": "Apakah anak rutin belajar dirumah setiap hari?", "type": "radio", "options": ["Ya", "Tidak"] },
+        { "id": "q15", "label": "Kapan waktu belajar anak dirumah?", "type": "text" },
+        { "id": "q16", "label": "Siapa pendamping anak ketika belajar dirumah?", "type": "text" },
+        { "id": "q17", "label": "Bagaimana pengkondisian tempat dan suasana anak ketika belajar?", "type": "text" },
+        { "id": "q18", "label": "Apa mata pelajaran yang disenangi anak?", "type": "text" },
+        { "id": "q19", "label": "Apa mata pelajaran yang kurang disenangi anak?", "type": "text" }
+      ]
+    },
+
+    {
+      "key": "ketunaan",
+      "label": "Aspek Ketunaan",
+      "sections": [
+        {
+          "key": "visual",
+          "label": "1. Aspek Visual",
+          "questions": [
+            { "id": "v1", "label": "a. Apakah anak anda mengalami gangguan visual?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "v2", "label": "b. Apakah anak pernah/sedang memakai kacamata baca?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "v3", "label": "c. Apakah anak nyaman bila membaca sambil duduk?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "v4", "label": "d. Apakah anak nyaman bila membaca sambil berbaring/tengkurap/tiduran?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "v5", "label": "e. Apakah anak tertarik dengan kegiatan belajar atau memperoleh informasi baru?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "v6", "label": "f. Berapa lama anak mengeksplore gadget? (per hari)", "type": "text", "placeholder": "/Hari" }
+          ]
+        },
+
+        {
+          "key": "auditori",
+          "label": "2. Aspek Auditori",
+          "questions": [
+            { "id": "a1", "label": "a. Apakah anak mengalami gangguan auditori?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "a2", "label": "b. Apakah anak sedang/pernah memakai alat bantu dengar (ABD)?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "a3", "label": "c. Apakah anak langsung merespon jika namanya dipanggil?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "a4", "label": "d. Apakah anak lebih suka mendengar musik / menyanyi?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "a5", "label": "e. Apakah anak lebih menyukai suasana yang tenang ketika belajar?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "a6", "label": "f. Apakah anak pernah/sering menunjukkan respon ketidaksukaannya dengan menutup telinga?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "a7", "label": "g. Apakah anak sering memakai headset?", "type": "radio", "options": ["Ya", "Tidak"] }
+          ]
+        },
+
+        {
+          "key": "motorik",
+          "label": "3. Aspek Motorik",
+          "questions": [
+            { "id": "m1", "label": "a. Apakah anak mengalami gangguan motorik?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "m2", "label": "b. Jika YA bagian yang mengalami gangguan?", "type": "radio", "options": ["Motorik Halus", "Motorik Kasar"] },
+            { "id": "m3", "label": "c. Bentuk gangguan berupa?", "type": "text" },
+            { "id": "m4", "label": "d. Apakah anak mengalami kesulitan dalam mobilisasi secara mandiri?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "m5", "label": "e. Apakah anak mengalami kekakuan / kelyauan pada bagian tubuh tertentu?", "type": "radio", "options": ["Ya", "Tidak"] }
+          ]
+        },
+
+        {
+          "key": "kognitif",
+          "label": "4. Aspek Kognitif",
+          "questions": [
+            { "id": "k1", "label": "a. Apakah anak mengalami gangguan kognitif?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "k2", "label": "b. Apakah anak perlu penjabaran dalam mengelola informasi?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "k3", "label": "c. Apakah anak tanggap terhadap sesuatu yang tiba-tiba terjadi?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "k4", "label": "d. Kegiatan yang paling diminati anak?", "type": "radio", "options": ["Membaca", "Menulis", "Berhitung"] },
+            { "id": "k5", "label": "e. Apakah anak tertarik dengan kegiatan belajar atau memperoleh informasi baru?", "type": "radio", "options": ["Ya", "Tidak"] }
+          ]
+        },
+
+        {
+          "key": "perilaku",
+          "label": "5. Aspek Perilaku",
+          "questions": [
+            { "id": "p1", "label": "a. Apakah anak mengalami masalah perilaku?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "p2", "label": "b. Apakah anak mudah berteman dengan teman sebayanya?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "p3", "label": "c. Apakah anak mengalami perubahan mood / “mood swing” yang cepat?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "p4", "label": "d. Apakah anak suka kekerasan dalam melampiaskan emosinya?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "p5", "label": "e. Apakah anak cenderung nyaman menyendiri?", "type": "radio", "options": ["Ya", "Tidak"] },
+            { "id": "p6", "label": "f. Apakah anak enggan menyapa / tersenyum terlebih dahulu dengan orang lain?", "type": "radio", "options": ["Ya", "Tidak"] }
+          ]
+        }
+      ]
+    },
+
+    {
+      "key": "sosialisasi",
+      "label": "Aspek Sosialisasi",
+      "questions": [
+        { "id": "s1", "label": "1. Bagaimana sikap anak ketika bertemu dengan orang-orang baru?", "type": "text" },
+        { "id": "s2", "label": "2. Bagaimana sikap anak ketika berteman dengan teman-teman yang biasa ditemuinya?", "type": "text" },
+        { "id": "s3", "label": "3. Apakah anak sering / tidak pernah mengawali pembicaraan?", "type": "radio", "options": ["Sering", "Jarang/Tidak Pernah"] },
+        { "id": "s4", "label": "4. Apakah anak aktif ketika diajak bicara dengan orangtua atau anggota keluarga yang lain?", "type": "radio", "options": ["Ya", "Tidak"] },
+        { "id": "s5", "label": "5. Bagaimana sikap anak ketika ditempatkan pada situasi yang membuatnya kurang nyaman?", "type": "text" },
+        { "id": "s6", "label": "6. Apakah anak bisa berbagi mainan/makanan ketika sedang bersama teman-teman?", "type": "radio", "options": ["Ya", "Tidak"] }
+      ]
+    }
+  ]
+}

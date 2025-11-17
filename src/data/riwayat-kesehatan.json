@@ -1,0 +1,57 @@
+{
+  "riwayat_kesehatan": [
+    {
+      "type": "table",
+      "question": "Berikan perkiraan usia anak pernah menderita penyakit berikut:",
+      "columns": ["Penyakit", "Tahun"],
+      "rows": [
+        "Alergi",
+        "Asma",
+        "Cacar Air",
+        "Demam",
+        "Kejang",
+        "Pusing",
+        "Infeksi Telinga",
+        "Encephalitis",
+        "Campak / Rubella",
+        "Sakit Kepala",
+        "Demam Tinggi",
+        "Influensa",
+        "Mastoiditis",
+        "Meningitis",
+        "Radang Paru",
+        "Sinusitis",
+        "Tonsilitis",
+        "Dll."
+      ]
+    },
+    {
+      "type": "textarea",
+      "question": "Apakah dalam anggota keluarga memiliki riwayat penyakit yang sama dengan anak? Mohon ceritakan detailnya."
+    },
+    {
+      "type": "textarea",
+      "question": "Apakah dalam anggota keluarga memiliki riwayat gangguan tertentu (misalnya stres, depresi, skizofrenia, dll)?"
+    },
+    {
+      "type": "textarea",
+      "question": "Pernahkah anak melakukan pembedahan? Jika iya, apa jenisnya dan kapan (contohnya tonsillectomy, adenoidectomy, dll)?"
+    },
+    {
+      "type": "textarea",
+      "question": "Apakah anak memiliki riwayat penyakit khusus?"
+    },
+    {
+      "type": "textarea",
+      "question": "Apakah anak menjalani pengobatan lain? Jika iya, sebutkan."
+    },
+    {
+      "type": "textarea",
+      "question": "Apakah ada reaksi negatif dari pengobatan tersebut? Jika iya, identifikasi."
+    },
+    {
+      "type": "textarea",
+      "question": "Ceritakan riwayat penyakit yang pernah dialami atau rawat inap yang pernah dilakukan."
+    }
+  ]
+}

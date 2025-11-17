@@ -20,7 +20,6 @@ export default function DataUmumIdentitas() {
 
   const activeStep = steps.findIndex((step) => pathname.includes(step.path));
 
-  // 🔄 Navigasi otomatis ketika dropdown berubah
   const handleSelectChange = (value: string) => {
     setSelectedSection(value);
 
@@ -37,8 +36,6 @@ export default function DataUmumIdentitas() {
       case "Riwayat Pendidikan":
         router.push("/orangtua/assessment/kategori/data-umum/riwayat-pendidikan");
         break;
-      default:
-        break;
     }
   };
 
@@ -50,7 +47,7 @@ export default function DataUmumIdentitas() {
         <HeaderOrangtua />
 
         <main className="flex-1 p-6 lg:p-10 text-[#36315B]">
-          {/* Stepper Klikable */}
+          {/* Stepper */}
           <div className="flex justify-center mb-12">
             <div className="flex items-center">
               {steps.map((step, i) => (
@@ -89,10 +86,12 @@ export default function DataUmumIdentitas() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-lg font-semibold">I. Data Umum</h2>
+
+              {/* Dropdown tetap aktif */}
               <select
                 value={selectedSection}
                 onChange={(e) => handleSelectChange(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-[#36315B] focus:outline-none focus:ring-2 focus:ring-[#6BB1A0]"
+                className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-[#36315B]"
               >
                 <option>Identitas</option>
                 <option>Riwayat Anak</option>
@@ -101,20 +100,14 @@ export default function DataUmumIdentitas() {
               </select>
             </div>
 
+            {/* Anak */}
             <div className="mb-8">
               <h3 className="font-semibold mb-3">1. Anak</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="text-sm text-gray-600">Nama</label>
-                  <p className="mt-1 font-medium">Aleyya Karina</p>
-                </div>
-                <div>
-                  <label className="text-sm text-gray-600">Tanggal Lahir</label>
-                  <p className="mt-1 font-medium">26 Agustus 2015</p>
-                </div>
+                <ReadOnly label="Nama" value="Aleyya Karina" />
+                <ReadOnly label="Tanggal Lahir" value="26 Agustus 2015" />
                 <div className="md:col-span-2">
-                  <label className="text-sm text-gray-600">Alamat</label>
-                  <p className="mt-1 font-medium">Jln. Malabar Selatan 10</p>
+                  <ReadOnly label="Alamat" value="Jln. Malabar Selatan 10" />
                 </div>
               </div>
             </div>
@@ -122,16 +115,17 @@ export default function DataUmumIdentitas() {
             {/* Orangtua */}
             <div>
               <h3 className="font-semibold mb-3">2. Orangtua</h3>
+
               {/* Ayah */}
               <div className="mt-4">
                 <h4 className="font-medium mb-3">Ayah</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input label="Nama Ayah" placeholder="Misal: Andi" />
-                  <Input label="Tanggal Lahir" type="date" />
-                  <Input label="Pekerjaan" placeholder="Karyawan Swasta" />
-                  <Input label="Nomor Telepon" placeholder="081x-xxx-xxxx" />
-                  <Input label="Hubungan dengan Anak" placeholder="Ayah kandung" />
-                  <Input label="NIK" placeholder="3272001878909754" />
+                  <ReadOnly label="Nama Ayah" value="Andi" />
+                  <ReadOnly label="Tanggal Lahir" value="-" />
+                  <ReadOnly label="Pekerjaan" value="Karyawan Swasta" />
+                  <ReadOnly label="Nomor Telepon" value="081x-xxx-xxxx" />
+                  <ReadOnly label="Hubungan dengan Anak" value="Ayah kandung" />
+                  <ReadOnly label="NIK" value="3272001878909754" />
                 </div>
               </div>
 
@@ -139,12 +133,12 @@ export default function DataUmumIdentitas() {
               <div className="mt-8">
                 <h4 className="font-medium mb-3">Ibu</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input label="Nama Ibu" placeholder="Misal: Sari" />
-                  <Input label="Tanggal Lahir" type="date" />
-                  <Input label="Pekerjaan" placeholder="Ibu Rumah Tangga" />
-                  <Input label="Nomor Telepon" placeholder="081x-xxx-xxxx" />
-                  <Input label="Hubungan dengan Anak" placeholder="Ibu kandung" />
-                  <Input label="NIK" placeholder="327204870395478" />
+                  <ReadOnly label="Nama Ibu" value="Sari" />
+                  <ReadOnly label="Tanggal Lahir" value="-" />
+                  <ReadOnly label="Pekerjaan" value="Ibu Rumah Tangga" />
+                  <ReadOnly label="Nomor Telepon" value="081x-xxx-xxxx" />
+                  <ReadOnly label="Hubungan dengan Anak" value="Ibu kandung" />
+                  <ReadOnly label="NIK" value="327204870395478" />
                 </div>
               </div>
 
@@ -152,22 +146,25 @@ export default function DataUmumIdentitas() {
               <div className="mt-8">
                 <h4 className="font-medium mb-3">Wali</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <Input label="Nama Wali" placeholder="-" />
-                  <Input label="Tanggal Lahir" type="date" />
-                  <Input label="Pekerjaan" placeholder="-" />
-                  <Input label="Nomor Telepon" placeholder="-" />
-                  <Input label="Hubungan dengan Anak" placeholder="-" />
-                  <Input label="NIK" placeholder="-" />
+                  <ReadOnly label="Nama Wali" value="-" />
+                  <ReadOnly label="Tanggal Lahir" value="-" />
+                  <ReadOnly label="Pekerjaan" value="-" />
+                  <ReadOnly label="Nomor Telepon" value="-" />
+                  <ReadOnly label="Hubungan dengan Anak" value="-" />
+                  <ReadOnly label="NIK" value="-" />
                   <div className="md:col-span-2">
-                    <Input label="Alamat" placeholder="-" />
+                    <ReadOnly label="Alamat" value="-" />
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Tombol Simpan */}
+            {/* Tombol Simpan (Dinonaktifkan) */}
             <div className="flex justify-end mt-10">
-              <button className="bg-[#6BB1A0] hover:bg-[#5c9c8d] text-white font-medium px-8 py-2 rounded-xl">
+              <button
+                disabled
+                className="bg-[#6BB1A0] text-white font-medium px-8 py-2 rounded-xl opacity-50 cursor-default"
+              >
                 Simpan
               </button>
             </div>
@@ -178,24 +175,18 @@ export default function DataUmumIdentitas() {
   );
 }
 
-/* ✅ Komponen Input sederhana */
-function Input({
-  label,
-  type = "text",
-  placeholder,
-}: {
-  label: string;
-  type?: string;
-  placeholder?: string;
-}) {
+/* 🔒 Input Read Only */
+function ReadOnly({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col">
       <label className="text-sm text-gray-600 mb-1">{label}</label>
       <input
-        type={type}
-        placeholder={placeholder}
-        className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-[#36315B] focus:outline-none focus:ring-2 focus:ring-[#6BB1A0]"
+        type="text"
+        value={value}
+        readOnly
+        className="border border-gray-300 rounded-lg px-3 py-2 text-sm text-[#36315B] bg-gray-100 cursor-default"
       />
     </div>
   );
 }
+
