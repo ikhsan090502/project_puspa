@@ -1,22 +1,49 @@
+
 "use client";
 
-import { useState } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
-import dataRiwayat from "@/data/riwayat-anak.json";
 import { ChevronDown, Plus, Trash } from "lucide-react";
 
+import {
+  getParentAssessmentQuestions,
+  submitParentAssessment,
+} from "@/lib/api/asesmentTerapiOrtu";
+
+/* =======================
+   HELPERS
+========================== */
+const safeJsonParse = (str: any, fallback: any) => {
+  if (str === null || str === undefined) return fallback;
+  if (typeof str !== "string") return str;
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    console.warn("safeJsonParse failed:", e, str);
+    return fallback;
+  }
+};
+
+const makeDefaultAnswerForQuestion = (q: any) => {
+  const t = q.answer_type;
+  if (t === "checkbox") return [];
+  if (t === "multi") return [];
+  if (t === "table") return {};
+  if (t === "radio_with_text") return { value: "", note: "" };
+  return "";
+};
+
+/* =======================
+   MAIN COMPONENT
+========================== */
 export default function FormAssessmentOrangtua() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const categories = [
-    { key: "riwayat_psikososial", label: "Riwayat Psikososial" },
-    { key: "riwayat_kehamilan", label: "Riwayat Kehamilan" },
-    { key: "riwayat_kelahiran", label: "Riwayat Kelahiran" },
-    { key: "riwayat_setelah_kelahiran", label: "Riwayat Setelah Kelahiran" }
-  ];
+  const assessmentIdFromQuery = searchParams?.get("assessment_id") || null;
 
   const steps = [
     { label: "Data Umum", path: "/orangtua/assessment/kategori/data-umum" },
@@ -26,22 +53,121 @@ export default function FormAssessmentOrangtua() {
     { label: "Data Paedagog", path: "/orangtua/assessment/kategori/paedagog" }
   ];
 
-  const [activeCategory, setActiveCategory] = useState("riwayat_psikososial");
-
-  const currentQuestions =
-    dataRiwayat[activeCategory as keyof typeof dataRiwayat] || [];
+  const [groups, setGroups] = useState<any[]>([]);
+  const [activeCategory, setActiveCategory] = useState<string>("identitas");
+  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState<boolean>(true);
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   const activeStep = steps.findIndex((step) => pathname.includes(step.path));
 
-  const [answers, setAnswers] = useState<any>({});
+  /* =======================
+     LOAD QUESTIONS
+  ========================== */
+  useEffect(() => {
+    let mounted = true;
 
-  const setAnswer = (key: string, value: any) => {
-    setAnswers((prev: any) => ({
-      ...prev,
-      [key]: value
-    }));
+    const load = async () => {
+      setLoading(true);
+      try {
+        const resp: any = await getParentAssessmentQuestions("parent_general");
+
+        const list =
+          Array.isArray(resp?.data?.groups) ? resp.data.groups :
+          Array.isArray(resp?.groups) ? resp.groups :
+          Array.isArray(resp?.data) ? resp.data :
+          [];
+
+        // Tambahkan grup Identitas
+        list.unshift({
+          group_key: "identitas",
+          title: "Identitas Anak & Orangtua",
+          questions: []  
+        });
+
+        if (!mounted) return;
+        setGroups(list);
+
+        if (list.length > 0) {
+          setActiveCategory((prev) => prev || list[0].group_key);
+        }
+
+        const init: Record<string, any> = {};
+        list.forEach((g: any) => {
+          (g.questions || []).forEach((q: any) => {
+            init[q.id] = makeDefaultAnswerForQuestion(q);
+          });
+        });
+
+        if (mounted) setAnswers(init);
+      } catch (e) {
+        console.error("failed:", e);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+
+    load();
+    return () => { mounted = false };
+  }, []);
+
+
+
+  /* =======================
+     DERIVED CURRENT QUESTIONS
+  ========================== */
+  const currentQuestions =
+    groups.find((g) => g.group_key === activeCategory)?.questions || [];
+
+  /* =======================
+     SETTERS
+  ========================== */
+  const setAnswer = (qid: any, value: any) => {
+    setAnswers((prev) => ({ ...prev, [qid]: value }));
   };
 
+  const toggleCheckboxValue = (qid: any, val: any) => {
+    setAnswers((prev) => {
+      const arr = Array.isArray(prev[qid]) ? prev[qid] : [];
+      return {
+        ...prev,
+        [qid]: arr.includes(val)
+          ? arr.filter((v: any) => v !== val)
+          : [...arr, val]
+      };
+    });
+  };
+
+  const handleTableCell = (qid: any, rowKey: string, value: any) => {
+    setAnswers((prev) => {
+      const base = typeof prev[qid] === "object" ? prev[qid] : {};
+      return { ...prev, [qid]: { ...base, [rowKey]: value } };
+    });
+  };
+
+  /* =======================
+     SUBMIT
+  ========================== */
+  const handleSubmit = async (e?: any) => {
+    if (e) e.preventDefault();
+    const id = assessmentIdFromQuery || "GENERAL-001";
+    setSubmitting(true);
+
+    try {
+      await submitParentAssessment(id, "umum_parent", { answers });
+      alert("Berhasil disimpan.");
+      router.push("/orangtua/assessment");
+    } catch (err: any) {
+      console.error(err);
+      alert(err?.message || "Gagal menyimpan");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  /* =======================
+     RENDER
+  ========================== */
   return (
     <div className="flex min-h-screen bg-gray-50">
       <SidebarOrangtua />
@@ -49,9 +175,9 @@ export default function FormAssessmentOrangtua() {
       <div className="flex-1 flex flex-col ml-64">
         <HeaderOrangtua />
 
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 p-8 overflow-y-auto">
 
-          {/* STEP NAVIGATION */}
+          {/* STEP NAVIGATOR */}
           <div className="flex justify-center mb-12">
             <div className="flex items-center">
               {steps.map((step, i) => (
@@ -62,7 +188,7 @@ export default function FormAssessmentOrangtua() {
                 >
                   <div className="flex flex-col items-center text-center space-y-2">
                     <div
-                      className={`w-9 h-9 flex items-center justify-center rounded-full border-2 text-sm font-semibold ${
+                      className={`w-9 h-9 rounded-full border-2 flex items-center justify-center ${
                         i === activeStep
                           ? "bg-[#6BB1A0] border-[#6BB1A0] text-white"
                           : "bg-gray-100 border-gray-300 text-gray-500"
@@ -70,301 +196,464 @@ export default function FormAssessmentOrangtua() {
                     >
                       {i + 1}
                     </div>
-                    <span
-                      className={`text-sm font-medium ${
-                        i === activeStep ? "text-[#36315B]" : "text-gray-500"
-                      }`}
-                    >
+                    <span className={`text-sm font-medium ${i === activeStep ? "text-[#36315B]" : "text-gray-500"}`}>
                       {step.label}
                     </span>
                   </div>
 
-                  {i < steps.length - 1 && (
-                    <div className="w-12 h-px bg-gray-300 mx-2 translate-y-[-12px]" />
-                  )}
+                  {i < steps.length - 1 && <div className="w-12 h-px bg-gray-300 mx-2 translate-y-[-12px]" />}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* CONTENT */}
-          <section className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 max-w-5xl mx-auto">
+
+
+          {/* CONTENT BOX */}
+          <section className="bg-white rounded-2xl shadow-sm border p-8 max-w-5xl mx-auto">
+
+            {/* TITLE + DROPDOWN */}
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-lg font-semibold text-[#36315B]">
-                I. Data Umum
-              </h2>
+              <h2 className="text-lg font-semibold text-[#36315B]">I. Data Umum</h2>
 
               <div className="relative inline-block">
                 <select
                   value={activeCategory}
                   onChange={(e) => setActiveCategory(e.target.value)}
-                  className="appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm text-[#36315B] focus:outline-none focus:ring-2 focus:ring-[#6BB1A0] cursor-pointer"
+                  className="appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm text-[#36315B]"
                 >
-                  {categories.map((c) => (
-                    <option key={c.key} value={c.key}>
-                      {c.label}
+                  {groups.map((g) => (
+                    <option key={g.group_key} value={g.group_key}>
+                      {g.title}
                     </option>
                   ))}
                 </select>
-                <ChevronDown className="absolute right-2.5 top-2.5 text-gray-500 w-4 h-4 pointer-events-none" />
+                <ChevronDown className="absolute right-2.5 top-2.5 w-4 h-4 text-gray-500" />
               </div>
             </div>
 
-            {/* FORM */}
-            <form className="space-y-6">
-              {currentQuestions.map((q: any, idx: number) => (
-                <div key={idx}>
-                  <label className="block text-gray-700 mb-1 font-medium">
-                    {q.question}
-                  </label>
+            {/* ==========================
+                IDENTITAS (STATIC PAGE)
+            =========================== */}
+            
+            {activeCategory === "identitas" && (
+  <form
+    onSubmit={handleSubmit}
+    className="space-y-10 mb-10"
+  >
+    {/* ==========================
+        1. ANAK
+    =========================== */}
+    <div>
+      <h3 className="font-semibold text-[#36315B] text-base mb-4">1. Anak</h3>
 
-                  {/* TEXT */}
-                  {q.type === "text" && (
-                    <input
-                      type="text"
-                      className="border border-gray-300 rounded-md p-2 w-full text-sm"
-                      placeholder={q.placeholder || ""}
-                      onChange={(e) => setAnswer(q.id, e.target.value)}
-                    />
-                  )}
+      <div className="grid grid-cols-2 gap-6 text-sm">
 
-                  {/* NUMBER */}
-                  {q.type === "number" && (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="number"
-                        className="border border-gray-300 rounded-md p-2 w-32 text-sm"
-                        onChange={(e) => setAnswer(q.id, e.target.value)}
-                      />
-                      {q.suffix && <span>{q.suffix}</span>}
-                    </div>
-                  )}
+        {/* Nama Anak */}
+        <div className="flex flex-col">
+          <label className="font-medium mb-1">Nama</label>
+          <input
+            className="w-full border border-gray-300 p-2 rounded-md bg-gray-50"
+            defaultValue="Zahara Prameswari"
+            name="nama_anak"
+          />
+        </div>
 
-                  {/* TEXTAREA */}
-                  {q.type === "textarea" && (
-                    <textarea
-                      rows={3}
-                      className="border border-gray-300 rounded-md p-2 w-full text-sm"
-                      placeholder={q.placeholder || ""}
-                      onChange={(e) => setAnswer(q.id, e.target.value)}
-                    ></textarea>
-                  )}
+        {/* Tanggal Lahir */}
+        <div className="flex flex-col">
+          <label className="font-medium mb-1">Tanggal Lahir</label>
+          <input
+            className="w-full border border-gray-300 p-2 rounded-md bg-gray-50"
+            defaultValue="26 Agustus 2015"
+            name="tanggal_lahir_anak"
+          />
+        </div>
 
-                  {/* SELECT */}
-                  {q.type === "select" && (
-                    <select
-                      className="border border-gray-300 rounded-md p-2 text-sm"
-                      onChange={(e) => setAnswer(q.id, e.target.value)}
-                    >
-                      <option value="">Pilih salah satu</option>
-                      {q.options?.map((opt: string) => (
-                        <option key={opt} value={opt}>
-                          {opt}
-                        </option>
-                      ))}
-                    </select>
-                  )}
+        {/* Alamat Anak */}
+        <div className="flex flex-col col-span-2">
+          <label className="font-medium mb-1">Alamat</label>
+          <input
+            className="w-full border border-gray-300 p-2 rounded-md bg-gray-50"
+            defaultValue="Jln. Malabar Selatan 10"
+            name="alamat_anak"
+          />
+        </div>
 
-                  {/* RADIO */}
-                  {q.type === "radio" && (
-                    <div className="flex gap-6 mt-2 flex-wrap">
-                      {q.options?.map((opt: string, i: number) => (
-                        <label key={i} className="flex items-center gap-2">
+      </div>
+    </div>
+
+    {/* ==========================
+        2. ORANGTUA
+    =========================== */}
+    <div>
+      <h3 className="font-semibold text-[#36315B] text-base mb-6">2. Orangtua</h3>
+
+      {/* ---------------- Ayah ---------------- */}
+      <h4 className="font-semibold text-[#36315B] text-sm mb-3">Ayah</h4>
+
+      <div className="grid grid-cols-2 gap-6 text-sm mb-8">
+
+        <div className="flex flex-col">
+          <label className="mb-1">Nama Ayah</label>
+          <input className="border p-2 rounded-md" placeholder="Moko" name="nama_ayah" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Tanggal Lahir</label>
+          <input className="border p-2 rounded-md" placeholder="DD/MM/YYYY" name="tanggal_lahir_ayah" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Pekerjaan</label>
+          <input className="border p-2 rounded-md" placeholder="Karyawan Swasta" name="pekerjaan_ayah" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Nomor Telpon</label>
+          <input className="border p-2 rounded-md" placeholder="0811-xxxx-xxxx" name="telpon_ayah" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Hubungan dengan anak</label>
+          <input className="border p-2 rounded-md" placeholder="Ayah kandung" name="hubungan_ayah" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">NIK</label>
+          <input className="border p-2 rounded-md" placeholder="33720001897098754" name="nik_ayah" />
+        </div>
+      </div>
+
+      {/* ---------------- Ibu ---------------- */}
+      <h4 className="font-semibold text-[#36315B] text-sm mb-3">Ibu</h4>
+
+      <div className="grid grid-cols-2 gap-6 text-sm mb-8">
+
+        <div className="flex flex-col">
+          <label className="mb-1">Nama Ibu</label>
+          <input className="border p-2 rounded-md" placeholder="Moko" name="nama_ibu" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Tanggal Lahir</label>
+          <input className="border p-2 rounded-md" placeholder="DD/MM/YYYY" name="tanggal_lahir_ibu" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Pekerjaan</label>
+          <input className="border p-2 rounded-md" placeholder="Ibu Rumah Tangga" name="pekerjaan_ibu" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Nomor Telpon</label>
+          <input className="border p-2 rounded-md" placeholder="0811-xxxx-xxxx" name="telpon_ibu" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Hubungan dengan anak</label>
+          <input className="border p-2 rounded-md" placeholder="Ibu kandung" name="hubungan_ibu" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">NIK</label>
+          <input className="border p-2 rounded-md" placeholder="337200917263548" name="nik_ibu" />
+        </div>
+      </div>
+
+      {/* ---------------- Wali ---------------- */}
+      <h4 className="font-semibold text-[#36315B] text-sm mb-3">Wali</h4>
+
+      <div className="grid grid-cols-2 gap-6 text-sm">
+
+        <div className="flex flex-col">
+          <label className="mb-1">Nama Wali</label>
+          <input className="border p-2 rounded-md" placeholder="-" name="nama_wali" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Tanggal Lahir</label>
+          <input className="border p-2 rounded-md" placeholder="DD/MM/YYYY" name="tanggal_lahir_wali" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Pekerjaan</label>
+          <input className="border p-2 rounded-md" placeholder="-" name="pekerjaan_wali" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Nomor Telpon</label>
+          <input className="border p-2 rounded-md" placeholder="-" name="telpon_wali" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">Hubungan dengan Anak</label>
+          <input className="border p-2 rounded-md" placeholder="-" name="hubungan_wali" />
+        </div>
+
+        <div className="flex flex-col">
+          <label className="mb-1">NIK</label>
+          <input className="border p-2 rounded-md" placeholder="-" name="nik_wali" />
+        </div>
+
+        <div className="flex flex-col col-span-2">
+          <label className="mb-1">Alamat</label>
+          <input className="border p-2 rounded-md" placeholder="-" name="alamat_wali" />
+        </div>
+      </div>
+
+    </div>
+
+    {/* SIMPAN BUTTON */}
+    <div className="flex justify-end pt-6">
+      <button
+        type="submit"
+        disabled={submitting}
+        className="bg-[#6BB1A0] hover:bg-[#5EA391] text-white px-8 py-2 rounded-xl disabled:opacity-60"
+      >
+        {submitting ? "Mengirim..." : "Simpan"}
+      </button>
+    </div>
+  </form>
+)}
+
+            {/* ==========================
+                DYNAMIC QUESTIONS
+            =========================== */}
+            {activeCategory !== "identitas" && (
+              <form className="space-y-6" onSubmit={handleSubmit}>
+                {loading ? (
+                  <p>Memuat pertanyaan...</p>
+                ) : currentQuestions.length === 0 ? (
+                  <p>Tidak ada pertanyaan di kategori ini.</p>
+                ) : (
+                  currentQuestions.map((q: any) => {
+                    const extra = safeJsonParse(q.extra_schema, {});
+                    const options = Array.isArray(extra?.options)
+                      ? extra.options
+                      : safeJsonParse(q.answer_options, []);
+
+                    return (
+                      <div key={q.id}>
+                        <label className="block font-medium text-gray-700 mb-1">
+                          {q.question_number ? `${q.question_number}. ` : ""}
+                          {q.question_text}
+                        </label>
+
+                        {/* TEXT */}
+                        {q.answer_type === "text" && (
                           <input
-                            type="radio"
-                            name={`radio-${q.id}`}
-                            value={opt}
+                            className="border rounded-md p-2 w-full text-sm"
+                            value={answers[q.id] ?? ""}
                             onChange={(e) => setAnswer(q.id, e.target.value)}
                           />
-                          {opt}
-                        </label>
-                      ))}
-                    </div>
-                  )}
+                        )}
 
-                  {/* ⬇️ NEW: RADIO WITH TEXT (IMUNISASI) */}
-                  {q.type === "radio_with_text" && (
-                    <div className="space-y-3 mt-2">
-
-                      {/* Radio Options */}
-                      <div className="flex gap-6 flex-wrap">
-                        {q.options?.map((opt: string, i: number) => (
-                          <label key={i} className="flex items-center gap-2">
-                            <input
-                              type="radio"
-                              name={`radio-${q.id}`}
-                              value={opt}
-                              onChange={(e) => {
-                                setAnswer(q.id, {
-                                  value: e.target.value,
-                                  note: "" // reset note jika ganti pilihan
-                                });
-                              }}
-                            />
-                            {opt}
-                          </label>
-                        ))}
-                      </div>
-
-                      {/* Jika pilih Tidak Lengkap / Belum Imunisasi */}
-                      {(answers[q.id]?.value === "Tidak Lengkap" ||
-                        answers[q.id]?.value === "Belum Imunisasi") && (
-                        <input
-                          type="text"
-                          className="border border-gray-300 rounded-md p-2 w-full text-sm"
-                          placeholder="Keterangan"
-                          value={answers[q.id]?.note || ""}
-                          onChange={(e) =>
-                            setAnswer(q.id, {
-                              ...answers[q.id],
-                              note: e.target.value
-                            })
-                          }
-                        />
-                      )}
-                    </div>
-                  )}
-
-                  {/* CHECKBOX */}
-                  {q.type === "checkbox" && (
-                    <div className="flex gap-6 mt-2 flex-wrap">
-                      {q.options?.map((opt: string, i: number) => (
-                        <label key={i} className="flex items-center gap-2">
+                        {/* NUMBER */}
+                        {q.answer_type === "number" && (
                           <input
-                            type="checkbox"
-                            value={opt}
-                            onChange={(e) => {
-                              const prev = answers[q.id] || [];
-                              if (e.target.checked) {
-                                setAnswer(q.id, [...prev, opt]);
-                              } else {
-                                setAnswer(
-                                  q.id,
-                                  prev.filter((v: string) => v !== opt)
-                                );
-                              }
-                            }}
+                            type="number"
+                            className="border rounded-md p-2 w-32"
+                            value={answers[q.id] ?? ""}
+                            onChange={(e) => setAnswer(q.id, e.target.value)}
                           />
-                          {opt}
-                        </label>
-                      ))}
-                    </div>
-                  )}
+                        )}
 
-                  {/* MULTI FIELD */}
-                  {q.type === "multi" && (
-                    <div className="space-y-3">
-                      {(answers[q.id] || [{ Nama: "", Usia: "" }]).map(
-                        (row: any, rowIndex: number) => (
-                          <div key={rowIndex} className="flex items-center gap-4">
-                            {/* Nama */}
-                            <input
-                              type="text"
-                              placeholder="Nama"
-                              className="border border-gray-300 p-2 rounded-md text-sm"
-                              value={row.Nama}
-                              onChange={(e) => {
-                                const updated = [...(answers[q.id] || [])];
-                                updated[rowIndex] = {
-                                  ...updated[rowIndex],
-                                  Nama: e.target.value
-                                };
-                                setAnswer(q.id, updated);
-                              }}
-                            />
+                        {/* TEXTAREA */}
+                        {q.answer_type === "textarea" && (
+                          <textarea
+                            rows={3}
+                            className="border rounded-md p-2 w-full"
+                            value={answers[q.id] ?? ""}
+                            onChange={(e) => setAnswer(q.id, e.target.value)}
+                          />
+                        )}
 
-                            {/* Usia */}
-                            <input
-                              type="text"
-                              placeholder="Usia"
-                              className="border border-gray-300 p-2 rounded-md text-sm w-24"
-                              value={row.Usia}
-                              onChange={(e) => {
-                                const updated = [...(answers[q.id] || [])];
-                                updated[rowIndex] = {
-                                  ...updated[rowIndex],
-                                  Usia: e.target.value
-                                };
-                                setAnswer(q.id, updated);
-                              }}
-                            />
+                        {/* SELECT */}
+                        {q.answer_type === "select" && (
+                          <select
+                            className="border rounded-md p-2 text-sm"
+                            value={answers[q.id] ?? ""}
+                            onChange={(e) => setAnswer(q.id, e.target.value)}
+                          >
+                            <option value="">Pilih salah satu</option>
+                            {options.map((opt: any, idx: number) => (
+                              <option key={idx} value={opt}>{opt}</option>
+                            ))}
+                          </select>
+                        )}
 
-                            {/* Add row */}
-                            {rowIndex === (answers[q.id]?.length || 1) - 1 && (
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  const updated = answers[q.id] || [];
-                                  updated.push({ Nama: "", Usia: "" });
-                                  setAnswer(q.id, [...updated]);
-                                }}
-                                className="text-[#6BB1A0]"
-                              >
-                                <Plus size={20} />
-                              </button>
+                        {/* RADIO */}
+                        {q.answer_type === "radio" && (
+                          <div className="flex gap-6 mt-2 flex-wrap">
+                            {options.map((opt: any, idx: number) => (
+                              <label key={idx} className="flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name={`radio-${q.id}`}
+                                  value={opt}
+                                  checked={answers[q.id] === opt}
+                                  onChange={(e) => setAnswer(q.id, e.target.value)}
+                                />
+                                {opt}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* CHECKBOX */}
+                        {q.answer_type === "checkbox" && (
+                          <div className="flex gap-6 mt-2 flex-wrap">
+                            {options.map((opt: any, idx: number) => (
+                              <label key={idx} className="flex items-center gap-2">
+                                <input
+                                  type="checkbox"
+                                  checked={Array.isArray(answers[q.id]) && answers[q.id].includes(opt)}
+                                  onChange={() => toggleCheckboxValue(q.id, opt)}
+                                />
+                                {opt}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* RADIO WITH TEXT */}
+                        {q.answer_type === "radio_with_text" && (
+                          <div className="mt-2 space-y-3">
+                            {options.map((opt: any, idx: number) => (
+                              <label key={idx} className="flex items-center gap-2">
+                                <input
+                                  type="radio"
+                                  name={`radio-${q.id}`}
+                                  value={opt}
+                                  checked={answers[q.id]?.value === opt}
+                                  onChange={() => setAnswer(q.id, { value: opt, note: "" })}
+                                />
+                                {opt}
+                              </label>
+                            ))}
+
+                            {(answers[q.id]?.value === "Tidak" ||
+                              answers[q.id]?.value === "Belum Imunisasi" ||
+                              answers[q.id]?.value === "Tidak Lengkap") && (
+                              <input
+                                className="border rounded-md p-2 w-full text-sm"
+                                value={answers[q.id]?.note ?? ""}
+                                onChange={(e) =>
+                                  setAnswer(q.id, { ...(answers[q.id] || {}), note: e.target.value })
+                                }
+                                placeholder="Keterangan"
+                              />
                             )}
+                          </div>
+                        )}
 
-                            {/* Delete row */}
-                            {rowIndex > 0 && (
+                        {/* MULTI INPUT */}
+                        {q.answer_type === "multi" && (
+                          <div className="space-y-3 mt-2">
+                            {Array.isArray(answers[q.id]) &&
+                              answers[q.id].map((row: any, index: number) => (
+                                <div key={index} className="flex items-center gap-4">
+                                  {(extra?.fields || ["Nama", "Usia"]).map((f: string) => (
+                                    <input
+                                      key={f}
+                                      className="border p-2 rounded-md text-sm"
+                                      value={row[f] || ""}
+                                      onChange={(e) => {
+                                        const up = [...answers[q.id]];
+                                        up[index] = { ...up[index], [f]: e.target.value };
+                                        setAnswer(q.id, up);
+                                      }}
+                                      placeholder={f}
+                                    />
+                                  ))}
+
+                                  {index === answers[q.id].length - 1 && (
+                                    <button
+                                      type="button"
+                                      className="text-[#6BB1A0]"
+                                      onClick={() => {
+                                        const newRow: any = {};
+                                        (extra?.fields || ["Nama", "Usia"]).forEach((f: string) => {
+                                          newRow[f] = "";
+                                        });
+                                        setAnswer(q.id, [...answers[q.id], newRow]);
+                                      }}
+                                    >
+                                      <Plus size={18} />
+                                    </button>
+                                  )}
+
+                                  {index > 0 && (
+                                    <button
+                                      type="button"
+                                      className="text-red-500"
+                                      onClick={() => {
+                                        const up = answers[q.id].filter((_: any, i: number) => i !== index);
+                                        setAnswer(q.id, up);
+                                      }}
+                                    >
+                                      <Trash size={18} />
+                                    </button>
+                                  )}
+                                </div>
+                              ))}
+
+                            {(!Array.isArray(answers[q.id]) || answers[q.id].length === 0) && (
                               <button
                                 type="button"
-                                className="text-red-500"
+                                className="text-[#6BB1A0]"
                                 onClick={() => {
-                                  const updated = answers[q.id].filter(
-                                    (_: any, i: number) => i !== rowIndex
-                                  );
-                                  setAnswer(q.id, updated);
+                                  const row: any = {};
+                                  (extra?.fields || ["Nama", "Usia"]).forEach((f: string) => { row[f] = "" });
+                                  setAnswer(q.id, [row]);
                                 }}
                               >
-                                <Trash size={18} />
+                                <Plus size={18} /> Tambah
                               </button>
                             )}
                           </div>
-                        )
-                      )}
-                    </div>
-                  )}
+                        )}
 
-                  {/* TABLE */}
-                  {q.type === "table" && (
-                    <div className="space-y-2">
-                      {q.rows.map((row: string, i: number) => (
-                        <div key={i} className="flex items-center gap-4">
-                          <span className="w-48">{row}</span>
+                        {/* TABLE */}
+                        {q.answer_type === "table" && (
+                          <div className="mt-2 space-y-2">
+                            {Array.isArray(extra?.rows) ? (
+                              extra.rows.map((label: string, idx: number) => (
+                                <div key={idx} className="flex items-center gap-4">
+                                  <span className="w-48">{label}</span>
+                                  <input
+                                    className="border p-2 rounded-md w-32"
+                                    value={answers[q.id]?.[label] ?? ""}
+                                    onChange={(e) => handleTableCell(q.id, label, e.target.value)}
+                                  />
+                                </div>
+                              ))
+                            ) : (
+                              <p>Tidak ada baris.</p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
 
-                          <input
-                            type="number"
-                            className="border border-gray-300 rounded-md p-2 w-32 text-sm"
-                            placeholder="Usia"
-                            onChange={(e) => {
-                              setAnswer(q.id, {
-                                ...(answers[q.id] || {}),
-                                [row]: e.target.value
-                              });
-                            }}
-                          />
-
-                          {q.suffix && <span>{q.suffix}</span>}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
+                <div className="flex justify-end pt-6">
+                  <button
+                    type="submit"
+                    disabled={submitting}
+                    className="bg-[#6BB1A0] hover:bg-[#5EA391] text-white px-8 py-2 rounded-xl disabled:opacity-60"
+                  >
+                    {submitting ? "Mengirim..." : "Simpan"}
+                  </button>
                 </div>
-              ))}
-
-              <div className="flex justify-end pt-6">
-                <button
-                  type="submit"
-                  className="bg-[#6BB1A0] hover:bg-[#5EA391] text-white px-8 py-2 rounded-xl font-medium"
-                >
-                  Simpan
-                </button>
-              </div>
-            </form>
+              </form>
+            )}
           </section>
         </main>
       </div>
     </div>
   );
 }
+
+

@@ -1,6 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "puspa.sinus.ac.id",
+        pathname: "/storage/**",
+      },
+    ],
+  },
+
   async rewrites() {
     return [
       {

@@ -1,55 +1,80 @@
-{
-  "Membaca": [
-    "Anak mampu mengenal huruf",
-    "Anak mampu mengenal simbol huruf",
-    "Anak mampu menyebutkan huruf A-Z secara berurutan",
-    "Anak mampu mengucapkan huruf yang tepat dan benar",
-    "Anak mampu membaca bunyi vokal (a,i,u,e,o)",
-    "Anak mampu membaca bunyi konsonan (b,c,d,f,g,h,j,k,l,m,n,p,q,r,s,t,v,w,x,z)",
-    "Anak mampu membaca kata yang diminta",
-    "Anak mampu membaca kalimat",
-    "Anak mampu membaca sepintas/cepat",
-    "Anak mampu membaca isi bacaan"
-  ],
-  "Menulis": [
-    "Anak mampu memegang alat tulis",
-    "Anak mampu menulis garis lurus keatas kebawah",
-    "Anak mampu menulis garis lurus kekanan kekiri",
-    "Anak mampu menulis garis melingkar",
-    "Anak mampu menulis huruf dengan lurus",
-    "Anak mampu menyalin huruf",
-    "Anak mampu menulis namanya sendiri",
-    "Anak mampu mengenal dan menulis kata atau kalimat yang diminta",
-    "Anak mampu mengenal dan menulis huruf besar atau huruf kecil alfabet",
-    "Anak mampu membedakan huruf dengan kesamaan bentuk (b,d,p,q atau m,n,w)",
-    "Anak mampu membuat kalimat sederhana",
-    "Anak mampu menulis cerita berdasarkan gambar"
-  ],
-  "Berhitung": [
-    "Anak mampu mengenal bentuk angka 1-10 dengan urut",
-    "Anak mampu menghitung benda konkret (1-50)",
-    "Anak mampu memahami perbandingan banyak sedikit angka",
-    "Anak mampu mengenal tanda operasi hitung bilangan (+,-,x,:)",
-    "Anak mampu mengoperasikan hitung bilangan penjumlahan dan pengurangan",
-    "Anak mampu mengoperasikan hitung bilangan perkalian dan pembagian",
-    "Anak mampu mengoperasikan alat bantu hitung"
-  ],
-  "Kesiapan Belajar": [
-    "Anak mampu mengikuti instruksi (konsentrasi)",
-    "Anak mampu duduk dalam waktu yang ditentukan untuk mengikuti instruksi guru",
-    "Anak bergerak aktif tidak dapat duduk tenang",
-    "Anak menunjukkan inisiasi (tidak pasif) dalam belajar",
-    "Anak bersikap kooperatif",
-    "Anak menunjukkan sikap antusias (mood) dalam belajar",
-    "Anak mampu menyelesaikan tugas sampai tuntas"
-  ],
-  "Pengetahuan Umum": [
-    "Anak mengetahui identitas diri",
-    "Anak menunjukkan anggota tubuh",
-    "Anak memiliki pemahaman perbedaan rasa pada indera pengecapan",
-    "Anak mampu mengidentifikasikan warna",
-    "Anak mampu memahami besar kecil, berat ringan, luas sempit",
-    "Anak mampu memahami orientasi waktu (pagi, siang, malam, jam, hari, bulan, tahun)",
-    "Anak mampu mengekspresikan wajah (emosi)"
-  ]
-}
+[
+  {
+    "key": "reading_aspect",
+    "title": "Membaca",
+    "questions": [
+      { "field": "recognize_letters", "label": "Anak mampu mengenal huruf" },
+      { "field": "recognize_letter_symbols", "label": "Anak mampu mengenal simbol huruf" },
+      { "field": "say_alphabet_in_order", "label": "Anak mampu menyebutkan huruf A-Z secara berurutan" },
+      { "field": "pronounce_letters_correctly", "label": "Anak mampu mengucapkan huruf yang tepat dan benar" },
+      { "field": "read_vowels", "label": "Anak mampu membaca bunyi vokal (a,i,u,e,o)" },
+      { "field": "read_consonants", "label": "Anak mampu membaca bunyi konsonan" },
+      { "field": "read_given_words", "label": "Anak mampu membaca kata yang diminta" },
+      { "field": "read_sentences", "label": "Anak mampu membaca kalimat" },
+      { "field": "read_quickly", "label": "Anak mampu membaca sepintas/cepat" },
+      { "field": "read_for_comprehension", "label": "Anak mampu membaca isi bacaan" }
+    ]
+  },
+
+  {
+    "key": "writing_aspect",
+    "title": "Menulis",
+    "questions": [
+      { "field": "hold_writing_tool", "label": "Anak mampu memegang alat tulis" },
+      { "field": "write_straight_down", "label": "Anak mampu menulis garis lurus keatas kebawah" },
+      { "field": "write_straight_side", "label": "Anak mampu menulis garis lurus kekanan kekiri" },
+      { "field": "write_curved_line", "label": "Anak mampu menulis garis melingkar" },
+      { "field": "write_letters_straight", "label": "Anak mampu menulis huruf dengan lurus" },
+      { "field": "copy_letters", "label": "Anak mampu menyalin huruf" },
+      { "field": "write_own_name", "label": "Anak mampu menulis namanya sendiri" },
+      { "field": "recognize_and_write_words", "label": "Anak mampu mengenal dan menulis kata atau kalimat yang diminta" },
+      { "field": "write_upper_lower_case", "label": "Anak mampu mengenal dan menulis huruf besar atau huruf kecil alfabet" },
+      { "field": "differentiate_similar_letters", "label": "Anak mampu membedakan huruf dengan kesamaan bentuk (b,d,p,q atau m,n,w)" },
+      { "field": "write_simple_sentences", "label": "Anak mampu membuat kalimat sederhana" },
+      { "field": "write_story_from_picture", "label": "Anak mampu menulis cerita berdasarkan gambar" }
+    ]
+  },
+
+  {
+    "key": "counting_aspect",
+    "title": "Berhitung",
+    "questions": [
+      { "field": "recognize_numbers_1_10", "label": "Anak mampu mengenal bentuk angka 1-10 dengan urut" },
+      { "field": "count_concrete_objects", "label": "Anak mampu menghitung benda konkret (1-50)" },
+      { "field": "compare_quantities", "label": "Anak mampu memahami perbandingan banyak sedikit angka" },
+      { "field": "recognize_math_symbols", "label": "Anak mampu mengenal tanda operasi hitung bilangan (+,-,x,:)" },
+      { "field": "operate_addition_subtraction", "label": "Anak mampu mengoperasikan hitung bilangan penjumlahan dan pengurangan" },
+      { "field": "operate_multiplication_division", "label": "Anak mampu mengoperasikan hitung bilangan perkalian dan pembagian" },
+      { "field": "use_counting_tools", "label": "Anak mampu mengoperasikan alat bantu hitung" }
+    ]
+  },
+
+  {
+    "key": "learning_readiness_aspect",
+    "title": "Kesiapan Belajar",
+    "questions": [
+      { "field": "follow_instructions", "label": "Anak mampu mengikuti instruksi (konsentrasi)" },
+      { "field": "sit_calmly", "label": "Anak mampu duduk dalam waktu yang ditentukan untuk mengikuti instruksi guru" },
+      { "field": "not_hyperactive", "label": "Anak bergerak aktif tidak dapat duduk tenang" },
+      { "field": "show_initiative", "label": "Anak menunjukkan inisiasi (tidak pasif) dalam belajar" },
+      { "field": "is_cooperative", "label": "Anak bersikap kooperatif" },
+      { "field": "show_enthusiasm", "label": "Anak menunjukkan sikap antusias (mood) dalam belajar" },
+      { "field": "complete_tasks", "label": "Anak mampu menyelesaikan tugas sampai tuntas" }
+    ]
+  },
+
+  {
+    "key": "general_knowledge_aspect",
+    "title": "Pengetahuan Umum",
+    "questions": [
+      { "field": "knows_identity", "label": "Anak mengetahui identitas diri" },
+      { "field": "show_body_parts", "label": "Anak menunjukkan anggota tubuh" },
+      { "field": "understand_taste_differences", "label": "Anak memiliki pemahaman perbedaan rasa pada indera pengecapan" },
+      { "field": "identify_colors", "label": "Anak mampu mengidentifikasikan warna" },
+      { "field": "understand_sizes", "label": "Anak mampu memahami besar kecil, berat ringan, luas sempit" },
+      { "field": "understand_orientation", "label": "Anak mampu memahami orientasi waktu (pagi, siang, malam, jam, hari, bulan, tahun)" },
+      { "field": "express_emotions", "label": "Anak mampu mengekspresikan wajah (emosi)" }
+    ]
+  }
+]
+

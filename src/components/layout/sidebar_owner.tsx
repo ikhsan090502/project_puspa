@@ -8,6 +8,9 @@ import {
   ShieldCheck,
   Settings,
   LogOut,
+  User,
+  Users,
+  UserCheck,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -17,21 +20,18 @@ interface SidebarProps {
 export const menu = [
   {
     section: null,
-    items: [{ name: "Dashboard", href: "/owner/dashboard_Owner", icon: LayoutGrid }],
+    items: [
+      { name: "Dashboard", href: "/owner/dashboard-Owner", icon: LayoutGrid },
+    ],
   },
   {
     section: "MANAJEMEN AKUN",
     items: [
-      {
-        name: "Verifikasi Admin",
-        href: "/owner/verifAdmin",
-        icon: ShieldCheck,
-      },
-      {
-        name: "Verifikasi Terapis",
-        href: "/owner/verifTerapis",
-        icon: ShieldCheck,
-      },
+      { name: "Verifikasi Admin", href: "/owner/verifAdmin", icon: ShieldCheck },
+      { name: "Verifikasi Terapis", href: "/owner/verifTerapis", icon: ShieldCheck },
+      { name: "Admin", href: "/owner/allAdmin", icon: User },           // menu baru
+      { name: "Terapis", href: "/owner/allTerapis", icon: Users },      // menu baru
+      { name: "Pasien / Anak", href: "/owner/allPasien", icon: UserCheck }, // menu baru
     ],
   },
   {

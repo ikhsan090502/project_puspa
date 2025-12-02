@@ -14,6 +14,7 @@ import {
   User,
   Lock,
 } from "lucide-react";
+import { useProfile } from "@/context/ProfileContext";
 
 export const menuOrangtua = [
   {
@@ -42,17 +43,21 @@ export default function SidebarOrangtua() {
   const pathname = usePathname();
   const [openProfileMenu, setOpenProfileMenu] = useState(false);
 
+  // 🔥 DATA PROFIL DARI CONTEXT
+  const { profile } = useProfile();
+
+  // Default avatar jika belum ada foto
+  const avatar =
+    profile?.profile_picture
+      ? profile.profile_picture
+      : "/profil.png";
+
   return (
     <div className="fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-50">
+
       {/* Logo Section */}
       <div className="flex items-center justify-center mt-8 mb-12">
-        <Image
-          src="/logo.png"
-          alt="Puspa Logo"
-          width={140}
-          height={60}
-          priority
-        />
+        <Image src="/logo.png" alt="Puspa Logo" width={140} height={60} priority />
       </div>
 
       {/* Menu Section */}
@@ -82,24 +87,26 @@ export default function SidebarOrangtua() {
 
       {/* Profile Dropdown Section */}
       <div className="px-6 py-4 border-t border-gray-200">
-        {/* BUTTON PROFIL */}
         <div
           className="flex items-center justify-between cursor-pointer"
           onClick={() => setOpenProfileMenu(!openProfileMenu)}
         >
           <div className="flex items-center gap-3">
             <Image
-              src="/profil.png"
+              src={avatar}
               alt="User Avatar"
               width={36}
               height={36}
-              className="rounded-full"
+              className="rounded-full object-cover"
             />
+
             <div className="flex flex-col">
               <span className="text-sm font-semibold text-[#36315B]">
-                Bunda
+                {profile?.guardian_name || "Loading..."}
               </span>
-              <span className="text-xs text-[#36315B]/70">Malaikha</span>
+              <span className="text-xs text-[#36315B]/70">
+                {profile?.email || ""}
+              </span>
             </div>
           </div>
 
@@ -110,13 +117,12 @@ export default function SidebarOrangtua() {
           )}
         </div>
 
-        {/* DROPDOWN MENU */}
         {openProfileMenu && (
           <div className="mt-3 ml-10 space-y-2">
             <Link href="/orangtua/profil">
               <div
                 className={`flex items-center gap-3 text-sm px-2 py-2 rounded-lg cursor-pointer transition ${
-                  pathname === "/orangtua/profile"
+                  pathname === "/orangtua/profil"
                     ? "text-[#36315B] font-semibold bg-[#C0DCD6]"
                     : "text-[#36315B] hover:bg-[#C0DCD6]"
                 }`}
@@ -129,7 +135,7 @@ export default function SidebarOrangtua() {
             <Link href="/orangtua/ubahPassword">
               <div
                 className={`flex items-center gap-3 text-sm px-2 py-2 rounded-lg cursor-pointer transition ${
-                  pathname === "/orangtua/profile/password"
+                  pathname === "/orangtua/ubahPassword"
                     ? "text-[#36315B] font-semibold bg-[#C0DCD6]"
                     : "text-[#36315B] hover:bg-[#C0DCD6]"
                 }`}

@@ -4,11 +4,14 @@ import Image from "next/image";
 import { Bell } from "lucide-react";
 import React from "react";
 import { usePathname } from "next/navigation";
+import { useProfile } from "@/context/ProfileContext";
 
 const HeaderOrangtua: React.FC = () => {
   const pathname = usePathname();
 
-  // Daftar halaman dan judul yang ditampilkan di header
+  // 🔥 Ambil profile dari Context
+  const { profile } = useProfile();
+
   const pageTitles: Record<string, string> = {
     "/orangtua/dashboard": "Dashboard",
     "/orangtua/anak": "Data Anak",
@@ -21,25 +24,29 @@ const HeaderOrangtua: React.FC = () => {
     "/orangtua/assessment/kategori/paedagog": "Data Paedagog",
     "/orangtua/assessment/riwayat-jawaban": "Riwayat Jawaban",
     "/orangtua/help": "Bantuan",
-    "/orangtua/profil": "Profile",
+    "/orangtua/profil": "Profil",
     "/orangtua/ubahPassword": "Ubah Password",
-
   };
 
   const title = pageTitles[pathname] || "Dashboard";
+
+  const avatar =
+    profile?.profile_picture ? profile.profile_picture : "/profil.png";
 
   return (
     <header className="w-full flex justify-between items-center px-6 py-4 bg-white shadow text-[#36315B]">
       {/* Judul Halaman */}
       <h2 className="text-xl font-semibold">{title}</h2>
 
-      {/* Bagian kanan (nama, avatar, notifikasi) */}
+      {/* Bagian Kanan */}
       <div className="flex items-center gap-4">
-        <span className="font-medium">Halo, Bunda Malaikha</span>
+        <span className="font-medium">
+          Halo, {profile?.guardian_name ?? "Memuat..."}
+        </span>
 
         <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
           <Image
-            src="/profil.png"
+            src={avatar}
             alt="Profil Orang Tua"
             width={40}
             height={40}

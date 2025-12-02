@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown } from "lucide-react";
+import { useSearchParams } from "next/navigation";
 
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
@@ -21,6 +22,10 @@ export default function RiwayatWicaraPage() {
   const [notes, setNotes] = useState<any>({});
   const [loading, setLoading] = useState(true);
 
+  const params = useSearchParams();
+  const assessmentId = params.get("assessment_id") || "0";
+
+  // ================== LOAD JSON TEMPLATE ==================
   useEffect(() => {
     const loadJson = async () => {
       const oral = await import("@/data/wicaraOral.json");
@@ -34,42 +39,63 @@ export default function RiwayatWicaraPage() {
 
   const data = activeTab === "Oral Fasial" ? oralFasial : kemampuanBahasa;
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const result = await getAssessmentAnswers("1", "wicara");
+ // ================== LOAD RIWAYAT JAWABAN DARI API ==================
+useEffect(() => {
+  if (oralFasial.length === 0) return;  // ⛔ JANGAN JALAN KALAU TEMPLATE BELUM ADA
 
-        const resp: any = {};
-        const nt: any = {};
+  const fetchData = async () => {
+    try {
+      const result = await getAssessmentAnswers(assessmentId, "wicara");
 
-        if (Array.isArray(result.oral_fasial)) {
-          result.oral_fasial.forEach((item: any) => {
-            const key = `Oral Fasial-${item.question}`;
-            resp[key] = item.answer || "";
-            nt[key] = item.note || "";
+      const resp: any = {};
+      const nt: any = {};
+
+      // ======== ORAL FASIAL (FIXED) ========
+      if (result?.oral_facial_aspect) {
+        const oral = result.oral_facial_aspect;
+
+        oralFasial.forEach((section: any) => {
+          const sectionKey = section.key; 
+          const apiSection = oral[sectionKey]; // ⛔ ini sebelumnya undefined
+
+          if (!apiSection) return;
+
+          section.questions.forEach((q: any) => {
+            const field = q.field;
+
+            const value = apiSection[field] ?? "";
+            const note = apiSection[`${field}_note`] ?? "";
+
+            const qKey = `${section.title}-${q.label}`;
+
+            resp[qKey] = value;
+            nt[qKey] = note;
           });
-        }
-
-        if (Array.isArray(result.kemampuan_bahasa)) {
-          result.kemampuan_bahasa.forEach((item: any) => {
-            const key = `Kemampuan Bahasa-${item.skill}`;
-
-            if (!resp[key]) resp[key] = [];
-            if (item.checked) resp[key].push(item.skill);
-          });
-        }
-
-        setResponses(resp);
-        setNotes(nt);
-      } catch (err) {
-        console.error("Gagal load riwayat:", err);
-      } finally {
-        setLoading(false);
+        });
       }
-    };
 
-    fetchData();
-  }, []);
+      // ====== KEMAMPUAN BAHASA ======
+      if (result?.language_skill_aspect?.answers) {
+        const answers = result.language_skill_aspect.answers;
+
+        answers.forEach((item: any) => {
+          const qKey = `Kemampuan Bahasa-${item.skill}`;
+
+          if (!resp[qKey]) resp[qKey] = [];
+
+          if (item.checked === true) resp[qKey].push(item.skill);
+        });
+      }
+
+      setResponses(resp);
+      setNotes(nt);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchData();
+}, [assessmentId, oralFasial]); // ← Tambah dependency oralFasial
 
   if (loading || oralFasial.length === 0) {
     return <p className="p-6">Memuat riwayat...</p>;
@@ -83,7 +109,14 @@ export default function RiwayatWicaraPage() {
         <HeaderTerapis />
 
         <div className="p-6">
-
+           <div className="flex justify-end mb-4">
+  <button
+    onClick={() => (window.location.href = "/terapis/asessment")}
+    className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+  >
+    ✕
+  </button>
+</div>
           {/* TAB HEADER */}
           <div className="flex gap-3 mb-6 border-b border-gray-200">
             {tabs.map((tab) => (
@@ -101,11 +134,13 @@ export default function RiwayatWicaraPage() {
             ))}
           </div>
 
-          {/* LIST SECTION */}
+          {/* SECTION LIST */}
           {data.map((section, i) => (
-            <div key={i} className="mb-6 rounded-2xl bg-white shadow-md overflow-hidden">
-
-              {/* HEADER — sudah diperbaiki */}
+            <div
+              key={i}
+              className="mb-6 rounded-2xl bg-white shadow-md overflow-hidden"
+            >
+              {/* HEADER */}
               <button
                 onClick={() => setOpenSection(openSection === i ? null : i)}
                 className="w-full flex justify-between items-center px-5 py-4 bg-[#36315B] text-white"
@@ -132,16 +167,35 @@ export default function RiwayatWicaraPage() {
                       const qKey = `${section.title}-${q.label}`;
 
                       return activeTab === "Oral Fasial" ? (
-                        <div key={j} className="flex flex-col md:flex-row justify-between gap-4 border-b pb-4">
-
+                        <div
+                          key={j}
+                          className="flex flex-col md:flex-row justify-between gap-4 border-b pb-4"
+                        >
                           <div className="md:w-2/3">
-                            <p className="text-gray-700 font-medium text-sm mb-2">{q.label}:</p>
+                            <p className="text-gray-700 font-medium text-sm mb-2">
+                              {q.label}:
+                            </p>
 
                             <div className="flex flex-col gap-2">
                               {q.options?.map((opt: string, k: number) => (
-                                <label key={k} className="flex items-center gap-2 text-sm">
-                                  <input type="radio" checked={responses[qKey] === opt} disabled />
-                                  <span>{opt}</span>
+                                <label
+                                  key={k}
+                                  className="flex items-center gap-2 text-sm"
+                                >
+                                  <div className="flex items-center gap-2 text-sm">
+  <div
+    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center
+      ${responses[qKey] === opt ? "border-[#36315B]" : "border-gray-400"}
+    `}
+  >
+    {responses[qKey] === opt && (
+      <div className="w-2.5 h-2.5 rounded-full bg-[#36315B]" />
+    )}
+  </div>
+
+  <span>{opt}</span>
+</div>
+
                                 </label>
                               ))}
                             </div>
@@ -157,7 +211,10 @@ export default function RiwayatWicaraPage() {
                           </div>
                         </div>
                       ) : (
-                        <div key={j} className="flex items-start gap-3 border-b pb-2">
+                        <div
+                          key={j}
+                          className="flex items-start gap-3 border-b pb-2"
+                        >
                           <input
                             type="checkbox"
                             disabled
@@ -175,7 +232,6 @@ export default function RiwayatWicaraPage() {
               </AnimatePresence>
             </div>
           ))}
-
         </div>
       </div>
     </div>

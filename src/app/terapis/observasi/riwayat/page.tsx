@@ -1,13 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
 import { ChevronDown, Settings, Clock3, Eye } from "lucide-react";
-import { getCompletedObservations } from "@/lib/api/observasiSubmit";
-import DatePicker from "@/components/dashboard/datepicker";
+import { getObservations } from "@/lib/api/observasiSubmit";
 
 // ==================== Interface ====================
 interface Anak {
@@ -16,8 +15,8 @@ interface Anak {
   observer: string;
   usia: string;
   sekolah: string;
-  tglObservasi: string;
-  waktu: string; // ← tambahan field waktu
+  tglObservasi: string; // selalu YYYY-MM-DD setelah mapping
+  waktu: string;
   status?: string;
 }
 
@@ -49,26 +48,33 @@ export default function RiwayatObservasiPage() {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
 
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [selectedPasien, setSelectedPasien] = useState<Anak | null>(null);
+  // Filter tambahan
+  const [searchName, setSearchName] = useState("");
+  const [filterDate, setFilterDate] = useState("");
 
   // ==================== Fetch Data ====================
   const fetchObservasi = async () => {
     try {
       setLoading(true);
-      const result = await getCompletedObservations();
+      const result = await getObservations("completed"); // ambil semua data completed
 
-      const mapped =
-        result?.map((item: any) => ({
-          observation_id: item.observation_id?.toString() || item.id?.toString(),
-          nama: item.child_name,
-          observer: item.observer,
-          usia: item.child_age,
-          sekolah: item.child_school,
-          tglObservasi: item.scheduled_date,
-          waktu: item.time || "-", // ← tambahkan waktu observasi
-          status: item.status,
-        })) || [];
+      const mapped: Anak[] =
+        result?.map((item: any) => {
+          // backend format DD/MM/YYYY, ubah ke YYYY-MM-DD
+          const [dd, mm, yyyy] = item.scheduled_date?.split("/") || ["-", "-", "-"];
+          const tglObservasi = `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+
+          return {
+            observation_id: item.observation_id?.toString() || "-",
+            nama: item.child_name || "-",
+            observer: item.observer || "-",
+            usia: item.child_age || "-",
+            sekolah: item.child_school || "-",
+            tglObservasi,
+            waktu: item.time || "-",
+            status: item.status || "-",
+          };
+        }) || [];
 
       setData(mapped);
     } catch (err) {
@@ -83,7 +89,17 @@ export default function RiwayatObservasiPage() {
     fetchObservasi();
   }, []);
 
-  const filtered = data.filter((d) => kategori[activeKategori].filter(d));
+  // ==================== Live Filtering ====================
+  const filtered = useMemo(() => {
+    return data
+      .filter((d) => kategori[activeKategori].filter(d)) // filter usia
+      .filter((d) =>
+        searchName ? d.nama.toLowerCase().includes(searchName.toLowerCase()) : true
+      ) // filter nama
+      .filter((d) =>
+        filterDate ? d.tglObservasi === filterDate : true
+      ); // filter tanggal
+  }, [data, activeKategori, searchName, filterDate]);
 
   const handleRiwayatJawaban = (id: string) => {
     router.push(`/terapis/riwayat-hasil?id=${id}`);
@@ -102,15 +118,33 @@ export default function RiwayatObservasiPage() {
 
         <main className="p-4 sm:p-6 overflow-y-auto">
           <button
-            onClick={() => router.back()}
-            className="mb-4 px-4 py-2 text-sm font-semibold text-[#36315B] border border-[#81B7A9] rounded hover:bg-[#81B7A9] hover:text-white transition"
-          >
-            Kembali
-          </button>
+  onClick={() => router.push("/terapis/observasi")}
+  className="mb-4 px-4 py-2 text-sm font-semibold text-[#36315B] border border-[#81B7A9] rounded hover:bg-[#81B7A9] hover:text-white transition"
+>
+  Kembali
+</button>
+
 
           <h2 className="text-lg sm:text-2xl font-bold text-center mb-6">
             Riwayat Observasi
           </h2>
+
+          {/* Filter & Search */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4">
+            <input
+              type="date"
+              value={filterDate}
+              onChange={(e) => setFilterDate(e.target.value)}
+              className="border border-[#81B7A9] rounded px-2 py-1 text-sm"
+            />
+            <input
+              type="text"
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              className="border border-[#81B7A9] rounded px-2 py-1 text-sm max-w-[200px]"
+              placeholder="Cari Nama Anak"
+            />
+          </div>
 
           {/* Tab Kategori Usia */}
           <div className="relative flex flex-wrap border-b border-gray-300 mb-4">
@@ -119,9 +153,7 @@ export default function RiwayatObservasiPage() {
                 key={idx}
                 onClick={() => setActiveKategori(idx)}
                 className={`relative px-3 sm:px-4 py-2 text-sm sm:text-base font-medium transition-colors ${
-                  activeKategori === idx
-                    ? "text-[#36315B]"
-                    : "text-gray-500 hover:text-[#36315B]"
+                  activeKategori === idx ? "text-[#36315B]" : "text-gray-500 hover:text-[#36315B]"
                 }`}
               >
                 {kat.title}
@@ -135,7 +167,7 @@ export default function RiwayatObservasiPage() {
             ))}
           </div>
 
-          {/* Loading State */}
+          {/* Loading & Table */}
           {loading ? (
             <div className="flex flex-col items-center justify-center mt-10 text-gray-500">
               <div className="w-10 h-10 border-4 border-[#81B7A9] border-t-transparent rounded-full animate-spin mb-3"></div>
@@ -144,7 +176,7 @@ export default function RiwayatObservasiPage() {
           ) : (
             <AnimatePresence mode="wait">
               <motion.div
-                key={activeKategori}
+                key={activeKategori + searchName + filterDate}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
@@ -172,8 +204,8 @@ export default function RiwayatObservasiPage() {
                           <td className="py-2 px-2 sm:px-4 text-center">{d.observer}</td>
                           <td className="py-2 px-2 sm:px-4 text-center">{d.usia}</td>
                           <td className="py-2 px-2 sm:px-4 text-center">{d.sekolah}</td>
-                           <td className="py-2 px-2 sm:px-4 text-center">{d.tglObservasi}</td>
-                            <td className="py-2 px-2 sm:px-4 text-center">{d.waktu}</td>
+                          <td className="py-2 px-2 sm:px-4 text-center">{d.tglObservasi}</td>
+                          <td className="py-2 px-2 sm:px-4 text-center">{d.waktu}</td>
                           <td className="py-2 px-2 sm:px-4 text-center capitalize">{d.status}</td>
                           <td className="py-2 px-2 sm:px-4 text-center relative">
                             <div className="relative inline-block text-left">
@@ -197,7 +229,6 @@ export default function RiwayatObservasiPage() {
                               </button>
                             </div>
 
-                            {/* Dropdown fixed */}
                             {openDropdown === d.observation_id && dropdownPosition && (
                               <div
                                 className="fixed z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-md border border-[#80C2B0]"
@@ -230,7 +261,7 @@ export default function RiwayatObservasiPage() {
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={7} className="text-center py-3 px-4 text-gray-500 text-sm">
+                        <td colSpan={8} className="text-center py-3 px-4 text-gray-500 text-sm">
                           Tidak ada data observasi completed.
                         </td>
                       </tr>

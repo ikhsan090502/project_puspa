@@ -1,238 +1,278 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
-import questionsData from "@/data/okupasi.json";
-import { ChevronDown } from "lucide-react";
+import { getAssessmentQuestions, submitAssessment } from "@/lib/api/asesment";
 
-type SubKey = string;
+type Question = {
+  id: number;
+  question_code: string;
+  question_number: string;
+  question_text: string;
+  answer_type: string;
+  answer_options: string | null;
+  extra_schema?: string | null;
+};
 
-export default function Page() {
-  const sectionKeys = useMemo(() => Object.keys(questionsData), []);
-  const [stepIndex, setStepIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<SubKey, { score?: string; note?: string }>>({});
-  const [reportNotes, setReportNotes] = useState("");
-  const [reportResult, setReportResult] = useState("");
-  const [recommendation, setRecommendation] = useState("");
+type Group = {
+  group_id: number;
+  group_key: string;
+  title: string;
+  questions: Question[];
+};
 
-  const currentSectionKey = stepIndex < sectionKeys.length ? sectionKeys[stepIndex] : null;
-  const isSummary = stepIndex >= sectionKeys.length;
+type UIAnswer = {
+  score?: string;
+  note?: string;
+};
 
-  const setAnswer = (key: SubKey, field: "score" | "note", value: string) => {
+export default function OkupasiAssessmentPage() {
+  const searchParams = useSearchParams();
+  const assessmentId = searchParams.get("assessment_id") || "";
+
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [answers, setAnswers] = useState<Record<string | number, UIAnswer>>({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string>("");
+  const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        setLoading(true);
+        const data = await getAssessmentQuestions("okupasi");
+        if (!data.groups || data.groups.length === 0) {
+          setError("Data pertanyaan tidak tersedia");
+          setGroups([]);
+        } else {
+          setGroups(data.groups);
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Gagal memuat pertanyaan");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
+
+  const handleChange = (
+    questionId: number | string,
+    field: "score" | "note",
+    value: string
+  ) => {
     setAnswers((prev) => ({
       ...prev,
-      [key]: { ...(prev[key] || {}), [field]: value },
+      [questionId]: { ...prev[questionId], [field]: value },
     }));
   };
 
-  const isSectionComplete = (sectionId: string) => {
-    const section = (questionsData as any)[sectionId];
-    if (!section) return false;
-
-    for (const item of section.items) {
-      for (let si = 0; si < item.sub.length; si++) {
-        const key = `${sectionId}-${item.no}-${si}`;
-        if (!answers[key] || !answers[key].score) return false;
-      }
+  const handleNextGroup = () => {
+    if (currentGroupIndex < groups.length - 1) {
+      setCurrentGroupIndex(currentGroupIndex + 1);
     }
-    return true;
   };
 
-  const goNext = () => {
-    if (isSummary) return;
-    setStepIndex((s) => Math.min(s + 1, sectionKeys.length));
-  };
-  const goPrev = () => {
-    setStepIndex((s) => Math.max(s - 1, 0));
+  const handlePrevGroup = () => {
+    if (currentGroupIndex > 0) {
+      setCurrentGroupIndex(currentGroupIndex - 1);
+    }
   };
 
-  const handleSave = () => {
+  const handleSubmit = async () => {
     const payload = {
-      answers,
-      reportNotes,
-      reportResult,
-      recommendation,
+      answers: Object.entries(answers)
+        .filter(([key]) => !isNaN(Number(key)))
+        .map(([question_id, answer]) => ({
+          question_id: Number(question_id),
+          answer: { score: Number(answer.score), note: answer.note || "" },
+        })),
+      note: answers["note"]?.note || "",
+      assessment_result: answers["assessment_result"]?.note || "",
+      therapy_recommendation: answers["therapy_recommendation"]?.note
+        ? answers["therapy_recommendation"]?.note.split(",")
+        : [],
     };
-    console.log("Simpan payload:", payload);
-    alert("Data disimpan (lihat console).");
+
+    try {
+      await submitAssessment(assessmentId, "okupasi", payload);
+      alert("Berhasil submit assessment!");
+    } catch (err) {
+      console.error(err);
+      alert("Gagal submit assessment");
+    }
   };
 
-  const SectionCard: React.FC<{ sectionId: string }> = ({ sectionId }) => {
-    const section = (questionsData as any)[sectionId];
-    return (
-      <div className="flex flex-col flex-1 bg-gray-50">
-        {/* Header */}
-        <div
-          className={`w-full flex items-center justify-between px-6 py-4 ${
-            isSectionComplete(sectionId)
-              ? "bg-[#36315B] text-white"
-              : "bg-[#F3F7F6] text-[#36315B]"
-          }`}
-        >
-          <h3 className="text-lg font-semibold">
-            {sectionId}. {section.title}
-          </h3>
-          <ChevronDown className="w-5 h-5" />
-        </div>
+  if (loading) return <div className="p-4">Loading pertanyaan...</div>;
+  if (error) return <div className="p-4 text-red-500">{error}</div>;
+  if (groups.length === 0) return null;
 
-        {/* Content */}
-        <div className="p-6 space-y-5">
-          {section.items.map((item: any) => (
-            <div
-              key={item.no}
-              className="bg-white rounded-xl shadow-lg p-5"
-            >
-              <div className="font-bold mb-2 text-[#36315B] text-sm">
-                {item.no}. {item.aspect}
-              </div>
-
-              {item.sub.map((s: string, si: number) => {
-                const key = `${sectionId}-${item.no}-${si}`;
-                return (
-                  <div key={si} className="grid grid-cols-12 gap-3 items-start mb-4">
-                    {/* Label a/b/c */}
-                    <div className="col-span-1 text-sm">{String.fromCharCode(97 + si)}.</div>
-
-                    {/* Sub description */}
-                    <div className="col-span-5 text-sm leading-5">{s}</div>
-
-                    
-                    <div className="col-span-2">
-                      <select
-                        value={answers[key]?.score || ""}
-                        onChange={(e) => setAnswer(key, "score", e.target.value)}
-                        className="w-full border rounded-lg py-2 px-3 text-sm select-penilaian 
-             hover:border-[#81B7A9] hover:ring-2 hover:ring-[#81B7A9]"
-                      >
-                        <option value="">Penilaian</option>
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="2">3</option>
-                      </select>
-                    </div>
-
-                 
-                    <div className="col-span-4">
-                      <input
-                        value={answers[key]?.note || ""}
-                        onChange={(e) => setAnswer(key, "note", e.target.value)}
-                        placeholder="Keterangan"
-                        className="w-full border rounded-lg py-2 px-3 text-sm 
-focus:border-[#81B7A9] focus:ring-2 focus:ring-[#81B7A9] focus:outline-none"
-
-                      />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const SummaryCard = () => (
-    <div className="bg-white p-6 rounded-2xl shadow-md">
-      <h3 className="text-lg font-semibold text-center mb-6">Laporan Assessment Terapi Okupasi</h3>
-
-      <label className="block font-medium mb-1">Catatan</label>
-      <textarea
-        value={reportNotes}
-        onChange={(e) => setReportNotes(e.target.value)}
-        rows={4}
-        className="w-full border rounded-lg p-3 mb-4"
-        placeholder="Catatan..."
-      />
-
-      <label className="block font-medium mb-1">Hasil Assessment</label>
-      <textarea
-        value={reportResult}
-        onChange={(e) => setReportResult(e.target.value)}
-        rows={4}
-        className="w-full border rounded-lg p-3 mb-4"
-        placeholder="Hasil assessment..."
-      />
-
-      <label className="block font-medium mb-2">Rekomendasi Terapi</label>
-      <div className="flex flex-wrap gap-6">
-        {["PLB (Paedagog)", "Terapi Okupasi", "Terapi Wicara", "Fisioterapi"].map((opt) => (
-          <label key={opt} className="flex items-center gap-2">
-            <input
-              type="radio"
-              name="rekomendasi"
-              value={opt}
-              checked={recommendation === opt}
-              onChange={() => setRecommendation(opt)}
-            />
-            <span>{opt}</span>
-          </label>
-        ))}
-      </div>
-
-      <div className="flex justify-end mt-6">
-        <button
-          onClick={handleSave}
-          className="px-6 py-2 bg-[#81B7A9] text-white rounded-lg"
-        >
-          Simpan
-        </button>
-      </div>
-    </div>
-  );
+  const group = groups[currentGroupIndex];
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
+    <div className="flex h-screen bg-gray-50 text-[#36315B]">
       <SidebarTerapis />
-      <div className="flex-1">
+      <div className="flex-1 flex flex-col">
         <HeaderTerapis />
-        <div className="p-6">
+        <div className="p-6 overflow-auto">
+           <div className="flex justify-end mb-4">
+            <button
+              onClick={() => (window.location.href = "/terapis/asessment")}
+              className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+            >
+              ✕
+            </button>
+          </div>
+          {currentGroupIndex < groups.length - 1 && (
+            <div className="mb-8">
+              <h2 className="text-lg font-semibold mb-4 px-2 py-1 bg-[#C0DCD6] rounded">
+                {currentGroupIndex + 1}. {group.title}
+              </h2>
+              <table className="w-full border-collapse border border-gray-300">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="border px-3 py-2 text-center w-[5%]">No</th>
+                <th className="border px-3 py-2 text-left w-[43%]">Aspek</th>
+                <th className="border px-3 py-2 text-center w-[15%]">Penilaian</th>
+                <th className="border px-3 py-2 text-left w-[40%]">Keterangan</th>
 
-          {/* Current Section */}
-          <div className="space-y-6">
-            {!isSummary && currentSectionKey ? (
-              <SectionCard sectionId={currentSectionKey} />
+                  </tr>
+                </thead>
+                <tbody>
+                  {group.questions.map((q, idx) => {
+                    const subAspects = q.question_text.split("|").map((line) => line.trim());
+                    return subAspects.map((sub, subIdx) => {
+                      const questionId = `${q.id}-${subIdx}`;
+                      return (
+                        <tr key={questionId} className="even:bg-gray-50">
+                          <td className="border border-gray-300 p-2 text-center">
+                            {subIdx === 0 ? `${idx + 1}` : String.fromCharCode(96 + subIdx)}.
+                          </td>
+                          <td className="border border-gray-300 p-2">{sub}</td>
+                          <td className="border border-gray-300 p-2 text-center">
+                            <select
+                              className="border rounded px-2 py-1 w-full"
+                              value={answers[questionId]?.score || ""}
+                              onChange={(e) =>
+                                handleChange(questionId, "score", e.target.value)
+                              }
+                            >
+                              <option value="">Pilih</option>
+                              {[0, 1, 2, 3].map((n) => (
+                                <option key={n} value={n}>
+                                  {n}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="border border-gray-300 p-2">
+                            <input
+                              type="text"
+                              placeholder="Keterangan"
+                              className="border rounded px-2 py-1 w-full"
+                              value={answers[questionId]?.note || ""}
+                              onChange={(e) =>
+                                handleChange(questionId, "note", e.target.value)
+                              }
+                            />
+                          </td>
+                        </tr>
+                      );
+                    });
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {/* Halaman terakhir */}
+          {currentGroupIndex === groups.length - 1 && (
+            <div className="mb-6">
+              <h3 className="text-md font-semibold mb-2">Catatan</h3>
+              <textarea
+                className="border rounded w-full p-2"
+                placeholder="Masukkan catatan..."
+                value={answers["note"]?.note || ""}
+                onChange={(e) => handleChange("note", "note", e.target.value)}
+              />
+
+              <h3 className="text-md font-semibold mt-4 mb-2">Hasil Asesment</h3>
+              <textarea
+                className="border rounded w-full p-2"
+                placeholder="Masukkan hasil asesment..."
+                value={answers["assessment_result"]?.note || ""}
+                onChange={(e) =>
+                  handleChange("assessment_result", "note", e.target.value)
+                }
+              />
+
+              <h3 className="text-md font-semibold mt-4 mb-2">Rekomendasi Terapi</h3>
+              <div className="flex flex-col gap-2">
+                {["PLB Paedagog", "Terapi Wicara", "Terapi Okupasi", "Fisioterapi"].map(
+                  (therapy) => (
+                    <label key={therapy} className="inline-flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        checked={
+                          answers["therapy_recommendation"]?.note
+                            ?.split(",")
+                            .includes(therapy) || false
+                        }
+                        onChange={(e) => {
+                          const current = answers["therapy_recommendation"]?.note
+                            ? answers["therapy_recommendation"].note.split(",")
+                            : [];
+                          let updated: string[];
+                          if (e.target.checked) {
+                            updated = [...current, therapy];
+                          } else {
+                            updated = current.filter((t) => t !== therapy);
+                          }
+                          handleChange(
+                            "therapy_recommendation",
+                            "note",
+                            updated.join(",")
+                          );
+                        }}
+                      />
+                      {therapy}
+                    </label>
+                  )
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Navigasi */}
+          <div className="flex justify-between mt-4">
+            {currentGroupIndex > 0 && (
+              <button
+                className="bg-gray-400 text-white px-4 py-2 rounded"
+                onClick={handlePrevGroup}
+              >
+                Sebelumnya
+              </button>
+            )}
+            {currentGroupIndex < groups.length - 1 ? (
+              <button
+                className="bg-[#81B7A9] text-white px-4 py-2 rounded ml-auto"
+                onClick={handleNextGroup}
+              >
+                Lanjutkan
+              </button>
             ) : (
-              <SummaryCard />
+              <button
+                className="bg-[#81B7A9] text-white px-4 py-2 rounded ml-auto"
+                onClick={handleSubmit}
+              >
+                Submit
+              </button>
             )}
           </div>
-
-          {/* Controls */}
-          <div className="flex justify-between items-center mt-6">
-            <div>
-              {stepIndex > 0 && (
-                <button
-                  onClick={goPrev}
-                  className="px-5 py-2 bg-white border rounded-lg shadow-sm text-[#36315B]"
-                >
-                  Kembali
-                </button>
-              )}
-            </div>
-
-            <div>
-              {!isSummary ? (
-                <button
-                  onClick={goNext}
-                  className="px-6 py-2 rounded-lg text-white"
-                  style={{ backgroundColor: "#81B7A9" }}
-                >
-                  Lanjut
-                </button>
-              ) : (
-                <button
-                  onClick={handleSave}
-                  className="px-6 py-2 rounded-lg text-white"
-                  style={{ backgroundColor: "#81B7A9" }}
-                >
-                  Simpan
-                </button>
-              )}
-            </div>
-          </div>
-
         </div>
       </div>
     </div>

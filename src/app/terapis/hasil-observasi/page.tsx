@@ -5,8 +5,8 @@ import { useSearchParams } from "next/navigation";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
 import {
-  getCompletedObservationDetail,
-  getCompletedObservations,
+  getObservationDetail,
+  getObservations,
   CompletedObservationDetail,
 } from "@/lib/api/observasiSubmit";
 
@@ -29,13 +29,13 @@ export default function HasilObservasiFrame() {
       try {
         setLoading(true);
 
-        // Jalankan 2 request paralel (detail & list completed)
-        const [detail, list] = await Promise.all([
-          getCompletedObservationDetail(observationId),
-          getCompletedObservations(),
-        ]);
+        // Ambil daftar observasi completed
+        const list = await getObservations("completed");
 
-        // Cari item jadwal terkait
+        // Ambil detail observasi spesifik
+        const detail = await getObservationDetail(observationId, "completed");
+
+        // Cari tanggal scheduled terkait
         const scheduleItem = list.find(
           (item) => item.observation_id?.toString() === observationId
         );
@@ -73,6 +73,14 @@ export default function HasilObservasiFrame() {
         <HeaderTerapis />
 
         <main className="p-10 bg-white m-4 rounded-xl shadow-md overflow-auto">
+          <div className="flex justify-end mb-4">
+  <button
+    onClick={() => (window.location.href = "/terapis/observasi/riwayat")}
+    className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+  >
+    ✕
+  </button>
+</div>
           {loading ? (
             <div className="flex items-center justify-center h-96 text-gray-500 animate-pulse">
               Memuat hasil observasi...
@@ -92,7 +100,7 @@ export default function HasilObservasiFrame() {
                 HASIL OBSERVASI
               </h1>
 
-              {/* 🧒 Informasi Anak */}
+              {/* Informasi Anak */}
               <section className="mb-10">
                 <h2 className="text-xl font-semibold text-gray-800 mb-3">
                   Informasi Anak
@@ -117,7 +125,7 @@ export default function HasilObservasiFrame() {
                 </div>
               </section>
 
-              {/* 🧾 Ringkasan Observasi */}
+              {/* Ringkasan Observasi */}
               <section>
                 <h2 className="text-xl font-semibold text-gray-800 mb-3">
                   Ringkasan Observasi
@@ -169,7 +177,7 @@ export default function HasilObservasiFrame() {
   );
 }
 
-/* 🔹 Komponen kecil reusable */
+/* Komponen InfoItem reusable */
 function InfoItem({
   label,
   value,

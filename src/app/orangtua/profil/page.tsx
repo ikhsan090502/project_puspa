@@ -1,52 +1,147 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
+import { getParentProfile, updateParentProfile } from "@/lib/api/profile";
+import { useProfile } from "@/context/ProfileContext";
 
 export default function ProfileOrangtuaPage() {
   const [isEditing, setIsEditing] = useState(false);
+  const [guardianId, setGuardianId] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const [formData, setFormData] = useState({
-    nama: "Malaikha",
-    hubungan: "Ibu (Kandung)",
-    tanggalLahir: "12-12-1981",
-    telepon: "089714398009",
-    email: "malaikha@gmail.com",
-    pekerjaan: "Ibu Rumah Tangga",
+  const { refreshProfile } = useProfile();
+
+  // ==========================
+  // STATE FORM
+  // ==========================
+  interface FormData {
+    guardian_name: string;
+    guardian_type: string;
+    relationship_with_child: string;
+    guardian_birth_date: string;
+    guardian_phone: string;
+    email: string;
+    guardian_occupation: string;
+    role: string;
+    profile_picture: string | null;
+  }
+
+  const [formData, setFormData] = useState<FormData>({
+    guardian_name: "",
+    guardian_type: "",
+    relationship_with_child: "",
+    guardian_birth_date: "",
+    guardian_phone: "",
+    email: "",
+    guardian_occupation: "",
+    role: "",
+    profile_picture: null,
   });
 
-  const handleChange = (e: any) => {
+  // ==========================
+  // LOAD PROFILE
+  // ==========================
+  useEffect(() => {
+    async function loadProfile() {
+      // Ambil token dari localStorage
+      const token = localStorage.getItem("token");
+      if (!token) {
+        console.error("Token tidak tersedia");
+        return;
+      }
+
+      const res = await getParentProfile(token);
+      if (res?.success && res.data) {
+        const d = res.data;
+        setGuardianId(d.guardian_id);
+
+        setFormData({
+          guardian_name: d.guardian_name || "",
+          guardian_type: d.guardian_type || "",
+          relationship_with_child: d.relationship_with_child || "",
+          guardian_birth_date: d.guardian_birth_date || "",
+          guardian_phone: d.guardian_phone || "",
+          email: d.email || "",
+          guardian_occupation: d.guardian_occupation || "",
+          role: d.role || "",
+          profile_picture: d.profile_picture || null,
+        });
+      }
+    }
+
+    loadProfile();
+  }, []);
+
+  // ==========================
+  // HANDLE INPUT
+  // ==========================
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  // ==========================
+  // UPDATE PROFILE
+  // ==========================
+  const handleUpdate = async () => {
+    const fd = new FormData();
+    if (selectedFile) fd.append("file", selectedFile);
+
+    fd.append("guardian_name", formData.guardian_name);
+    fd.append("guardian_type", formData.guardian_type);
+    fd.append("relationship_with_child", formData.relationship_with_child);
+    fd.append("guardian_birth_date", formData.guardian_birth_date);
+    fd.append("guardian_phone", formData.guardian_phone);
+    fd.append("email", formData.email);
+    fd.append("guardian_occupation", formData.guardian_occupation);
+
+    // Hanya 2 argumen: guardianId + FormData
+    const res = await updateParentProfile(guardianId, fd);
+
+    if (res?.success) {
+      alert("Profil berhasil diperbarui!");
+      setIsEditing(false);
+
+      // Update profile_picture jika ada
+      if (res.data?.profile_picture) {
+        setFormData((prev) => ({
+          ...prev,
+          profile_picture: res.data.profile_picture,
+        }));
+      }
+
+      // refresh header/sidebar info
+      refreshProfile();
+    }
+  };
+
+  // ==========================
+  // UI
+  // ==========================
   return (
     <div className="flex min-h-screen bg-gray-50">
       <SidebarOrangtua />
-
       <div className="flex-1 flex flex-col ml-64">
         <HeaderOrangtua />
-
-        {/* Frame Profil */}
         <main className="flex-1 overflow-y-auto p-8 mt-0">
           <div className="max-w-5xl mx-auto">
             <div className="bg-white rounded-xl shadow-lg p-6">
+
               {!isEditing ? (
-                // ====================== TAMPILAN PROFIL ======================
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  {/* Foto & Identitas */}
                   <div className="flex flex-col items-center text-center p-6 shadow rounded-xl bg-white">
                     <img
-                      src="/profil.png"
+                      src={formData.profile_picture || "/profil.png"}
                       className="w-44 h-44 rounded-full object-cover"
+                      alt="Foto Profil"
                     />
                     <h2 className="text-xl font-semibold text-[#4A8B73] mt-4">
-                      {formData.nama}
+                      {formData.guardian_name}
                     </h2>
-                    <p className="text-gray-500 text-sm">Orangtua Pasien/Anak</p>
+                    <p className="text-gray-500 text-sm">{formData.role}</p>
                   </div>
 
-                  {/* Informasi Profil */}
                   <div className="shadow rounded-xl p-6 bg-white relative">
                     <button
                       onClick={() => setIsEditing(true)}
@@ -57,54 +152,71 @@ export default function ProfileOrangtuaPage() {
 
                     <div className="grid grid-cols-2 gap-y-3 text-sm mt-6">
                       <p className="font-semibold">Nama</p>
-                      <p>{formData.nama}</p>
+                      <p>{formData.guardian_name}</p>
 
                       <p className="font-semibold">Hubungan</p>
-                      <p>{formData.hubungan}</p>
+                      <p>{formData.relationship_with_child}</p>
 
                       <p className="font-semibold">Tanggal Lahir</p>
-                      <p>{formData.tanggalLahir}</p>
+                      <p>{formData.guardian_birth_date}</p>
 
                       <p className="font-semibold">Telepon</p>
-                      <p>{formData.telepon}</p>
+                      <p>{formData.guardian_phone}</p>
 
                       <p className="font-semibold">Email</p>
                       <p>{formData.email}</p>
 
                       <p className="font-semibold">User Role</p>
-                      <p>Orangtua Pasien/Anak</p>
+                      <p>{formData.role}</p>
 
                       <p className="font-semibold">Pekerjaan</p>
-                      <p>{formData.pekerjaan}</p>
+                      <p>{formData.guardian_occupation}</p>
                     </div>
                   </div>
                 </div>
               ) : (
-                // ====================== MODE EDIT PROFIL ======================
                 <div className="shadow-lg rounded-xl p-6 bg-white">
                   <h2 className="text-xl font-semibold text-[#4A8B73] mb-4">
                     Informasi Pribadi
                   </h2>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {/* 🌿 Kolom 1 — Foto */}
                     <div className="flex flex-col items-center shadow p-5 rounded-xl">
                       <img
-                        src="/profil.png"
+                        src={
+                          selectedFile
+                            ? URL.createObjectURL(selectedFile)
+                            : formData.profile_picture || "/profil.png"
+                        }
                         className="w-40 h-40 rounded-full object-cover"
+                        alt="Foto Profil"
                       />
-                      <button className="mt-3 text-sm px-4 py-1 rounded-full bg-[#8EC3AA] text-white">
-                        Ubah Profile
-                      </button>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="mt-3 text-sm"
+                        onChange={(e) =>
+                          setSelectedFile(e.target.files?.[0] || null)
+                        }
+                      />
                     </div>
 
-                    {/* 🌿 Kolom 2 — 3 Field */}
                     <div className="shadow rounded-xl p-5 space-y-4">
                       <div>
                         <label className="text-sm font-semibold">Nama</label>
                         <input
-                          name="nama"
-                          value={formData.nama}
+                          name="guardian_name"
+                          value={formData.guardian_name}
+                          onChange={handleChange}
+                          className="border rounded px-3 py-1 w-full"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-semibold">Telepon</label>
+                        <input
+                          name="guardian_phone"
+                          value={formData.guardian_phone}
                           onChange={handleChange}
                           className="border rounded px-3 py-1 w-full"
                         />
@@ -113,43 +225,20 @@ export default function ProfileOrangtuaPage() {
                       <div>
                         <label className="text-sm font-semibold">Hubungan</label>
                         <input
-                          name="hubungan"
-                          value={formData.hubungan}
-                          onChange={handleChange}
-                          className="border rounded px-3 py-1 w-full"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="text-sm font-semibold">
-                          Tanggal Lahir
-                        </label>
-                        <input
-                          name="tanggalLahir"
-                          value={formData.tanggalLahir}
+                          name="relationship_with_child"
+                          value={formData.relationship_with_child}
                           onChange={handleChange}
                           className="border rounded px-3 py-1 w-full"
                         />
                       </div>
                     </div>
 
-                    {/* 🌿 Kolom 3 — 3 Field berikutnya */}
                     <div className="shadow rounded-xl p-5 space-y-4">
-                      <div>
-                        <label className="text-sm font-semibold">Telepon</label>
-                        <input
-                          name="telepon"
-                          value={formData.telepon}
-                          onChange={handleChange}
-                          className="border rounded px-3 py-1 w-full"
-                        />
-                      </div>
-
                       <div>
                         <label className="text-sm font-semibold">Pekerjaan</label>
                         <input
-                          name="pekerjaan"
-                          value={formData.pekerjaan}
+                          name="guardian_occupation"
+                          value={formData.guardian_occupation}
                           onChange={handleChange}
                           className="border rounded px-3 py-1 w-full"
                         />
@@ -164,10 +253,22 @@ export default function ProfileOrangtuaPage() {
                           className="border rounded px-3 py-1 w-full"
                         />
                       </div>
+
+                      <div>
+                        <label className="text-sm font-semibold">
+                          Tanggal Lahir
+                        </label>
+                        <input
+                          type="date"
+                          name="guardian_birth_date"
+                          value={formData.guardian_birth_date}
+                          onChange={handleChange}
+                          className="border rounded px-3 py-1 w-full"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* Tombol */}
                   <div className="flex justify-end mt-6 gap-3">
                     <button
                       onClick={() => setIsEditing(false)}
@@ -175,12 +276,17 @@ export default function ProfileOrangtuaPage() {
                     >
                       Batal
                     </button>
-                    <button className="px-4 py-2 rounded bg-[#8EC3AA] text-white">
+
+                    <button
+                      onClick={handleUpdate}
+                      className="px-4 py-2 rounded bg-[#8EC3AA] text-white"
+                    >
                       Perbarui
                     </button>
                   </div>
                 </div>
               )}
+
             </div>
           </div>
         </main>

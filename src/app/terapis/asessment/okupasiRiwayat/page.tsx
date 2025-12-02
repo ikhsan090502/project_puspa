@@ -4,22 +4,16 @@ import React, { useMemo, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
-import questionsData from "@/data/okupasi.json";
-import { ChevronDown } from "lucide-react";
 import { getAssessmentAnswers } from "@/lib/api/asesment";
-
-type SubKey = string;
+import { ChevronDown } from "lucide-react";
 
 export default function RiwayatJawabanOkupasiPage() {
-  const sectionKeys = useMemo(() => Object.keys(questionsData), []);
-
   const params = useSearchParams();
   const assessmentId = params.get("assessment_id");
-  const type = "okupasi"; // 🔥 sesuai permintaan
+  const type = "okupasi";
 
-  const [answers, setAnswers] = useState<
-    Record<SubKey, { score?: string; note?: string }>
-  >({});
+  const [answers, setAnswers] = useState<any>(null);
+  const [sections, setSections] = useState<string[]>([]);
 
   const [reportNotes, setReportNotes] = useState("");
   const [reportResult, setReportResult] = useState("");
@@ -28,139 +22,163 @@ export default function RiwayatJawabanOkupasiPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  const currentSectionKey =
-    stepIndex < sectionKeys.length ? sectionKeys[stepIndex] : null;
-  const isSummary = stepIndex >= sectionKeys.length;
-
-  const goNext = () => {
-    if (!isSummary) setStepIndex((s) => Math.min(s + 1, sectionKeys.length));
-  };
-
-  const goPrev = () => {
-    setStepIndex((s) => Math.max(s - 1, 0));
-  };
-
-  /* ============================
-      FETCH API OKUPASI
-     ============================ */
+  /* ===========================
+        FETCH API OKUPASI
+     =========================== */
   useEffect(() => {
     const fetchData = async () => {
-      if (!assessmentId) {
-        setLoading(false);
-        return;
-      }
+      if (!assessmentId) return setLoading(false);
 
       try {
         const response = await getAssessmentAnswers(assessmentId, type);
         if (!response) return;
 
-        const formatted: Record<string, { score?: string; note?: string }> = {};
+        setReportNotes(response.note || "");
+        setReportResult(response.assessment_result || "");
 
-        Object.entries(response).forEach(([key, value]) => {
-          const matchScore = key.match(/^(.+?)_(\d+)_score$/);
-          const matchDesc = key.match(/^(.+?)_(\d+)_desc$/);
+        const rec = response.therapy_recommendation ?? "";
+        setRecommendation(Array.isArray(rec) ? rec.join(", ") : rec);
 
-          if (matchScore) {
-            const section = matchScore[1].replace(/_/g, "");
-            const index = Number(matchScore[2]);
-            const finalKey = `${section}-${index}`;
+        setAnswers(response);
 
-            if (!formatted[finalKey]) formatted[finalKey] = {};
-            formatted[finalKey].score = String(value);
-          }
-
-          if (matchDesc) {
-            const section = matchDesc[1].replace(/_/g, "");
-            const index = Number(matchDesc[2]);
-            const finalKey = `${section}-${index}`;
-
-            if (!formatted[finalKey]) formatted[finalKey] = {};
-            formatted[finalKey].note = String(value);
-          }
-
-          if (key === "report_notes") setReportNotes(String(value));
-          if (key === "report_result") setReportResult(String(value));
-          if (key === "recommendation") setRecommendation(String(value));
-        });
-
-        setAnswers(formatted);
+        const keys = Object.keys(response).filter(
+          (k) =>
+            ![
+              "note",
+              "assessment_result",
+              "therapy_recommendation",
+              "child_name",
+              "child_id",
+            ].includes(k)
+        );
+        setSections(keys);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, [assessmentId, type]);
+  }, [assessmentId]);
 
-  /* ============================
-        SECTION CARD - UI SAMA
-     ============================ */
-  const SectionCard: React.FC<{ sectionId: string }> = ({ sectionId }) => {
-    const section = (questionsData as any)[sectionId];
+  const isSummary = stepIndex >= sections.length;
+  const currentSection = !isSummary ? sections[stepIndex] : null;
+
+  /* ===========================
+        A/B/C/D Prefix Function
+     =========================== */
+  const getLetterPrefix = (index: number) => {
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    return alphabet[index]
+      ? `${alphabet[index]}.`
+      : `${index + 1}.`;
+  };
+
+  /* ===========================
+        CEK SECTION COMPLETE
+     =========================== */
+  const isSectionComplete = (section: string) => {
+    const data = answers?.[section] ?? [];
+    if (!Array.isArray(data)) return false;
+    return data.every((q) => q.answer_value !== null && q.answer_value !== "");
+  };
+
+  /* ===========================
+        SECTION CARD
+     =========================== */
+  const SectionCard: React.FC<{ title: string }> = ({ title }) => {
+    const items = answers?.[currentSection!] || [];
 
     return (
       <div className="flex flex-col flex-1 bg-gray-50">
-
-        {/* Header - kecil & rounded */}
-        <div className="w-full flex items-center justify-between px-4 py-3 bg-[#36315B] text-white rounded-t-xl shadow-sm">
-          <h3 className="text-base font-semibold">
-            {sectionId}. {section.title}
-          </h3>
-          <ChevronDown className="w-4 h-4" />
+        <div className="flex justify-end mb-4">
+          <button
+            onClick={() => (window.location.href = "/terapis/asessment")}
+            className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+          >
+            ✕
+          </button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-5">
-          {section.items.map((item: any) => (
-            <div key={item.no} className="bg-white rounded-xl shadow-lg p-5">
-              <div className="font-bold mb-2 text-[#36315B] text-sm">
-                {item.no}. {item.aspect}
-              </div>
+        {/* HEADER */}
+        <div
+          className={`w-full flex items-center justify-between px-6 py-4 rounded-t-xl shadow-sm ${
+            isSectionComplete(currentSection!)
+              ? "bg-[#36315B] text-white"
+              : "bg-[#F3F7F6] text-[#36315B]"
+          }`}
+        >
+          <h3 className="text-lg font-semibold">{title}</h3>
+          <ChevronDown className="w-5 h-5" />
+        </div>
 
-              {item.sub.map((s: string, si: number) => {
-                const dataKey = `${sectionId}${item.no}-${si}`;
-                const ans = answers[dataKey] || {};
+        {/* TABLE */}
+        <div className="bg-white shadow-lg rounded-b-xl p-6">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-[#F3F7F6] text-[#36315B]">
+                <th className="border px-3 py-2 text-center w-[5%]">No</th>
+                <th className="border px-3 py-2 text-left w-[43%]">Aspek</th>
+                <th className="border px-3 py-2 text-center w-[15%]">Penilaian</th>
+                <th className="border px-3 py-2 text-left w-[40%]">Keterangan</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {items.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="text-center py-4 text-gray-500">
+                    Tidak ada pertanyaan.
+                  </td>
+                </tr>
+              )}
+
+              {items.map((q: any, index: number) => {
+                let parsed: any = {};
+                try {
+                  parsed = q.answer_value ? JSON.parse(q.answer_value) : {};
+                } catch {
+                  parsed = {};
+                }
 
                 return (
-                  <div key={si} className="grid grid-cols-12 gap-3 items-start mb-4">
-                    <div className="col-span-1 text-sm">
-                      {String.fromCharCode(97 + si)}.
-                    </div>
+                  <tr key={index} className="border">
+                    <td className="border px-3 py-2 text-center">{index + 1}</td>
+                    <td className="border px-3 py-2">{q.question_text}</td>
 
-                    <div className="col-span-5 text-sm leading-5">{s}</div>
-
-                    <div className="col-span-2">
+                    <td className="border px-3 py-2 text-center">
                       <select
                         disabled
-                        value={ans?.score || ""}
-                        className="w-full border bg-gray-200 text-gray-600 rounded-lg py-2 px-3 text-sm cursor-not-allowed"
+                        value={parsed.score ?? ""}
+                        className="w-full border bg-gray-200 text-gray-600 rounded-lg py-2 px-2 text-sm"
                       >
-                        <option value="">Penilaian</option>
+                        <option value="">Pilih</option>
                         <option value="0">0</option>
                         <option value="1">1</option>
                         <option value="2">2</option>
-                        <option value="2">3</option>
+                        <option value="3">3</option>
                       </select>
-                    </div>
+                    </td>
 
-                    <div className="col-span-4">
+                    <td className="border px-3 py-2">
                       <input
                         readOnly
-                        value={ans?.note || ""}
-                        placeholder="Keterangan"
-                        className="w-full border bg-gray-100 text-gray-700 rounded-lg py-2 px-3 text-sm cursor-not-allowed"
+                        value={parsed.note ?? ""}
+                        className="w-full border bg-gray-100 text-gray-700 rounded-lg py-2 px-3 text-sm"
                       />
-                    </div>
-                  </div>
+                    </td>
+                  </tr>
                 );
               })}
-            </div>
-          ))}
+            </tbody>
+          </table>
         </div>
       </div>
     );
   };
 
+  /* ===========================
+        SUMMARY
+     =========================== */
   const SummaryCard = () => (
     <div className="bg-white p-6 rounded-2xl shadow-md">
       <h3 className="text-lg font-semibold text-center mb-6">
@@ -172,7 +190,7 @@ export default function RiwayatJawabanOkupasiPage() {
         readOnly
         value={reportNotes}
         rows={4}
-        className="w-full border rounded-lg p-3 bg-gray-100 cursor-not-allowed mb-4"
+        className="w-full border rounded-lg p-3 bg-gray-100 mb-4"
       />
 
       <label className="font-medium mb-1 block">Hasil Assessment</label>
@@ -180,24 +198,27 @@ export default function RiwayatJawabanOkupasiPage() {
         readOnly
         value={reportResult}
         rows={4}
-        className="w-full border rounded-lg p-3 bg-gray-100 cursor-not-allowed mb-4"
+        className="w-full border rounded-lg p-3 bg-gray-100 mb-4"
       />
 
       <label className="font-medium mb-2 block">Rekomendasi Terapi</label>
       <div className="flex flex-wrap gap-6 text-gray-600">
-        {["PLB (Paedagog)", "Terapi Okupasi", "Terapi Wicara", "Fisioterapi"].map(
-          (opt) => (
-            <label key={opt} className="flex items-center gap-2">
-              <input type="radio" disabled checked={recommendation === opt} />
-              <span>{opt}</span>
-            </label>
-          )
-        )}
+        {[
+          "PLB (Paedagog)",
+          "Terapi Okupasi",
+          "Terapi Wicara",
+          "Fisioterapi",
+        ].map((opt) => (
+          <label key={opt} className="flex items-center gap-2">
+            <input type="radio" disabled checked={recommendation === opt} />
+            <span>{opt}</span>
+          </label>
+        ))}
       </div>
     </div>
   );
 
-  if (loading) {
+  if (loading || !answers) {
     return (
       <div className="flex min-h-screen items-center justify-center text-[#36315B] font-medium">
         Memuat riwayat jawaban...
@@ -213,43 +234,40 @@ export default function RiwayatJawabanOkupasiPage() {
         <HeaderTerapis />
 
         <div className="p-6">
-          {/* Section Card */}
-          <div className="space-y-6">
-            {!isSummary && currentSectionKey ? (
-              <SectionCard sectionId={currentSectionKey} />
-            ) : (
-              <SummaryCard />
-            )}
-          </div>
+          {!isSummary && currentSection ? (
+            <SectionCard
+              title={`${getLetterPrefix(stepIndex)} ${currentSection}`}
+            />
+          ) : (
+            <SummaryCard />
+          )}
 
-          {/* Navigation */}
+          {/* NAVIGASI */}
           <div className="flex justify-between items-center mt-6">
-            <div>
-              {stepIndex > 0 && (
-                <button
-                  onClick={goPrev}
-                  className="px-5 py-2 bg-white border rounded-lg shadow-sm text-[#36315B]"
-                >
-                  Sebelumnya
-                </button>
-              )}
-            </div>
+            {stepIndex > 0 ? (
+              <button
+                onClick={() => setStepIndex((s) => s - 1)}
+                className="px-5 py-2 bg-white border rounded-lg shadow-sm text-[#36315B]"
+              >
+                Sebelumnya
+              </button>
+            ) : (
+              <div></div>
+            )}
 
-            <div>
-              {!isSummary ? (
-                <button
-                  onClick={goNext}
-                  className="px-6 py-2 rounded-lg text-white"
-                  style={{ backgroundColor: "#81B7A9" }}
-                >
-                  Lanjutkan
-                </button>
-              ) : (
-                <div className="text-gray-400 font-medium text-sm">
-                  (Akhir Riwayat)
-                </div>
-              )}
-            </div>
+            {!isSummary ? (
+              <button
+                onClick={() => setStepIndex((s) => s + 1)}
+                className="px-6 py-2 rounded-lg text-white"
+                style={{ backgroundColor: "#81B7A9" }}
+              >
+                Lanjutkan
+              </button>
+            ) : (
+              <div className="text-gray-400 font-medium text-sm">
+                (Akhir Riwayat)
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -5,32 +5,61 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Play, Clock3 } from "lucide-react";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
-import { useRouter } from "next/navigation";
-import { getAssessmentsByStatus } from "@/lib/api/asesment";
+import { useRouter, useSearchParams } from "next/navigation";
+import { getAssessments } from "@/lib/api/asesment";
 
-type TerapiTab = "PLB (Paedagog)" | "Terapi Okupasi" | "Terapi Wicara" | "Fisioterapi";
+/* -------------------------------------------------------------------------- */
+/*                              TYPES & INTERFACE                              */
+/* -------------------------------------------------------------------------- */
+
+type TerapiTab =
+  | "PLB (Paedagog)"
+  | "Terapi Okupasi"
+  | "Terapi Wicara"
+  | "Fisioterapi";
+
 type StatusFilter = "Terjadwal" | "Selesai";
 
 interface Assessment {
+  id: number;
   assessment_id: number;
+  child_id: string;
   child_name: string;
-  child_age: string;
-  child_gender: string;
   guardian_name: string;
   guardian_phone: string;
+  type: string;
+  administrator: string;
+  assessor: string | null;
   scheduled_date?: string;
+  scheduled_time?: string;
   status: string;
 }
 
+/* -------------------------------------------------------------------------- */
+/*                                COMPONENT PAGE                               */
+/* -------------------------------------------------------------------------- */
+
 export default function AssessmentPage() {
+  const router = useRouter();
+  const params = useSearchParams();
+
+  const urlStatus = params.get("status");
+
   const [activeTab, setActiveTab] = useState<TerapiTab>("PLB (Paedagog)");
-  const [activeFilter, setActiveFilter] = useState<StatusFilter>("Terjadwal");
+  const [activeFilter, setActiveFilter] = useState<StatusFilter>(
+    urlStatus === "completed" ? "Selesai" : "Terjadwal"
+  );
+  const [dateFilter, setDateFilter] = useState("");
+  const [searchName, setSearchName] = useState("");
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
-  // ✅ Mapping jenis terapi ke key API dan route
+  const mappedStatus = activeFilter === "Terjadwal" ? "scheduled" : "completed";
+
+  /* -------------------------------------------------------------------------- */
+  /*                               MAPPING TYPE                                 */
+  /* -------------------------------------------------------------------------- */
   const getType = () => {
     switch (activeTab) {
       case "Terapi Okupasi":
@@ -44,88 +73,132 @@ export default function AssessmentPage() {
     }
   };
 
-  // ✅ Ambil data dari API sesuai jenis terapi & status
+  /* -------------------------------------------------------------------------- */
+  /*                              SYNC URL STATUS                               */
+  /* -------------------------------------------------------------------------- */
+
+  useEffect(() => {
+    router.replace(`?type=${getType()}&status=${mappedStatus}`);
+  }, [activeFilter, activeTab]);
+
+  /* -------------------------------------------------------------------------- */
+  /*                               FETCH DATA                                   */
+  /* -------------------------------------------------------------------------- */
+
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
-      try {
-        const status = activeFilter === "Terjadwal" ? "scheduled" : "completed";
-        const data = await getAssessmentsByStatus(status, getType());
-        setAssessments(Array.isArray(data) ? data : []);
-      } catch (error) {
-        console.error("❌ Gagal memuat data asesmen:", error);
-      }
-      setLoading(false);
-      setOpenDropdown(null);
-    };
-    fetchData();
-  }, [activeTab, activeFilter]);
 
-  // ✅ Fungsi redirect ke halaman form sesuai terapi
+      try {
+        let data = await getAssessments(
+          getType(),
+          mappedStatus,
+          dateFilter || undefined
+        );
+
+        if (Array.isArray(data)) {
+          if (searchName.trim()) {
+            const lower = searchName.toLowerCase();
+            data = data.filter((item) =>
+              String(item.child_name || "").toLowerCase().includes(lower)
+            );
+          }
+          setAssessments(data);
+        } else {
+          setAssessments([]);
+        }
+      } catch (err) {
+        console.error("❌ Error fetching assessments:", err);
+        setAssessments([]);
+      }
+
+      setOpenDropdown(null);
+      setLoading(false);
+    };
+
+    fetchData();
+  }, [activeTab, activeFilter, dateFilter, searchName]);
+
+  /* -------------------------------------------------------------------------- */
+  /*                              EVENT HANDLERS                                */
+  /* -------------------------------------------------------------------------- */
+
   const handleStartAssessment = (id: number) => {
     const type = getType();
-    let route = "";
-
-    switch (type) {
-      case "paedagog":
-        route = `/terapis/asessment/plbAsesment?assessment_id=${id}`;
-        break;
-      case "okupasi":
-        route = `/terapis/asessment/okupasiAsesment?assessment_id=${id}`;
-        break;
-      case "wicara":
-        route = `/terapis/asessment/wicaraAsesment?assessment_id=${id}`;
-        break;
-      case "fisio":
-        route = `/terapis/asessment/fisioAsesment?assessment_id=${id}`;
-        break;
-      default:
-        route = `/terapis/asessment/plbAsesment?assessment_id=${id}`;
-    }
-
-    router.push(route);
+    router.push(
+      `/terapis/asessment/${type}Asesment?assessment_id=${id}&status=${mappedStatus}`
+    );
   };
 
   const toggleDropdown = (id: number) =>
-    setOpenDropdown(openDropdown === id ? null : id);
+    setOpenDropdown((prev) => (prev === id ? null : id));
+
+  /* -------------------------------------------------------------------------- */
+  /*                                RENDER UI                                   */
+  /* -------------------------------------------------------------------------- */
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <SidebarTerapis />
+
       <div className="flex-1 flex flex-col">
         <HeaderTerapis />
+
         <main className="p-6 flex-1 flex flex-col text-[#36315B]">
-          {/* Tabs Jenis Terapi */}
-          <div className="flex justify-start space-x-4 mb-6">
-            {(["PLB (Paedagog)", "Terapi Okupasi", "Terapi Wicara", "Fisioterapi"] as TerapiTab[]).map(
-              (tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`px-5 py-2 rounded-full text-md font-semibold transition-all duration-300 ${
-                    activeTab === tab
-                      ? "border border-[#81B7A9] text-[#36315B] bg-white shadow-sm"
-                      : "text-[#36315B]/70 hover:text-[#36315B]"
-                  }`}
-                >
-                  {tab}
-                </button>
-              )
-            )}
+          {/* TAB TERAPI */}
+          <div className="flex gap-4 mb-4">
+            {(
+              [
+                "PLB (Paedagog)",
+                "Terapi Okupasi",
+                "Terapi Wicara",
+                "Fisioterapi",
+              ] as TerapiTab[]
+            ).map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-5 py-2 rounded-full text-md font-semibold transition-all ${
+                  activeTab === tab
+                    ? "border border-[#81B7A9] bg-white shadow-sm"
+                    : "text-[#36315B]/70 hover:text-[#36315B]"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
 
-          {/* Filter Status */}
+          {/* FILTERS */}
+          <div className="flex flex-wrap sm:flex-row justify-end gap-3 mb-6">
+            <input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="border px-3 py-2 rounded-lg text-sm shadow-sm"
+            />
+
+            <input
+              type="text"
+              placeholder="Cari nama anak..."
+              value={searchName}
+              onChange={(e) => setSearchName(e.target.value)}
+              className="border px-3 py-2 rounded-lg text-sm shadow-sm w-60"
+            />
+          </div>
+
+          {/* STATUS FILTER */}
           <div className="mb-4 border-b border-gray-200">
-            <ul className="flex w-full text-sm font-semibold">
+            <ul className="flex text-sm font-semibold">
               {(["Terjadwal", "Selesai"] as StatusFilter[]).map((filter) => (
                 <li
                   key={filter}
-                  className={`pb-2 cursor-pointer flex-1 text-center transition-colors duration-200 ${
+                  onClick={() => setActiveFilter(filter)}
+                  className={`pb-2 flex-1 text-center cursor-pointer ${
                     activeFilter === filter
                       ? "border-b-2 border-[#81B7A9] text-[#81B7A9]"
                       : "text-[#36315B]"
                   }`}
-                  onClick={() => setActiveFilter(filter)}
                 >
                   {filter}
                 </li>
@@ -133,23 +206,26 @@ export default function AssessmentPage() {
             </ul>
           </div>
 
-          {/* Tabel Data */}
-          <div className="bg-white shadow-sm border border-gray-100 rounded-xl p-4">
+          {/* TABLE */}
+          <div className="bg-white shadow-md rounded-xl p-4">
             {loading ? (
-              <p className="text-center py-4 text-gray-500">Memuat data...</p>
+              <p className="text-center py-4 text-gray-500">Memuat data…</p>
             ) : assessments.length === 0 ? (
-              <p className="text-center py-4 text-gray-500">Tidak ada data asesmen.</p>
+              <p className="text-center py-4 text-gray-500">
+                Tidak ada data asesmen.
+              </p>
             ) : (
               <table className="min-w-full text-sm text-[#36315B] border-collapse">
                 <thead className="bg-[#F8FAF9] border-b-2 border-[#81B7A9]">
                   <tr className="text-left">
                     {[
-                      "Nama",
-                      "Usia",
-                      "Jenis Kelamin",
-                      "Nama Wali",
+                      "Nama Pasien",
+                      "Nama Orang Tua",
                       "Telepon",
+                      "Tipe Assessment",
+                      activeFilter === "Selesai" ? "Assessor" : "Administrator",
                       "Tanggal Asesmen",
+                      "Waktu",
                       "Aksi",
                     ].map((head) => (
                       <th key={head} className="px-3 py-2 font-semibold">
@@ -158,64 +234,96 @@ export default function AssessmentPage() {
                     ))}
                   </tr>
                 </thead>
+
                 <tbody>
                   {assessments.map((item) => (
                     <tr
                       key={item.assessment_id}
-                      className="border-t border-[#81B7A9] hover:bg-[#F8FAF9] transition"
+                      className="border-t border-[#81B7A9] hover:bg-[#F8FAF9]"
                     >
                       <td className="px-3 py-2">{item.child_name}</td>
-                      <td className="px-3 py-2">{item.child_age}</td>
-                      <td className="px-3 py-2 capitalize">
-                        {item.child_gender}
-                      </td>
                       <td className="px-3 py-2">{item.guardian_name}</td>
                       <td className="px-3 py-2">{item.guardian_phone}</td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        {item.scheduled_date || "-"}
-                      </td>
-                      <td className="px-3 py-2 relative">
-                        <div className="flex justify-start">
-                          <button
-                            onClick={() => toggleDropdown(item.assessment_id)}
-                            className="flex items-center gap-1 border border-[#81B7A9] text-[#81B7A9] rounded-md px-4 py-1 text-sm hover:bg-[#E9F4F1] transition"
-                          >
-                            Aksi <ChevronDown size={14} />
-                          </button>
-                        </div>
+                      <td className="px-3 py-2">{item.type}</td>
 
-                        {/* Dropdown Aksi */}
+                      {/* ADMIN vs ASSESSOR */}
+                      <td className="px-3 py-2">
+                        {activeFilter === "Selesai"
+                          ? item.assessor
+                          : item.administrator}
+                      </td>
+
+                      <td className="px-3 py-2">{item.scheduled_date}</td>
+                      <td className="px-3 py-2">{item.scheduled_time}</td>
+
+                      {/* ACTION DROPDOWN */}
+                      <td className="px-3 py-2 relative">
+                        <button
+                          onClick={() => toggleDropdown(item.assessment_id)}
+                          className="flex items-center gap-1 border border-[#81B7A9] text-[#81B7A9] rounded-md px-4 py-1 text-sm hover:bg-[#E9F4F1]"
+                        >
+                          Aksi <ChevronDown size={14} />
+                        </button>
+
                         <AnimatePresence>
                           {openDropdown === item.assessment_id && (
                             <motion.div
                               initial={{ opacity: 0, y: -5 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, y: -5 }}
-                              className="absolute bg-white border border-[#81B7A9] shadow-md rounded-md right-0 mt-2 w-44 z-10 overflow-hidden"
+                              className="absolute bg-white border border-[#81B7A9] shadow-md rounded-md right-0 mt-2 w-44 z-10"
                             >
-                              {/* Tombol Mulai */}
-                              <button
-                                onClick={() =>
-                                  handleStartAssessment(item.assessment_id)
-                                }
-                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm text-left"
-                              >
-                                <Play size={14} /> Mulai
-                              </button>
+                              {activeFilter === "Terjadwal" ? (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      handleStartAssessment(item.assessment_id)
+                                    }
+                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
+                                  >
+                                    <Play size={14} /> Mulai
+                                  </button>
 
-                              <div className="border-t border-[#81B7A9]" />
+                                  <div className="border-t border-[#81B7A9]" />
 
-                              {/* Tombol Riwayat Jawaban */}
-                              <button
-                                onClick={() =>
-                                  router.push(
-                                    `/terapis/asessment/${item.assessment_id}/answer?type=${getType()}`
-                                  )
-                                }
-                                className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm text-left"
-                              >
-                                <Clock3 size={14} /> Riwayat Jawaban
-                              </button>
+                                  <button
+                                    onClick={() =>
+                                      router.push(
+                                        `/terapis/asessment/detailAsesment?assessment_id=${item.assessment_id}&type=${getType()}&status=${mappedStatus}`
+                                      )
+                                    }
+                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
+                                  >
+                                    <Clock3 size={14} /> Detail
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() =>
+                                      router.push(
+                                        `/terapis/asessment/${getType()}Riwayat?assessment_id=${item.assessment_id}&status=${mappedStatus}`
+                                      )
+                                    }
+                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
+                                  >
+                                    <Clock3 size={14} /> Riwayat Jawaban
+                                  </button>
+
+                                  <div className="border-t border-[#81B7A9]" />
+
+                                  <button
+                                    onClick={() =>
+                                      router.push(
+                                        `/terapis/asessment/${item.assessment_id}/result?type=${getType()}&status=${mappedStatus}`
+                                      )
+                                    }
+                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
+                                  >
+                                    <Play size={14} /> Lihat Hasil
+                                  </button>
+                                </>
+                              )}
                             </motion.div>
                           )}
                         </AnimatePresence>

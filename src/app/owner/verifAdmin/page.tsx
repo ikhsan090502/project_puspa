@@ -1,43 +1,53 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/sidebar_owner";
 import Header from "@/components/layout/header_owner";
+import { getUnverifiedAdmins, activateAdmin } from "@/lib/api/ownerAdmin";
 
-const admins = [
-  {
-    id: 1,
-    name: "Alief Arifin Mahardiko",
-    email: "alief@gmail.com",
-    registrationDate: "10/09/2025",
-  },
-  {
-    id: 2,
-    name: "Agung Hernawan",
-    email: "agung@gmail.com",
-    registrationDate: "10/09/2025",
-  },
-  {
-    id: 3,
-    name: "Marlina Ningsih",
-    email: "lina@gmail.com",
-    registrationDate: "11/09/2025",
-  },
-  {
-    id: 4,
-    name: "Mawar Melati",
-    email: "mawar@gmail.com",
-    registrationDate: "11/09/2025",
-  },
-  {
-    id: 5,
-    name: "Tommy Adi",
-    email: "adi@gmail.com",
-    registrationDate: "11/09/2025",
-  },
-];
+// Type respons
+interface AdminData {
+  user_id: string;
+  admin_id: string;
+  admin_name: string;
+  email: string;
+  admin_phone: string;
+  createdAt: string;
+}
 
 const VerifikasiAdminPage: React.FC = () => {
+  const [admins, setAdmins] = useState<AdminData[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Ambil data dari API
+  useEffect(() => {
+    async function fetchData() {
+      const res = await getUnverifiedAdmins();
+      if (res.success) setAdmins(res.data);
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  // ==========================
+  // HANDLE APPROVE ADMIN
+  // ==========================
+  const handleApprove = async (user_id: string) => {
+    const confirm = window.confirm("Aktifkan admin ini?");
+    if (!confirm) return;
+
+    const res = await activateAdmin(user_id);
+
+    if (res.success) {
+      alert("Admin berhasil diaktifkan!");
+
+      // Hapus admin itu dari list
+      setAdmins((prev) => prev.filter((admin) => admin.user_id !== user_id));
+    } else {
+      alert(res.message);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50 text-[#36315B]">
       <Sidebar />
@@ -47,13 +57,15 @@ const VerifikasiAdminPage: React.FC = () => {
 
         <main className="p-8">
           <section className="bg-white rounded-xl shadow-lg p-6">
-            <h1 className="text-2xl font-bold mb-3 pb-2">Menunggu Verifikasi</h1>
+            <h1 className="text-2xl font-bold mb-3 pb-2">
+              Menunggu Verifikasi
+            </h1>
 
-            {/* Search Input */}
+            {/* Search */}
             <div className="flex justify-end mb-4 relative w-full max-w-xs ml-auto">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none"
+                className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -72,85 +84,107 @@ const VerifikasiAdminPage: React.FC = () => {
               />
             </div>
 
-            {/* Table Data */}
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr>
-                    {[ 
-                      { label: "No", width: "w-12" },
-                      { label: "Nama Admin" },
-                      { label: "Email" },
-                      { label: "Tanggal Pendaftaran" },
-                      { label: "Aksi", width: "w-48" },
-                    ].map(({ label, width }) => (
-                      <th
-                        key={label}
-                        className={`py-3 px-4 font-semibold text-[#36315B] border-b-2 ${width || ""}`}
+            {/* Loading */}
+            {loading ? (
+              <p className="text-center py-6 text-gray-500">Loading...</p>
+            ) : admins.length === 0 ? (
+              <p className="text-center py-6 text-gray-500">
+                Tidak ada admin yang menunggu verifikasi.
+              </p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr>
+                      {[
+                        { label: "No", width: "w-12" },
+                        { label: "Nama Admin" },
+                        { label: "Email" },
+                        { label: "Tanggal Pendaftaran" },
+                        { label: "Aksi", width: "w-48" },
+                      ].map(({ label, width }) => (
+                        <th
+                          key={label}
+                          className={`py-3 px-4 font-semibold text-[#36315B] border-b-2 ${
+                            width || ""
+                          }`}
+                          style={{ borderBottomColor: "#81B7A9" }}
+                        >
+                          {label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {admins.map((admin, idx) => (
+                      <tr
+                        key={admin.user_id}
+                        className={`border-b ${
+                          idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                        }`}
                         style={{ borderBottomColor: "#81B7A9" }}
                       >
-                        {label}
-                      </th>
+                        <td className="py-3 px-4">{idx + 1}</td>
+                        <td className="py-3 px-4">{admin.admin_name}</td>
+                        <td className="py-3 px-4 text-[#757575]">
+                          {admin.email}
+                        </td>
+
+                        {/* Tanggal saja */}
+                        <td className="py-3 px-4 text-[#757575]">
+                          {admin.createdAt.split(" ").slice(0, 3).join(" ")}
+                        </td>
+
+                        {/* Tombol aksi */}
+                        <td className="py-3 px-4 flex gap-3">
+                          {/* Approve */}
+                          <button
+                            onClick={() => handleApprove(admin.user_id)}
+                            className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-green-600 transition"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M5 13l4 4L19 7"
+                              />
+                            </svg>
+                            Setujui
+                          </button>
+
+                          {/* Reject */}
+                          <button className="bg-red-600 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-red-700 transition">
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M6 18L18 6M6 6l12 12"
+                              />
+                            </svg>
+                            Tolak
+                          </button>
+                        </td>
+                      </tr>
                     ))}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {admins.map(({ id, name, email, registrationDate }, idx) => (
-                    <tr
-                      key={id}
-                      className={`border-b ${
-                        idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                      }`}
-                      style={{ borderBottomColor: "#81B7A9" }}
-                    >
-                      <td className="py-3 px-4">{id}</td>
-                      <td className="py-3 px-4">{name}</td>
-                      <td className="py-3 px-4 text-[#757575]">{email}</td>
-                      <td className="py-3 px-4 text-[#757575]">
-                        {registrationDate}
-                      </td>
-
-                      <td className="py-3 px-4 flex gap-3">
-                        {/* Approve */}
-                        <button
-                          className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-green-600 transition"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                          Setujui
-                        </button>
-
-                        {/* Reject */}
-                        <button
-                          className="bg-red-600 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-red-700 transition"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          Tolak
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
         </main>
       </div>

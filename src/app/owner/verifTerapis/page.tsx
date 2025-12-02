@@ -1,33 +1,49 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/sidebar_owner";
 import Header from "@/components/layout/header_owner";
-
-const therapists= [
-  
-  {
-    id: 1,
-    name: "Agung Hernawan",
-    email: "agung@gmail.com",
-    registrationDate: "10/09/2025",
-  },
-  {
-    id: 2,
-    name: "Marlina Ningsih",
-    email: "lina@gmail.com",
-    registrationDate: "11/09/2025",
-  },
-  {
-    id: 3,
-    name: "Mawar Melati",
-    email: "mawar@gmail.com",
-    registrationDate: "11/09/2025",
-  },
-  
-];
+import {
+  getUnverifiedTherapists,
+  activateTherapist,
+} from "@/lib/api/ownerTerapis";
 
 const VerifikasitherapistsPage: React.FC = () => {
+  const [therapists, setTherapists] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch data dari API
+  const loadTherapists = async () => {
+    setLoading(true);
+    const response = await getUnverifiedTherapists();
+
+    if (response.success) {
+      setTherapists(response.data);
+    } else {
+      console.error(response.message);
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadTherapists();
+  }, []);
+
+  // Handle Setujui
+  const handleApprove = async (user_id: string) => {
+    const confirmApprove = confirm("Yakin ingin menyetujui terapis ini?");
+    if (!confirmApprove) return;
+
+    const response = await activateTherapist(user_id);
+
+    if (response.success) {
+      alert("Terapis berhasil diaktifkan!");
+      loadTherapists(); // refresh list
+    } else {
+      alert("Gagal mengaktifkan: " + response.message);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-50 text-[#36315B]">
       <Sidebar />
@@ -62,7 +78,7 @@ const VerifikasitherapistsPage: React.FC = () => {
               />
             </div>
 
-            {/* Table Data */}
+            {/* Table */}
             <div className="overflow-x-auto">
               <table className="w-full text-left border-collapse">
                 <thead>
@@ -86,58 +102,75 @@ const VerifikasitherapistsPage: React.FC = () => {
                 </thead>
 
                 <tbody>
-                  {therapists.map(({ id, name, email, registrationDate }, idx) => (
-                    <tr
-                      key={id}
-                      className={`border-b ${
-                        idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                      }`}
-                      style={{ borderBottomColor: "#81B7A9" }}
-                    >
-                      <td className="py-3 px-4">{id}</td>
-                      <td className="py-3 px-4">{name}</td>
-                      <td className="py-3 px-4 text-[#757575]">{email}</td>
-                      <td className="py-3 px-4 text-[#757575]">
-                        {registrationDate}
-                      </td>
-
-                      <td className="py-3 px-4 flex gap-3">
-                        {/* Approve */}
-                        <button
-                          className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-green-600 transition"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                          Setujui
-                        </button>
-
-                        {/* Reject */}
-                        <button
-                          className="bg-red-600 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-red-700 transition"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-4 w-4"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                          Tolak
-                        </button>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-4">
+                        Loading...
                       </td>
                     </tr>
-                  ))}
+                  ) : therapists.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="text-center py-4 text-gray-500">
+                        Tidak ada data terapis menunggu verifikasi
+                      </td>
+                    </tr>
+                  ) : (
+                    therapists.map((item, idx) => (
+                      <tr
+                        key={item.user_id}
+                        className={`border-b ${
+                          idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                        }`}
+                        style={{ borderBottomColor: "#81B7A9" }}
+                      >
+                        <td className="py-3 px-4">{idx + 1}</td>
+                        <td className="py-3 px-4">{item.therapist_name}</td>
+                        <td className="py-3 px-4 text-[#757575]">
+                          {item.email}
+                        </td>
+                        <td className="py-3 px-4 text-[#757575]">
+                          {item.createdAt}
+                        </td>
+
+                        <td className="py-3 px-4 flex gap-3">
+                          {/* Approve */}
+                          <button
+                            onClick={() => handleApprove(item.user_id)}
+                            className="bg-green-500 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-green-600 transition"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Setujui
+                          </button>
+
+                          {/* Reject */}
+                          <button
+                            className="bg-red-600 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-red-700 transition"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              className="h-4 w-4"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            Tolak
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

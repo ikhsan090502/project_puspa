@@ -4,7 +4,10 @@ import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
-import { submitObservation, getObservationQuestions } from "@/lib/api/observasiSubmit";
+import {
+  submitObservation,
+  getObservationQuestions,
+} from "@/lib/api/observasiSubmit";
 
 type Question = {
   question_id: number;
@@ -48,13 +51,16 @@ export default function FormObservasiPage() {
     usia: searchParams.get("usia") || "",
     kategori: searchParams.get("kategori") || "",
     tglObservasi: searchParams.get("tglObservasi") || "",
-    observation_id: searchParams.get("observation_id") || searchParams.get("id") || "",
+    observation_id:
+      searchParams.get("observation_id") || searchParams.get("id") || "",
   };
 
   const [questionsData, setQuestionsData] = useState<Question[]>([]);
   const [activeTab, setActiveTab] = useState<string>("");
   const [answers, setAnswers] = useState<Record<number, Answer>>({});
-  const [step, setStep] = useState<"observasi" | "kesimpulan" | "review">("observasi");
+  const [step, setStep] = useState<"observasi" | "kesimpulan" | "review">(
+    "observasi"
+  );
   const [kesimpulan, setKesimpulan] = useState("");
   const [rekomendasiLanjutan, setRekomendasiLanjutan] = useState("");
   const [rekomendasiAssessment, setRekomendasiAssessment] = useState("");
@@ -72,7 +78,12 @@ export default function FormObservasiPage() {
 
       try {
         setLoading(true);
+        // Ambil pertanyaan dengan type "scheduled"
         const data = await getObservationQuestions(pasien.observation_id);
+(
+          
+          "scheduled"
+        );
         if (Array.isArray(data) && data.length > 0) {
           setQuestionsData(data);
           const firstPrefix = data[0].question_code.split("-")[0];
@@ -121,7 +132,9 @@ export default function FormObservasiPage() {
 
   const handleNext = () => {
     const pertanyaanKategori = groupedQuestions[activeTab];
-    const belumDiisi = pertanyaanKategori.some((q) => answers[q.question_id]?.jawaban === undefined);
+    const belumDiisi = pertanyaanKategori.some(
+      (q) => answers[q.question_id]?.jawaban === undefined
+    );
     if (belumDiisi) return alert("Harap isi semua jawaban sebelum lanjut.");
     const idx = kategoriList.indexOf(activeTab);
     if (idx < kategoriList.length - 1) setActiveTab(kategoriList[idx + 1]);
@@ -167,6 +180,16 @@ export default function FormObservasiPage() {
       <div className="flex flex-col flex-1 bg-gray-50">
         <HeaderTerapis />
         <main className="p-6 overflow-y-auto">
+         {/* 🔹 Tombol Close di atas Total Skor */}
+<div className="flex justify-end mb-4">
+  <button
+    onClick={() => (window.location.href = "/terapis/observasi")}
+    className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+  >
+    ✕
+  </button>
+</div>
+
           {loading ? (
             <div className="flex flex-col items-center justify-center mt-20 text-gray-500">
               <div className="w-10 h-10 border-4 border-[#81B7A9] border-t-transparent rounded-full animate-spin mb-3"></div>
@@ -174,7 +197,7 @@ export default function FormObservasiPage() {
             </div>
           ) : (
             <>
-              {/* 🔹 Stepper dengan badge warna */}
+              {/* 🔹 Stepper */}
               {step === "observasi" && kategoriList.length > 0 && (
                 <div className="flex justify-between items-center mb-8">
                   <div className="flex justify-start items-center gap-8 overflow-x-auto relative">
@@ -237,7 +260,9 @@ export default function FormObservasiPage() {
                           placeholder="Keterangan"
                           className="border rounded-md p-2 flex-1"
                           value={answers[q.question_id]?.keterangan || ""}
-                          onChange={(e) => handleChange(q.question_id, "keterangan", e.target.value)}
+                          onChange={(e) =>
+                            handleChange(q.question_id, "keterangan", e.target.value)
+                          }
                         />
                         <div className="flex items-center gap-4">
                           <label className="flex items-center gap-1">
@@ -246,7 +271,9 @@ export default function FormObservasiPage() {
                               name={`jawaban-${q.question_id}`}
                               value="true"
                               checked={answers[q.question_id]?.jawaban === true}
-                              onChange={() => handleChange(q.question_id, "jawaban", true)}
+                              onChange={() =>
+                                handleChange(q.question_id, "jawaban", true)
+                              }
                             />
                             Ya
                           </label>
@@ -256,7 +283,9 @@ export default function FormObservasiPage() {
                               name={`jawaban-${q.question_id}`}
                               value="false"
                               checked={answers[q.question_id]?.jawaban === false}
-                              onChange={() => handleChange(q.question_id, "jawaban", false)}
+                              onChange={() =>
+                                handleChange(q.question_id, "jawaban", false)
+                              }
                             />
                             Tidak
                           </label>

@@ -2,33 +2,48 @@
 
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
-const data = [
-  { name: "Fisioterapi", value: 35.7 },
-  { name: "Wicara", value: 28.6 },
-  { name: "Okupasi", value: 21.4 },
-  { name: "Paedagog", value: 14.3 },
-];
+type CategoryItem = {
+  name: string;
+  value: number;
+};
 
-const COLORS = ["#f59e0b", "#10b981", "#3b82f6", "#facc15"];
+export default function PasienChart({ apiData }: { apiData: CategoryItem[] }) {
+  const COLORS = ["#f59e0b", "#10b981", "#3b82f6", "#facc15"];
 
-export default function PasienChart() {
+  const hasData = apiData && apiData.length > 0;
+
+  const dataToUse = hasData
+    ? apiData
+    : [{ name: "Tidak ada data", value: 1 }]; // fallback biar PieChart tetap render
+
   return (
     <div className="bg-white rounded-lg shadow-md shadow-[#ADADAD] p-4 text-[#36315B]">
       <h3 className="font-bold mb-3 text-lg">Kategori Pasien</h3>
+
+      {!hasData && (
+        <p className="text-sm text-gray-400 mb-2">
+          Belum ada data kategori pasien
+        </p>
+      )}
+
       <div className="w-full h-64">
         <ResponsiveContainer>
           <PieChart>
             <Pie
-              data={data}
+              data={dataToUse}
               dataKey="value"
               nameKey="name"
               outerRadius={100}
               label
             >
-              {data.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index]} />
+              {dataToUse.map((entry, index) => (
+                <Cell
+                  key={`cell-${index}`}
+                  fill={COLORS[index % COLORS.length]}
+                />
               ))}
             </Pie>
+
             <Tooltip
               contentStyle={{
                 fontFamily: "Playpen Sans, sans-serif",

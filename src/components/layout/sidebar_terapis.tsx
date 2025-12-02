@@ -8,13 +8,13 @@ import {
   LayoutGrid,
   Search,
   ClipboardList,
+  Settings,
+  LogOut,
   Users,
   Handshake,
-  Workflow,
-  FileCheck,
-  ChevronDown,
   IdCard,
   UsersRound,
+  ChevronDown,
 } from "lucide-react";
 
 interface MenuItem {
@@ -35,7 +35,7 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
-// 🟢 1️⃣ PINDAHKAN MENU KE LUAR & EKSPOR
+// ================= BASE MENU =================
 export const baseMenu: MenuGroup[] = [
   {
     section: null,
@@ -57,20 +57,23 @@ export const baseMenu: MenuGroup[] = [
     ],
   },
   {
-    section: "INTERVENSI & KOLABORASI",
+    section: "KELOLA AKUN",
     items: [
-      { name: "Konferensi", href: "/terapis/konferensi", icon: Users },
-      { name: "Intervensi", href: "/terapis/intervensi", icon: Handshake },
-      { name: "Sinergi Program", href: "/terapis/sinergi", icon: Workflow },
+      {
+        name: "Pengaturan",
+        href: "#",
+        icon: Settings,
+        dropdown: [
+          { name: "Ubah Profil", href: "/terapis/profileTerapis" },
+          { name: "Ubah Password", href: "/terapis/ubah-password" },
+        ],
+      },
+      { name: "Log Out", href: "/terapis/intervensi", icon: LogOut },
     ],
-  },
-  {
-    section: "MONITORING & EVALUASI",
-    items: [{ name: "Evaluasi", href: "/terapis/evaluasi", icon: FileCheck }],
   },
 ];
 
-// 🟢 2️⃣ GUNAKAN ROLE UNTUK FILTER DI DALAM KOMPONEN
+// ================= SIDEBAR COMPONENT =================
 export default function SidebarTerapis({ activePage }: SidebarProps) {
   const pathname = usePathname();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
