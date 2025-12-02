@@ -42,14 +42,19 @@ export const menu = [
       },
     ],
   },
-  {
-    section: "Dokumen",
-    items: [{ name: "Laporan", href: "/laporan", icon: FileText }],
-  },
+
   {
     section: "Kelola Akun",
     items: [
-      { name: "Pengaturan", href: "/pengaturan", icon: Settings },
+      {
+        name: "Pengaturan",
+        href: "/admin/pengaturan",
+        icon: Settings,
+        subItems: [
+          { name: "Ubah Profile", href: "/admin/ubah_profile" },
+          { name: "Ubah Password", href: "/admin/ubah_password" },
+        ],
+      },
       { name: "Log Out", href: "/auth/login", icon: LogOut },
     ],
   },

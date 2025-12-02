@@ -1,0 +1,245 @@
+{
+  "identity": {
+    "Nama": "Zahara Prameswari",
+    "Tanggal Lahir": "2015-08-26",
+    "Usia Kronologi": "10 Tahun 1 Bulan",
+    "Jenis Kelamin": "Perempuan",
+    "Agama": "Islam",
+    "Nama OrangTua": "Dewi Kurnia",
+    "Alamat": "Jl. Mawar No.12",
+    "Tanggal Assessment": "2025-11-02"
+  },
+
+  "A": {
+  "title": "Pemeriksaan Umum",
+  "inputType": "text",
+  "items": [
+    { "label": "Cara Datang" },
+    { "label": "Kesadaran" },
+    { "label": "Kooperatif / Tidak Kooperatif" },
+    { "label": "Tensi" },
+    { "label": "Nadi" },
+    { "label": "RR" },
+    { "label": "Status Gizi" },
+    { "label": "Suhu" },
+    { "label": "Lingkar Kepala" }
+  ]
+},
+"B": {
+  "title": "Anamnesis Sistem",
+  "inputType": "text",
+  "items": [
+    { "label": "Kepala & Leher" },
+    { "label": "Kardiovaskuler" },
+    { "label": "Respirasi" },
+    { "label": "Gastrointestinalis" },
+    { "label": "Urogenital" },
+    { "label": "Muskuloskeletal" },
+    { "label": "Nervorum" },
+    { "label": "Sensoris" },
+    { "label": "Motorik Kasar" },
+    { "label": "Motorik Halus" }
+  ]
+},
+
+  "C": {
+    "title": "Pemeriksaan Khusus ",
+    "items": [{
+  "section": "Pemeriksaan Sensoris",
+  "inputType": "checkbox",
+  "options": ["Hypersensitif", "Hyposensitif", "Seeking"],
+  "questions": [
+    { "label": "Penglihatan (Visual)" },
+    { "label": "Pendengaran (Auditory)" },
+    { "label": "Penciuman (Olfactory)" },
+    { "label": "Pengecapan (Gustatory)" },
+    { "label": "Peraba / Kulit (Tactile)" },
+    { "label": "Otot dan Sendi (Proprioseptive)" },
+    { "label": "Keseimbangan (Vestibular)" }
+  ]
+},
+    {
+  "section": "Pemeriksaan Refleks Primitif",
+  "inputType": "radio",
+  "options": ["Primitif", "Fungsional", "Patologis", "Integrasi", "Belum Sinkron"],
+  "withTextResult": true,
+  "questions": [
+    { "label": "Moro" },
+    { "label": "Galant" },
+    { "label": "STNR" },
+    { "label": "Rooting" },
+    { "label": "Plantar Graps" },
+    { "label": "Babinsky" },
+    { "label": "Blinking" },
+    { "label": "ATNR" },
+    { "label": "Sucking" },
+    { "label": "Palmar Graps" },
+    { "label": "Fleksor Withdrawl" },
+    { "label": "Righting" },
+    { "label": "Automatic Gait Reflek" },
+    { "label": "Landau" },
+    { "label": "Parachute" },
+    { "label": "Protective Refleks" }
+  ]
+},
+
+{
+  "section": "Pemeriksaan Gross Motor & Pola Gerak",
+  "groups": [
+    {
+      "sub": "Posisi Telentang",
+      "questions": [
+        { "label": "Head", "key": "gm_telentang_head", "type": "text" },
+        { "label": "Shoulder", "key": "gm_telentang_shoulder", "type": "text" },
+        { "label": "Elbow", "key": "gm_telentang_elbow", "type": "text" },
+        { "label": "Wrist", "key": "gm_telentang_wrist", "type": "text" },
+        { "label": "Finger", "key": "gm_telentang_finger", "type": "text" },
+        { "label": "Trunk", "key": "gm_telentang_trunk", "type": "text" },
+        { "label": "Hip", "key": "gm_telentang_hip", "type": "text" },
+        { "label": "Knee", "key": "gm_telentang_knee", "type": "text" },
+        { "label": "Ankle", "key": "gm_telentang_ankle", "type": "text" }
+      ]
+    },
+    {
+      "sub": "Berguling",
+      "questions": [
+        { "label": "Handling pada", "key": "gm_rolling_handling", "type": "text" },
+        { "label": "Berguling via", "key": "gm_rolling_via", "type": "text" },
+        { "label": "Rotasi trunk", "key": "gm_rolling_trunk", "type": "text" }
+      ]
+    },
+    {
+      "sub": "Posisi Telungkup",
+      "questions": [
+        { "label": "Head lifting", "key": "gm_prone_headlifting", "type": "text" },
+        { "label": "Head control", "key": "gm_prone_headcontrol", "type": "text" },
+        { "label": "Forearm support", "key": "gm_prone_forearm", "type": "text" },
+        { "label": "Hand support", "key": "gm_prone_hand", "type": "text" },
+        { "label": "Hip", "key": "gm_prone_hip", "type": "text" },
+        { "label": "Knee", "key": "gm_prone_knee", "type": "text" },
+        { "label": "Ankle", "key": "gm_prone_ankle", "type": "text" }
+      ]
+    },
+    {
+      "sub": "Posisi Duduk",
+      "questions": [
+        { "label": "Head lifting", "key": "gm_sitting_headlifting", "type": "text" },
+        { "label": "Head control", "key": "gm_sitting_headcontrol", "type": "text" },
+        { "label": "Head support", "key": "gm_sitting_headsupport", "type": "text" },
+        { "label": "Trunk control", "key": "gm_sitting_trunk", "type": "text" },
+        { "label": "Sitting balance", "key": "gm_sitting_balance", "type": "text" },
+        { "label": "Protective reaction", "key": "gm_sitting_protective", "type": "text" },
+        { "label": "Posisi duduk", "key": "gm_sitting_posisi", "type": "text" },
+        { "label": "Weight bearing", "key": "gm_sitting_weight", "type": "text" }
+      ]
+    },
+    {
+      "sub": "Posisi Berdiri",
+      "questions": [
+        { "label": "Head lifting", "key": "gm_standing_headlifting", "type": "text" },
+        { "label": "Head control", "key": "gm_standing_headcontrol", "type": "text" },
+        { "label": "Trunk control", "key": "gm_standing_trunk", "type": "text" },
+        { "label": "Hip", "key": "gm_standing_hip", "type": "text" },
+        { "label": "Knee", "key": "gm_standing_knee", "type": "text" },
+        { "label": "Ankle", "key": "gm_standing_ankle", "type": "text" },
+        { "label": "Tumpuan", "key": "gm_standing_tumpuan", "type": "text" },
+        {
+          "label": "Postural",
+          "key": "gm_standing_postural",
+          "type": "radio",
+          "options": ["Good posture", "Bad posture"],
+          "subInput": {
+            "type": "text",
+            "placeholder": "kyphosis-lordosis/ sway-back/ military type/ lower cross"
+          }
+        }
+      ]
+    },
+    {
+      "sub": "Berjalan",
+      "questions": [
+        { "label": "Pola jalan", "key": "gm_walk_pola", "type": "text" },
+        { "label": "Keseimbangan", "key": "gm_walk_balance", "type": "text" },
+        {
+          "label": "Tipe lutut",
+          "key": "gm_walk_knee",
+          "type": "radio",
+          "options": ["Genu valgum (x)", "Genu varum (o)", "Genu recuvartum (hiperekstensi lutut)"]
+        }
+      ]
+    }
+  ]
+},
+
+{
+  "section": "Test Joint Laxity",
+  "type": "text",
+  "questions": [
+    { "label": "Elbow", "key": "laxity_elbow" },
+    { "label": "Wrist", "key": "laxity_wrist" },
+    { "label": "Hip", "key": "laxity_hip" },
+    { "label": "Knee", "key": "laxity_knee" },
+    { "label": "Ankle", "key": "laxity_ankle" }
+  ]
+},
+{
+  "section": "Pemeriksaan Spastisitas",
+  "type": "radio",
+  "options": ["0", "1", "2", "3"],
+  "questions": [
+    { "label": "Kepala & Leher", "key": "spastik_kepala_leher" },
+    { "label": "Trunk (Leher, Punggung, Pinggang)", "key": "spastik_trunk" },
+    { "label": "AGA Dex", "key": "spastik_aga_dex" },
+    { "label": "AGA Sin", "key": "spastik_aga_sin" },
+    { "label": "AGB Dex", "key": "spastik_agb_dex" },
+    { "label": "AGB Sin", "key": "spastik_agb_sin" }
+  ]
+},
+{
+  "section": "Pemeriksaan Kekuatan Otot",
+  "type": "radio",
+  "options": ["X", "O", "T", "R"],
+  "questions": [
+    { "label": "Trunk (Leher, Punggung, Pinggang)", "key": "kekuatan_trunk" },
+    { "label": "AGA Dex", "key": "kekuatan_aga_dex" },
+    { "label": "AGA Sin", "key": "kekuatan_aga_sin" },
+    { "label": "AGB Dex", "key": "kekuatan_agb_dex" },
+    { "label": "AGB Sin", "key": "kekuatan_agb_sin" }
+  ]
+},
+{
+  "section": "Pemeriksaan Palpasi Otot",
+  "questions": [
+    { "label": "Hypertonus (spactic/rigid)", "key": "palpasi_hypertonus" },
+    { "label": "Hypotonus", "key": "palpasi_hypotonus" },
+    { "label": "Fluktuatif", "key": "palpasi_fluktuatif" },
+    { "label": "Normal", "key": "palpasi_normal" }
+  ]
+},
+{
+  "section": "Jenis Spastisitas",
+  "inputType": "text",
+  "questions": [
+    { "label": "Hemiplegia", "key": "jenis_hemiplegia"},
+    { "label": "Diplegia", "key": "jenis_diplegia"},
+    { "label": "Quadriplegia", "key": "jenis_quadriplegia"},
+    { "label": "Monoplegia", "key": "jenis_monoplegia"},
+    { "label": "Triplegia", "key": "jenis_triplegia"}
+  ]
+},
+{
+  "section": "Test Fungsi Bermain",
+  "inputType": "text",
+  "questions": [
+    { "label": "Jenis Permainan", "key": "fungsi_jenis_permainan" },
+    { "label": "Mengikuti Objek", "key": "fungsi_mengikuti_objek" },
+    { "label": "Menikuti Sumber Suara", "key": "fungsi_menikuti_sumber_suara" },
+    { "label": "Meraih Objek", "key": "fungsi_meraih_objek" },
+    { "label": "Menggenggam", "key": "fungsi_menggenggam" },
+    { "label": "Membedakan Warna", "key": "fungsi_membedakan_warna" },
+    { "label": "Atensi Fokus", "key": "fungsi_atensi_fokus" }
+  ]
+}
+]
+  }
+}

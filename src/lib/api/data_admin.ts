@@ -55,7 +55,7 @@ export async function addAdmin(data: {
     email: data.email,
     admin_phone: data.admin_phone,
     password: data.password || "12345678",
-    is_active: 1,
+    is_active: "1",
   });
 }
 

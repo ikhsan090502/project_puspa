@@ -14,10 +14,84 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { getObservations, Jadwal } from "@/lib/api/jadwal_observasi";
 import { useRouter } from "next/navigation";
 import FormAturAsesmen from "@/components/form/FormAturAsesmen";
+import api from "@/lib/axios";
 
+// =======================
+// Interface Jadwal
+// =======================
+export interface Jadwal {
+  id: number;
+  nama: string;
+  usia?: string;
+  jenisKelamin?: string;
+  sekolah?: string;
+  orangtua: string;
+  telepon: string;
+  tanggalObservasi?: string | null;
+  waktu?: string | null;
+  observer?: string | null;
+  status?: string | null;
+}
+
+// =======================
+// Refactored getObservations
+// =======================
+export async function getObservations(
+  status: "pending" | "scheduled" | "completed",
+  search: string = "",
+  date?: string
+): Promise<Jadwal[]> {
+  try {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (!token) return [];
+
+    let endpoint = "/observations";
+    if (status === "pending") endpoint = "/observations/pending";
+    if (status === "scheduled") endpoint = "/observations/scheduled";
+    if (status === "completed") endpoint = "/observations/completed";
+
+    const params: Record<string, any> = {};
+    if (search) params.search = search;
+    if (date && date.trim() !== "") params.date = date;
+
+    console.log("GET OBSERVATIONS:", endpoint, params);
+
+    const res = await api.get(endpoint, {
+      params,
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    const list = res.data?.data || [];
+
+    return list.map((item: any) => ({
+      id: item.observation_id,
+      nama: item.child_name,
+      usia: item.age_category || "-",
+      jenisKelamin: "-", // tidak ada gender di JSON
+      sekolah: "-",      // tidak ada sekolah di JSON
+      orangtua: item.guardian_name,
+      telepon: item.guardian_phone,
+      tanggalObservasi: status === "completed" ? item.scheduled_date : item.scheduled_date || null,
+      waktu: status === "completed" ? item.time : item.scheduled_time || null,
+      observer: item.observer || "-",
+      status: item.status,
+    }));
+  } catch (error: any) {
+    if (error.response) {
+      console.error("AXIOS ERROR STATUS:", error.response.status);
+      console.error("AXIOS ERROR DATA:", error.response.data);
+    } else {
+      console.error("ERROR getObservations:", error);
+    }
+    return [];
+  }
+}
+
+// =======================
+// Page Component
+// =======================
 export default function JadwalAsesmenPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -32,12 +106,13 @@ export default function JadwalAsesmenPage() {
   const [openDropdown, setOpenDropdown] = useState<boolean>(false);
   const [openAsesmen, setOpenAsesmen] = useState(false);
 
+  // Fetch data jadwal
   const fetchJadwal = async () => {
     setLoading(true);
     setError(null);
     try {
       const status = tab === "terjadwal" ? "scheduled" : "completed";
-      const data = await getObservations(status);
+      const data = await getObservations(status, "", selectedDate || undefined);
       setJadwalList(data);
       setOriginalList(data);
     } catch (err) {
@@ -64,17 +139,14 @@ export default function JadwalAsesmenPage() {
   const handleDateSelect = (date: Date) => {
     const formatted = format(date, "yyyy-MM-dd", { locale: id });
     setSelectedDate(formatted);
-    const filteredData = originalList.filter(
-      (j) => j.tanggalObservasi === formatted
-    );
-    setJadwalList(filteredData);
+    fetchJadwal(); // refetch berdasarkan tanggal terpilih
   };
 
-  const handleRiwayatJawaban = (id: string) => {
+  const handleRiwayatJawaban = (id: number) => {
     router.push(`/terapis/riwayat-hasil?id=${id}`);
   };
 
-  const handleLihatHasil = (id: string) => {
+  const handleLihatHasil = (id: number) => {
     router.push(`/terapis/hasil-observasi?id=${id}`);
   };
 
@@ -110,6 +182,9 @@ export default function JadwalAsesmenPage() {
     );
   };
 
+  // =======================
+  // Render
+  // =======================
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -157,9 +232,7 @@ export default function JadwalAsesmenPage() {
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
             {loading ? (
-              <p className="text-center text-gray-500 py-10">
-                Memuat data...
-              </p>
+              <p className="text-center text-gray-500 py-10">Memuat data...</p>
             ) : error ? (
               <p className="text-center text-red-500 py-10">{error}</p>
             ) : filtered.length === 0 ? (
@@ -169,9 +242,7 @@ export default function JadwalAsesmenPage() {
                   {format(new Date(selectedDate), "dd MMMM yyyy", { locale: id })}
                 </p>
               ) : (
-                <p className="text-center text-gray-500 py-10">
-                  Tidak ada data.
-                </p>
+                <p className="text-center text-gray-500 py-10">Tidak ada data.</p>
               )
             ) : tab === "selesai" ? (
               <table className="w-full text-sm border-collapse">

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { FaTh } from "react-icons/fa";
 
 interface BackendDetailAnak {
   child_name: string;
@@ -63,18 +64,21 @@ export default function FormUbahPasien({
     father_occupation: "",
     father_phone: "",
     father_relationship: "",
+    father_nik: "",
 
     mother_name: "",
     mother_age: "",
     mother_occupation: "",
     mother_phone: "",
     mother_relationship: "",
+    mother_nik: "",
 
     guardian_name: "",
     guardian_age: "",
     guardian_occupation: "",
     guardian_phone: "",
     guardian_relationship: "",
+    guardian_nik: "",
   });
 
   function parseBirthInfo(str: string) {
@@ -284,125 +288,189 @@ export default function FormUbahPasien({
             <h3 className="font-medium mb-2">Informasi Orangtua / Wali</h3>
 
             <div className="border rounded-lg p-4 mb-4">
-              <h4 className="font-semibold mb-2">Ayah</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  name="father_name"
-                  placeholder="Nama Ayah"
-                  value={formData.father_name}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  readOnly
-                  value="Ayah"
-                  className="w-full border rounded-lg p-2 bg-gray-100"
-                />
-                <input
-                  name="father_age"
-                  placeholder="Usia"
-                  value={formData.father_age}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  name="father_occupation"
-                  placeholder="Pekerjaan"
-                  value={formData.father_occupation}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  name="father_phone"
-                  placeholder="Nomor Telepon"
-                  value={formData.father_phone}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2 col-span-2"
-                />
-              </div>
-            </div>
+  <h4 className="font-semibold mb-2">Ayah</h4>
 
-            <div className="border rounded-lg p-4 mb-4">
-              <h4 className="font-semibold mb-2">Ibu</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  name="mother_name"
-                  placeholder="Nama Ibu"
-                  value={formData.mother_name}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  readOnly
-                  value="Ibu"
-                  className="w-full border rounded-lg p-2 bg-gray-100"
-                />
-                <input
-                  name="mother_age"
-                  placeholder="Usia"
-                  value={formData.mother_age}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  name="mother_occupation"
-                  placeholder="Pekerjaan"
-                  value={formData.mother_occupation}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  name="mother_phone"
-                  placeholder="Nomor Telepon"
-                  value={formData.mother_phone}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2 col-span-2"
-                />
-              </div>
-            </div>
+  <label className="block text-sm mb-1">Nama Ayah</label>
+  <input
+    name="father_name"
+    value={formData.father_name}
+    onChange={handleChange}
+    className="w-full border rounded-lg p-2 mb-3"
+  />
+
+  <label className="block text-sm mb-1">Hubungan</label>
+  <input
+    readOnly
+    value="Ayah"
+    className="w-full border rounded-lg p-2 bg-gray-100 mb-3"
+  />
+
+  <div className="grid grid-cols-2 gap-4">
+    <div>
+      <label className="block text-sm mb-1">Usia</label>
+      <input
+        name="father_age"
+        value={formData.father_age}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm mb-1">Pekerjaan</label>
+      <input
+        name="father_occupation"
+        value={formData.father_occupation}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+  </div>
+
+  <div className="grid grid-cols-2 gap-4 mt-3">
+    <div>
+      <label className="block text-sm mb-1">Nomor Telepon</label>
+      <input
+        name="father_phone"
+        value={formData.father_phone}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm mb-1">NIK</label>
+      <input
+        name="father_nik"
+        value={formData.father_nik}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+  </div>
+</div>
+
+
+           <div className="border rounded-lg p-4 mb-4">
+  <h4 className="font-semibold mb-2">Ibu</h4>
+
+  <label className="block text-sm mb-1">Nama Ibu</label>
+  <input
+    name="mother_name"
+    value={formData.mother_name}
+    onChange={handleChange}
+    className="w-full border rounded-lg p-2 mb-3"
+  />
+
+  <label className="block text-sm mb-1">Hubungan</label>
+  <input
+    readOnly
+    value="Ibu"
+    className="w-full border rounded-lg p-2 bg-gray-100 mb-3"
+  />
+
+  <div className="grid grid-cols-2 gap-4">
+    <div>
+      <label className="block text-sm mb-1">Usia</label>
+      <input
+        name="mother_age"
+        value={formData.mother_age}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm mb-1">Pekerjaan</label>
+      <input
+        name="mother_occupation"
+        value={formData.mother_occupation}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+  </div>
+
+  <div className="grid grid-cols-2 gap-4 mt-3">
+    <div>
+      <label className="block text-sm mb-1">Nomor Telepon</label>
+      <input
+        name="mother_phone"
+        value={formData.mother_phone}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm mb-1">NIK</label>
+      <input
+        name="mother_nik"
+        value={formData.mother_nik}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+  </div>
+</div>
+
 
             <div className="border rounded-lg p-4">
-              <h4 className="font-semibold mb-2">
-                Wali (Opsional)
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  name="wali_nama"
-                  placeholder="Nama Wali"
-                  value={formData.guardian_name}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  name="wali_hubungan"
-                  placeholder="Hubungan"
-                  value={formData.guardian_relationship}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  name="wali_usia"
-                  placeholder="Usia"
-                  value={formData.guardian_age}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  name="wali_pekerjaan"
-                  placeholder="Pekerjaan"
-                  value={formData.guardian_occupation}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2"
-                />
-                <input
-                  name="wali_telepon"
-                  placeholder="Nomor Telepon"
-                  value={formData.guardian_phone}
-                  onChange={handleChange}
-                  className="w-full border rounded-lg p-2 col-span-2"
-                />
-              </div>
-            </div>
+  <h4 className="font-semibold mb-2">Wali (Opsional)</h4>
+
+  <label className="block text-sm mb-1">Nama Wali</label>
+  <input
+    name="guardian_name"
+    value={formData.guardian_name}
+    onChange={handleChange}
+    className="w-full border rounded-lg p-2 mb-3"
+  />
+
+  <div className="grid grid-cols-2 gap-4">
+    <div>
+      <label className="block text-sm mb-1">Hubungan</label>
+      <input
+        name="guardian_relationship"
+        value={formData.guardian_relationship}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm mb-1">Usia</label>
+      <input
+        name="guardian_age"
+        value={formData.guardian_age}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+  </div>
+
+  <div className="grid grid-cols-2 gap-4 mt-3">
+    <div>
+      <label className="block text-sm mb-1">Nomor Telepon</label>
+      <input
+        name="guardian_phone"
+        value={formData.guardian_phone}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+
+    <div>
+      <label className="block text-sm mb-1">NIK</label>
+      <input
+        name="guardian_nik"
+        value={formData.guardian_nik}
+        onChange={handleChange}
+        className="w-full border rounded-lg p-2"
+      />
+    </div>
+  </div>
+</div>
+
           </div>
 
           <div>
