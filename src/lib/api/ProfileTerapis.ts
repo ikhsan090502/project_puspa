@@ -18,7 +18,7 @@ export interface TherapistProfile {
   email: string;
   role: string;
   profile_picture: string | null;
-  date_of_birth?: string;
+  therapist_birth_date: string;
 }
 
 export interface ProfileResponse {
