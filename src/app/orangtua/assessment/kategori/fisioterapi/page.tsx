@@ -52,7 +52,7 @@ export default function DataFisioterapiPage() {
     fetchQuestions();
   }, []);
 
-  // Submit API
+  // Submit API dengan format jawaban sesuai BE
   const handleSubmit = async () => {
     if (!assessmentId) {
       alert("Assessment ID tidak ditemukan.");
@@ -63,11 +63,15 @@ export default function DataFisioterapiPage() {
       answers: [
         {
           question_id: keluhanQuestion?.id,
-          answer: keluhanJawaban,
+          answer: {
+            value: keluhanJawaban,
+          },
         },
         {
           question_id: riwayatQuestion?.id,
-          answer: riwayatJawaban,
+          answer: {
+            value: riwayatJawaban,
+          },
         },
       ],
     };
@@ -76,8 +80,8 @@ export default function DataFisioterapiPage() {
       setLoading(true);
       await submitParentAssessment(assessmentId, "fisio_parent", payload);
 
-      alert("Berhasil menyimpan data!");
-      router.push("/orangtua/assessment/kategori/okupasi");
+      alert("Berhasil menyimpan data fisioterapi!");
+     
     } catch (err) {
       console.error(err);
       alert("Gagal menyimpan data.");
@@ -92,14 +96,18 @@ export default function DataFisioterapiPage() {
       label: "Data Fisioterapi",
       path: "/orangtua/assessment/kategori/fisioterapi",
     },
-    { label: "Data Terapi Okupasi", path: "/orangtua/assessment/kategori/okupasi" },
-    { label: "Data Terapi Wicara", path: "/orangtua/assessment/kategori/wicara" },
+    {
+      label: "Data Terapi Okupasi",
+      path: "/orangtua/assessment/kategori/okupasi",
+    },
+    {
+      label: "Data Terapi Wicara",
+      path: "/orangtua/assessment/kategori/wicara",
+    },
     { label: "Data Paedagog", path: "/orangtua/assessment/kategori/paedagog" },
   ];
 
-  const activeStep = steps.findIndex((step) =>
-    pathname.includes(step.path)
-  );
+  const activeStep = steps.findIndex((step) => pathname.includes(step.path));
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -121,11 +129,7 @@ export default function DataFisioterapiPage() {
           <div className="flex justify-center mb-12">
             <div className="flex items-center">
               {steps.map((step, i) => (
-                <div
-                  key={i}
-                  className="flex items-center cursor-pointer"
-                  
-                >
+                <div key={i} className="flex items-center cursor-pointer">
                   <div className="flex flex-col items-center text-center space-y-2">
                     <div
                       className={`w-9 h-9 flex items-center justify-center rounded-full border-2 text-sm font-semibold ${

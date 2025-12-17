@@ -77,3 +77,22 @@ export async function getAllAdmins() {
     };
   }
 }
+
+export async function deactivateAdmin(user_id: string) {
+  try {
+    const response = await axiosInstance.get(`/users/${user_id}/deactive`);
+
+    return {
+      success: response.data.success,
+      message: response.data.message,
+      data: response.data.data || null,
+    };
+  } catch (error: any) {
+    console.error("API Error deactivateAdmin:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Terjadi kesalahan",
+      data: null,
+    };
+  }
+}

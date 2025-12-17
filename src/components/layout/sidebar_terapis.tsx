@@ -65,10 +65,10 @@ export const baseMenu: MenuGroup[] = [
         icon: Settings,
         dropdown: [
           { name: "Ubah Profil", href: "/terapis/profileTerapis" },
-          { name: "Ubah Password", href: "/terapis/ubah-password" },
+          { name: "Ubah Password", href: "/terapis/ubahPassword" },
         ],
       },
-      { name: "Log Out", href: "/terapis/intervensi", icon: LogOut },
+      { name: "Log Out", href: "/auth/login", icon: LogOut },
     ],
   },
 ];

@@ -108,62 +108,68 @@ export default function DataTerapiOkupasiPage() {
   const goPrev = () => activeIdx > 0 && setActiveIdx(activeIdx - 1);
 
   // FIX PENTING — selalu pastikan value controlled
-  const getValue = (qid: number, type?: string) => {
-    const v = answers[qid];
-    if (v !== undefined && v !== null) return v;
+ const getValue = (qid: number, type?: string) => {
+  if (answers.hasOwnProperty(qid)) {
+    return answers[qid];
+  }
 
-    if (type === "checkbox") return [];
-    if (type === "slider") return 3;
-    return "";
+  if (type === "checkbox") return [];
+  if (type === "slider") return 1; // default paling aman
+  return "";
+};
+
+const onSubmitAll = async () => {
+  if (!assessmentId) {
+    alert("Assessment ID tidak ditemukan!");
+    return;
+  }
+
+  const payload = {
+    answers: categories.flatMap((cat) =>
+      cat.questions.map((q) => {
+        const val = answers[q.id];
+
+        // skip jika benar-benar kosong
+        if (
+          val === undefined ||
+          val === null ||
+          (Array.isArray(val) && val.length === 0)
+        ) {
+          return null;
+        }
+
+        return {
+          question_id: Number(q.id),
+          answer: {
+            value:
+              q.answer_type === "checkbox"
+                ? val
+                : q.answer_type === "slider"
+                ? Number(val)
+                : val,
+          },
+        };
+      })
+    ).filter(Boolean),
   };
 
-  const onSubmitAll = async () => {
-    if (!assessmentId) {
-      alert("Assessment ID tidak ditemukan!");
-      return;
-    }
+  console.log("Payload dikirim ke BE:", payload);
 
-    // Mapping jawaban sesuai BE
-    const payload = {
-      answers: categories.flatMap((cat) =>
-        cat.questions.map((q) => {
-          const val = answers[q.id];
-          let answer: any = null;
+  try {
+    await submitParentAssessment(
+      assessmentId,
+      "okupasi_parent",
+      payload
+    );
 
-          if (q.answer_type === "yes_only") {
-            answer = val === "Ya" ? "Ya" : null;
-          } else if (q.answer_type === "radio3") {
-            answer = val || null;
-          } else if (q.answer_type === "checkbox") {
-            answer = Array.isArray(val) && val.length > 0 ? val : [];
-          } else if (q.answer_type === "slider") {
-            answer = val || null;
-          }
+    alert("Jawaban berhasil dikirim!");
+    
+  } catch (e) {
+    console.error("Error submit okupasi:", e);
+    alert("Gagal mengirim jawaban.");
+  }
+};
 
-          return {
-            question_id: Number(q.id),
-            answer,
-          };
-        })
-      ),
-    };
-
-    console.log("Payload dikirim ke BE:", payload);
-
-    try {
-      await submitParentAssessment(assessmentId, "okupasi_parent", payload);
-      alert("Jawaban berhasil dikirim!");
-      router.push(
-        `/orangtua/assessment/kategori/wicara?assessment_id=${assessmentId}`
-      );
-    } catch (e: any) {
-      console.error(
-        "Error submitting parent assessment (okupasi_parent):",
-        e
-      );
-      alert("Gagal mengirim jawaban. Internal Server Error.");
-    }
-  };
 
   if (loading) {
     return (

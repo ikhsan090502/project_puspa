@@ -6,6 +6,9 @@ import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
 import { getAssessmentQuestions, submitAssessment } from "@/lib/api/asesment";
 
+/* =======================
+   TYPES
+======================= */
 type Question = {
   id: number;
   question_code: string;
@@ -26,6 +29,18 @@ type Group = {
 type UIAnswer = {
   score?: string;
   note?: string;
+  checked?: string[];
+};
+
+/* =======================
+   HELPERS
+======================= */
+const splitQuestion = (text: string) => {
+  const parts = text.split("—").map((t) => t.trim());
+  if (parts.length >= 2) {
+    return { subTitle: parts[0], question: parts.slice(1).join(" — ") };
+  }
+  return { subTitle: null, question: text };
 };
 
 export default function OkupasiAssessmentPage() {
@@ -33,22 +48,21 @@ export default function OkupasiAssessmentPage() {
   const assessmentId = searchParams.get("assessment_id") || "";
 
   const [groups, setGroups] = useState<Group[]>([]);
-  const [answers, setAnswers] = useState<Record<string | number, UIAnswer>>({});
+  const [answers, setAnswers] = useState<Record<number, UIAnswer>>({});
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string>("");
+  const [error, setError] = useState("");
   const [currentGroupIndex, setCurrentGroupIndex] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
+  /* =======================
+     LOAD QUESTIONS
+  ======================= */
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
         setLoading(true);
         const data = await getAssessmentQuestions("okupasi");
-        if (!data.groups || data.groups.length === 0) {
-          setError("Data pertanyaan tidak tersedia");
-          setGroups([]);
-        } else {
-          setGroups(data.groups);
-        }
+        setGroups(data.groups ?? []);
       } catch (err) {
         console.error(err);
         setError("Gagal memuat pertanyaan");
@@ -56,70 +70,100 @@ export default function OkupasiAssessmentPage() {
         setLoading(false);
       }
     };
-
     fetchQuestions();
   }, []);
 
-  const handleChange = (
-    questionId: number | string,
-    field: "score" | "note",
-    value: string
+  /* =======================
+     HANDLERS
+  ======================= */
+  const handleScoreChange = (id: number, value: string) => {
+    setAnswers((p) => ({ ...p, [id]: { ...p[id], score: value } }));
+  };
+
+  const handleNoteChange = (id: number, value: string) => {
+    setAnswers((p) => ({ ...p, [id]: { ...p[id], note: value } }));
+  };
+
+  const handleCheckboxToggle = (
+    id: number,
+    option: string,
+    checked: boolean
   ) => {
-    setAnswers((prev) => ({
-      ...prev,
-      [questionId]: { ...prev[questionId], [field]: value },
-    }));
+    setAnswers((p) => {
+      const current = p[id]?.checked ?? [];
+      return {
+        ...p,
+        [id]: {
+          ...p[id],
+          checked: checked
+            ? [...current, option]
+            : current.filter((o) => o !== option),
+        },
+      };
+    });
   };
 
-  const handleNextGroup = () => {
-    if (currentGroupIndex < groups.length - 1) {
-      setCurrentGroupIndex(currentGroupIndex + 1);
-    }
-  };
-
-  const handlePrevGroup = () => {
-    if (currentGroupIndex > 0) {
-      setCurrentGroupIndex(currentGroupIndex - 1);
-    }
-  };
-
+  /* =======================
+     SUBMIT
+  ======================= */
   const handleSubmit = async () => {
-    const payload = {
-      answers: Object.entries(answers)
-        .filter(([key]) => !isNaN(Number(key)))
-        .map(([question_id, answer]) => ({
-          question_id: Number(question_id),
-          answer: { score: Number(answer.score), note: answer.note || "" },
-        })),
-      note: answers["note"]?.note || "",
-      assessment_result: answers["assessment_result"]?.note || "",
-      therapy_recommendation: answers["therapy_recommendation"]?.note
-        ? answers["therapy_recommendation"]?.note.split(",")
-        : [],
-    };
+    const payloadAnswers: any[] = [];
+
+    for (const g of groups) {
+      for (const q of g.questions) {
+        const ui = answers[q.id] ?? {};
+
+        if (q.answer_type === "checkbox") {
+          payloadAnswers.push({
+            question_id: q.id,
+            answer: { value: ui.checked ?? [] },
+          });
+        } else if (q.answer_type === "score_with_note") {
+          payloadAnswers.push({
+            question_id: q.id,
+            answer: { value: Number(ui.score ?? 0) },
+            note: ui.note ?? "",
+          });
+        } else {
+          payloadAnswers.push({
+            question_id: q.id,
+            answer: { value: ui.note ?? "" },
+          });
+        }
+      }
+    }
 
     try {
-      await submitAssessment(assessmentId, "okupasi", payload);
-      alert("Berhasil submit assessment!");
+      setSubmitting(true);
+      await submitAssessment(assessmentId, "okupasi", {
+        answers: payloadAnswers,
+      });
+      alert("Assessment berhasil disubmit");
     } catch (err) {
       console.error(err);
       alert("Gagal submit assessment");
+    } finally {
+      setSubmitting(false);
     }
   };
 
-  if (loading) return <div className="p-4">Loading pertanyaan...</div>;
+  /* =======================
+     RENDER
+  ======================= */
+  if (loading) return <div className="p-4">Loading...</div>;
   if (error) return <div className="p-4 text-red-500">{error}</div>;
-  if (groups.length === 0) return null;
 
   const group = groups[currentGroupIndex];
+  let lastSubTitle: string | null = null;
 
   return (
     <div className="flex h-screen bg-gray-50 text-[#36315B]">
       <SidebarTerapis />
       <div className="flex-1 flex flex-col">
         <HeaderTerapis />
+
         <div className="p-6 overflow-auto">
-           <div className="flex justify-end mb-4">
+          <div className="flex justify-end mb-4">
             <button
               onClick={() => (window.location.href = "/terapis/asessment")}
               className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
@@ -127,149 +171,148 @@ export default function OkupasiAssessmentPage() {
               ✕
             </button>
           </div>
-          {currentGroupIndex < groups.length - 1 && (
-            <div className="mb-8">
-              <h2 className="text-lg font-semibold mb-4 px-2 py-1 bg-[#C0DCD6] rounded">
-                {currentGroupIndex + 1}. {group.title}
-              </h2>
-              <table className="w-full border-collapse border border-gray-300">
-                <thead>
-                  <tr className="bg-gray-100">
-                    <th className="border px-3 py-2 text-center w-[5%]">No</th>
-                <th className="border px-3 py-2 text-left w-[43%]">Aspek</th>
-                <th className="border px-3 py-2 text-center w-[15%]">Penilaian</th>
-                <th className="border px-3 py-2 text-left w-[40%]">Keterangan</th>
+          <h2 className="text-lg font-semibold mb-4 px-3 py-2 bg-[#C0DCD6] rounded">
+            {currentGroupIndex + 1}. {group.title}
+          </h2>
 
-                  </tr>
-                </thead>
-                <tbody>
-                  {group.questions.map((q, idx) => {
-                    const subAspects = q.question_text.split("|").map((line) => line.trim());
-                    return subAspects.map((sub, subIdx) => {
-                      const questionId = `${q.id}-${subIdx}`;
-                      return (
-                        <tr key={questionId} className="even:bg-gray-50">
-                          <td className="border border-gray-300 p-2 text-center">
-                            {subIdx === 0 ? `${idx + 1}` : String.fromCharCode(96 + subIdx)}.
-                          </td>
-                          <td className="border border-gray-300 p-2">{sub}</td>
-                          <td className="border border-gray-300 p-2 text-center">
-                            <select
-                              className="border rounded px-2 py-1 w-full"
-                              value={answers[questionId]?.score || ""}
-                              onChange={(e) =>
-                                handleChange(questionId, "score", e.target.value)
-                              }
-                            >
-                              <option value="">Pilih</option>
-                              {[0, 1, 2, 3].map((n) => (
-                                <option key={n} value={n}>
-                                  {n}
-                                </option>
-                              ))}
-                            </select>
-                          </td>
-                          <td className="border border-gray-300 p-2">
-                            <input
-                              type="text"
-                              placeholder="Keterangan"
-                              className="border rounded px-2 py-1 w-full"
-                              value={answers[questionId]?.note || ""}
-                              onChange={(e) =>
-                                handleChange(questionId, "note", e.target.value)
-                              }
-                            />
+          {/* =======================
+              FINAL REPORT (NO TABLE)
+          ======================= */}
+          {group.group_key === "final_report" ? (
+            <div className="space-y-6">
+              {group.questions.map((q) => {
+                const ui = answers[q.id] ?? {};
+
+                if (q.answer_type === "checkbox") {
+                  return (
+                    <div key={q.id}>
+                      <label className="font-semibold block mb-2">
+                        {q.question_text}
+                      </label>
+                      {["paedagog", "okupasi", "wicara", "fisio"].map((opt) => (
+                        <label key={opt} className="flex gap-2 items-center mb-1">
+                          <input
+                            type="checkbox"
+                            checked={ui.checked?.includes(opt) ?? false}
+                            onChange={(e) =>
+                              handleCheckboxToggle(
+                                q.id,
+                                opt,
+                                e.target.checked
+                              )
+                            }
+                          />
+                          {opt}
+                        </label>
+                      ))}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={q.id}>
+                    <label className="font-semibold block mb-2">
+                      {q.question_text}
+                    </label>
+                    <textarea
+                      className="w-full border rounded p-2"
+                      rows={4}
+                      value={ui.note ?? ""}
+                      onChange={(e) =>
+                        handleNoteChange(q.id, e.target.value)
+                      }
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            /* =======================
+               NORMAL GROUP (TABLE)
+            ======================= */
+            <table className="w-full border">
+              <tbody>
+                {group.questions.map((q, idx) => {
+                  const ui = answers[q.id] ?? {};
+                  const { subTitle, question } = splitQuestion(q.question_text);
+                  const showSubTitle = subTitle && subTitle !== lastSubTitle;
+                  if (showSubTitle) lastSubTitle = subTitle;
+
+                  return (
+                    <React.Fragment key={q.id}>
+                      {showSubTitle && (
+                        <tr>
+                          <td colSpan={4} className="bg-gray-100 font-semibold p-2">
+                            {subTitle}
                           </td>
                         </tr>
-                      );
-                    });
-                  })}
-                </tbody>
-              </table>
-            </div>
+                      )}
+                      <tr>
+                        <td className="border p-2 text-center">{idx + 1}</td>
+                        <td className="border p-2">{question}</td>
+                        <td className="border p-2">
+                          <select
+                            className="border rounded w-full"
+                            value={ui.score ?? ""}
+                            onChange={(e) =>
+                              handleScoreChange(q.id, e.target.value)
+                            }
+                          >
+                            <option value="">Pilih</option>
+                            {[0, 1, 2, 3].map((s) => (
+                              <option key={s} value={s}>
+                                {s}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        <td className="border p-2">
+                          <input
+                            className="border rounded w-full p-1"
+                            value={ui.note ?? ""}
+                            onChange={(e) =>
+                              handleNoteChange(q.id, e.target.value)
+                            }
+                          />
+                        </td>
+                      </tr>
+                    </React.Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
           )}
 
-          {/* Halaman terakhir */}
-          {currentGroupIndex === groups.length - 1 && (
-            <div className="mb-6">
-              <h3 className="text-md font-semibold mb-2">Catatan</h3>
-              <textarea
-                className="border rounded w-full p-2"
-                placeholder="Masukkan catatan..."
-                value={answers["note"]?.note || ""}
-                onChange={(e) => handleChange("note", "note", e.target.value)}
-              />
+          {/* =======================
+              NAVIGATION
+          ======================= */}
+          <div className="flex justify-between mt-6">
+            <button
+              className="bg-gray-300 px-4 py-2 rounded"
+              disabled={currentGroupIndex === 0}
+              onClick={() =>
+                setCurrentGroupIndex((i) => Math.max(i - 1, 0))
+              }
+            >
+              Sebelumnya
+            </button>
 
-              <h3 className="text-md font-semibold mt-4 mb-2">Hasil Asesment</h3>
-              <textarea
-                className="border rounded w-full p-2"
-                placeholder="Masukkan hasil asesment..."
-                value={answers["assessment_result"]?.note || ""}
-                onChange={(e) =>
-                  handleChange("assessment_result", "note", e.target.value)
-                }
-              />
-
-              <h3 className="text-md font-semibold mt-4 mb-2">Rekomendasi Terapi</h3>
-              <div className="flex flex-col gap-2">
-                {["PLB Paedagog", "Terapi Wicara", "Terapi Okupasi", "Fisioterapi"].map(
-                  (therapy) => (
-                    <label key={therapy} className="inline-flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        checked={
-                          answers["therapy_recommendation"]?.note
-                            ?.split(",")
-                            .includes(therapy) || false
-                        }
-                        onChange={(e) => {
-                          const current = answers["therapy_recommendation"]?.note
-                            ? answers["therapy_recommendation"].note.split(",")
-                            : [];
-                          let updated: string[];
-                          if (e.target.checked) {
-                            updated = [...current, therapy];
-                          } else {
-                            updated = current.filter((t) => t !== therapy);
-                          }
-                          handleChange(
-                            "therapy_recommendation",
-                            "note",
-                            updated.join(",")
-                          );
-                        }}
-                      />
-                      {therapy}
-                    </label>
-                  )
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Navigasi */}
-          <div className="flex justify-between mt-4">
-            {currentGroupIndex > 0 && (
-              <button
-                className="bg-gray-400 text-white px-4 py-2 rounded"
-                onClick={handlePrevGroup}
-              >
-                Sebelumnya
-              </button>
-            )}
             {currentGroupIndex < groups.length - 1 ? (
               <button
-                className="bg-[#81B7A9] text-white px-4 py-2 rounded ml-auto"
-                onClick={handleNextGroup}
+                className="bg-[#81B7A9] text-white px-4 py-2 rounded"
+                onClick={() =>
+                  setCurrentGroupIndex((i) => i + 1)
+                }
               >
                 Lanjutkan
               </button>
             ) : (
               <button
-                className="bg-[#81B7A9] text-white px-4 py-2 rounded ml-auto"
+                className="bg-[#81B7A9] text-white px-4 py-2 rounded"
+                disabled={submitting}
                 onClick={handleSubmit}
               >
-                Submit
+                {submitting ? "Mengirim..." : "Submit"}
               </button>
             )}
           </div>

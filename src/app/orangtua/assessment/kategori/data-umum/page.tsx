@@ -9,9 +9,9 @@ import { ChevronDown, Plus, Trash } from "lucide-react";
 import {
   getParentAssessmentQuestions,
   submitParentAssessment,
+  updateParentIdentity,
 } from "@/lib/api/asesmentTerapiOrtu";
 
-// gunakan getAssessments() yang kamu kirim di message sebelumnya
 import { getMyAssessments } from "@/lib/api/childrenAsesment";
 
 /* =======================
@@ -32,7 +32,7 @@ const makeDefaultAnswerForQuestion = (q: any) => {
   const t = q.answer_type;
   if (t === "checkbox") return [];
   if (t === "multi") return [];
-  if (t === "table") return {};
+  if (t === "table") return {}; // keep as object mapping rowLabel -> value
   if (t === "radio_with_text") return { value: "", note: "" };
   return "";
 };
@@ -61,15 +61,38 @@ export default function FormAssessmentOrangtua() {
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
-  // identitas anak
   const [childName, setChildName] = useState<string>("");
   const [childBirthInfo, setChildBirthInfo] = useState<string>("");
 
-  // derive activeStep for the top stepper (based on steps array)
-  const activeStep = steps.findIndex((step) => pathname.includes(step.path));
+  const [parentIdentity, setParentIdentity] = useState<any>({
+    father_identity_number: null,
+    father_name: null,
+    father_phone: null,
+    father_birth_date: null,
+    father_occupation: null,
+    father_relationship: null,
+
+    mother_identity_number: null,
+    mother_name: null,
+    mother_phone: null,
+    mother_birth_date: null,
+    mother_occupation: null,
+    mother_relationship: null,
+
+    guardian_identity_number: null,
+    guardian_name: null,
+    guardian_phone: null,
+    guardian_birth_date: null,
+    guardian_occupation: null,
+    guardian_relationship: null,
+
+    address: null, // additional local field (not required by API but kept)
+  });
+
+  const activeStep = steps.findIndex((step) => pathname?.includes(step.path));
 
   /* =======================
-     LOAD IDENTITAS ANAK (from /my/assessments)
+     LOAD IDENTITAS ANAK (FROM ASSESSMENTS)
   ========================== */
   useEffect(() => {
     if (!assessmentIdFromQuery) return;
@@ -97,7 +120,7 @@ export default function FormAssessmentOrangtua() {
   }, [assessmentIdFromQuery]);
 
   /* =======================
-     LOAD QUESTIONS (groups)
+     LOAD QUESTIONS
   ========================== */
   useEffect(() => {
     let mounted = true;
@@ -113,7 +136,6 @@ export default function FormAssessmentOrangtua() {
           Array.isArray(resp?.data) ? resp.data :
           [];
 
-        // Tambahkan grup Identitas statis di posisi pertama (jika belum ada)
         const hasIdentitas = list.some((g: any) => g.group_key === "identitas");
         if (!hasIdentitas) {
           list.unshift({
@@ -126,10 +148,8 @@ export default function FormAssessmentOrangtua() {
         if (!mounted) return;
         setGroups(list);
 
-        // set active category default jika belum ada (tetap 'identitas' jika ada)
         if (list.length > 0) setActiveCategory((prev) => prev || list[0].group_key);
 
-        // init answers
         const init: Record<string, any> = {};
         list.forEach((g: any) => {
           (g.questions || []).forEach((q: any) => {
@@ -150,13 +170,13 @@ export default function FormAssessmentOrangtua() {
   }, []);
 
   /* =======================
-     DERIVED CURRENT QUESTIONS
+     DERIVED QUESTIONS
   ========================== */
   const currentQuestions =
     groups.find((g) => g.group_key === activeCategory)?.questions || [];
 
   /* =======================
-     NAVIGATION HELPERS
+     NAVIGATION
   ========================== */
   const categoryOrder = groups.map((g) => g.group_key);
   const currentIndex = categoryOrder.indexOf(activeCategory);
@@ -164,7 +184,6 @@ export default function FormAssessmentOrangtua() {
   const goNextCategory = () => {
     if (currentIndex < categoryOrder.length - 1) {
       setActiveCategory(categoryOrder[currentIndex + 1]);
-      // scroll to top of the form when switch category (optional)
       window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
@@ -177,7 +196,7 @@ export default function FormAssessmentOrangtua() {
   };
 
   /* =======================
-     SETTERS
+     UPDATE ANSWERS
   ========================== */
   const setAnswer = (qid: any, value: any) => {
     setAnswers((prev) => ({ ...prev, [qid]: value }));
@@ -195,35 +214,124 @@ export default function FormAssessmentOrangtua() {
     });
   };
 
-  const handleTableCell = (qid: any, rowKey: string, value: any) => {
-    setAnswers((prev) => {
-      const base = typeof prev[qid] === "object" ? prev[qid] : {};
-      return { ...prev, [qid]: { ...base, [rowKey]: value } };
+  // Updated: store table answers as object mapping label -> value
+  const handleTableCell = (qid: any, label: string, value: any) => {
+    setAnswers(prev => {
+      const prevTable = (prev[qid] && typeof prev[qid] === "object") ? prev[qid] : {};
+      return { ...prev, [qid]: { ...prevTable, [label]: value } };
     });
   };
 
   /* =======================
-     SUBMIT (only for identitas)
+     HANDLE PARENT IDENTITY INPUTS
   ========================== */
-  const handleSubmit = async (e?: any) => {
-    if (e) e.preventDefault();
-    // only process submit when activeCategory is identitas
-    if (activeCategory !== "identitas") return;
+  const setParentField = (key: string, value: any) => {
+    setParentIdentity((prev: any) => ({ ...prev, [key]: value }));
+  };
 
-    const id = assessmentIdFromQuery || "GENERAL-001";
+  /* =======================
+     SUBMIT IDENTITAS (updateParentIdentity)
+  ========================== */
+  const handleSubmitIdentity = async (e?: any) => {
+    if (e) e.preventDefault();
     setSubmitting(true);
 
     try {
-      await submitParentAssessment(id, "umum_parent", { answers });
-      alert("Berhasil disimpan.");
+      // Build payload matching ParentIdentityPayload (null when empty)
+      const payload = {
+        father_identity_number: parentIdentity.father_identity_number || null,
+        father_name: parentIdentity.father_name || null,
+        father_phone: parentIdentity.father_phone || null,
+        father_birth_date: parentIdentity.father_birth_date || null,
+        father_occupation: parentIdentity.father_occupation || null,
+        father_relationship: parentIdentity.father_relationship || null,
+
+        mother_identity_number: parentIdentity.mother_identity_number || null,
+        mother_name: parentIdentity.mother_name || null,
+        mother_phone: parentIdentity.mother_phone || null,
+        mother_birth_date: parentIdentity.mother_birth_date || null,
+        mother_occupation: parentIdentity.mother_occupation || null,
+        mother_relationship: parentIdentity.mother_relationship || null,
+
+        guardian_identity_number: parentIdentity.guardian_identity_number || null,
+        guardian_name: parentIdentity.guardian_name || null,
+        guardian_phone: parentIdentity.guardian_phone || null,
+        guardian_birth_date: parentIdentity.guardian_birth_date || null,
+        guardian_occupation: parentIdentity.guardian_occupation || null,
+        guardian_relationship: parentIdentity.guardian_relationship || null,
+      };
+
+      await updateParentIdentity(payload);
+
+      alert("Identitas berhasil disimpan.");
       router.push("/orangtua/assessment");
     } catch (err: any) {
-      console.error(err);
-      alert(err?.message || "Gagal menyimpan");
+      console.error("Gagal update identitas:", err);
+      alert(err?.message || "Gagal menyimpan identitas");
     } finally {
       setSubmitting(false);
     }
   };
+
+  /* =======================
+     SUBMIT ASSESSMENT (submitParentAssessment)
+  ========================== */
+  /* =======================
+   SUBMIT ASSESSMENT (revisi sesuai BE)
+========================== */
+const handleSubmitAssessment = async () => {
+  if (!assessmentIdFromQuery) {
+    alert("assessment_id tidak ditemukan di URL.");
+    return;
+  }
+
+  setSubmitting(true);
+  try {
+    // convert answers {} -> answers[] untuk BE
+    const answerArray = Object.entries(answers).map(([qid, value]) => {
+      let ansPayload: any = {};
+
+      if (value === null || value === undefined || value === "") {
+        ansPayload = { value: null };
+      } else if (typeof value === "object") {
+        // Jika sudah object (radio_with_text, table, multi)
+        ansPayload = value;
+      } else if (Array.isArray(value)) {
+        // checkbox/multi diubah jadi object dengan array value
+        ansPayload = { value };
+      } else {
+        // text/number/select => bungkus jadi object
+        ansPayload = { value };
+      }
+
+      return {
+        question_id: Number(qid),
+        answer: ansPayload,
+      };
+    });
+
+    const payload = {
+      answers: answerArray,
+      child_name: childName || null,
+      child_birth_info: childBirthInfo || null,
+    };
+
+    await submitParentAssessment(
+      assessmentIdFromQuery,
+      "umum_parent",
+      payload
+    );
+
+    alert("Jawaban assessment berhasil dikirim.");
+    router.push("/orangtua/assessment");
+  } catch (err: any) {
+    console.error("Gagal submit assessment:", err);
+    alert(err?.message || "Gagal mengirim jawaban assessment");
+  } finally {
+    setSubmitting(false);
+  }
+};
+
 
   /* =======================
      RENDER
@@ -276,7 +384,7 @@ export default function FormAssessmentOrangtua() {
             </div>
           </div>
 
-          {/* CONTENT BOX */}
+          {/* CONTENT */}
           <section className="bg-white rounded-2xl shadow-sm border p-8 max-w-5xl mx-auto">
 
             {/* TITLE + DROPDOWN */}
@@ -299,117 +407,111 @@ export default function FormAssessmentOrangtua() {
               </div>
             </div>
 
-            {/* ==========================
-                IDENTITAS (STATIC PAGE)
-            =========================== */}
+            {/* IDENTITAS PAGE */}
             {activeCategory === "identitas" && (
-              <form onSubmit={handleSubmit} className="space-y-10 mb-10">
-                {/* ==========================
-                    1. ANAK
-                =========================== */}
+              <form onSubmit={handleSubmitIdentity} className="space-y-10 mb-10">
+
+                {/* ANAK */}
                 <div>
                   <h3 className="font-semibold text-[#36315B] text-base mb-4">1. Anak</h3>
 
                   <div className="grid grid-cols-2 gap-6 text-sm">
-                    {/* Nama Anak */}
                     <div className="flex flex-col">
                       <label className="font-medium mb-1">Nama</label>
                       <input
                         className="w-full border border-gray-300 p-2 rounded-md bg-gray-50"
                         value={childName}
                         onChange={(e) => setChildName(e.target.value)}
-                        name="nama_anak"
                       />
                     </div>
 
-                    {/* Tanggal Lahir */}
                     <div className="flex flex-col">
                       <label className="font-medium mb-1">Tanggal Lahir</label>
                       <input
                         className="w-full border border-gray-300 p-2 rounded-md bg-gray-50"
                         value={childBirthInfo}
                         onChange={(e) => setChildBirthInfo(e.target.value)}
-                        name="tanggal_lahir_anak"
                       />
                     </div>
 
-                    {/* Alamat Anak */}
                     <div className="flex flex-col col-span-2">
                       <label className="font-medium mb-1">Alamat</label>
                       <input
                         className="w-full border border-gray-300 p-2 rounded-md bg-gray-50"
                         placeholder="Jln. Malabar Selatan 10"
-                        name="alamat_anak"
+                        value={parentIdentity.address || ""}
+                        onChange={(e) => setParentField("address", e.target.value)}
                       />
                     </div>
-
                   </div>
                 </div>
 
-                {/* ==========================
-                    2. ORANGTUA
-                =========================== */}
+                {/* ORANG TUA */}
                 <div>
                   <h3 className="font-semibold text-[#36315B] text-base mb-6">2. Orangtua</h3>
 
-                  {/* ---------------- Ayah ---------------- */}
+                  {/* AYAH */}
                   <h4 className="font-semibold text-[#36315B] text-sm mb-3">Ayah</h4>
-
                   <div className="grid grid-cols-2 gap-6 text-sm mb-8">
-                    <InputField label="Nama Ayah" name="nama_ayah" />
-                    <InputField label="Tanggal Lahir" name="tanggal_lahir_ayah" />
-                    <InputField label="Pekerjaan" name="pekerjaan_ayah" />
-                    <InputField label="Nomor Telpon" name="telpon_ayah" />
-                    <InputField label="Hubungan dengan anak" name="hubungan_ayah" />
-                    <InputField label="NIK" name="nik_ayah" />
+                    <InputField label="Nama Ayah" value={parentIdentity.father_name || ""} onChange={(v) => setParentField("father_name", v)} />
+                    <InputField label="Tanggal Lahir" value={parentIdentity.father_birth_date || ""} onChange={(v) => setParentField("father_birth_date", v)} />
+                    <InputField label="Pekerjaan" value={parentIdentity.father_occupation || ""} onChange={(v) => setParentField("father_occupation", v)} />
+                    <InputField label="Nomor Telpon" value={parentIdentity.father_phone || ""} onChange={(v) => setParentField("father_phone", v)} />
+                    <InputField label="Hubungan dengan anak" value={parentIdentity.father_relationship || ""} onChange={(v) => setParentField("father_relationship", v)} />
+                    <InputField label="NIK" value={parentIdentity.father_identity_number || ""} onChange={(v) => setParentField("father_identity_number", v)} />
                   </div>
 
-                  {/* ---------------- Ibu ---------------- */}
+                  {/* IBU */}
                   <h4 className="font-semibold text-[#36315B] text-sm mb-3">Ibu</h4>
-
                   <div className="grid grid-cols-2 gap-6 text-sm mb-8">
-                    <InputField label="Nama Ibu" name="nama_ibu" />
-                    <InputField label="Tanggal Lahir" name="tanggal_lahir_ibu" />
-                    <InputField label="Pekerjaan" name="pekerjaan_ibu" />
-                    <InputField label="Nomor Telpon" name="telpon_ibu" />
-                    <InputField label="Hubungan dengan anak" name="hubungan_ibu" />
-                    <InputField label="NIK" name="nik_ibu" />
+                    <InputField label="Nama Ibu" value={parentIdentity.mother_name || ""} onChange={(v) => setParentField("mother_name", v)} />
+                    <InputField label="Tanggal Lahir" value={parentIdentity.mother_birth_date || ""} onChange={(v) => setParentField("mother_birth_date", v)} />
+                    <InputField label="Pekerjaan" value={parentIdentity.mother_occupation || ""} onChange={(v) => setParentField("mother_occupation", v)} />
+                    <InputField label="Nomor Telpon" value={parentIdentity.mother_phone || ""} onChange={(v) => setParentField("mother_phone", v)} />
+                    <InputField label="Hubungan dengan anak" value={parentIdentity.mother_relationship || ""} onChange={(v) => setParentField("mother_relationship", v)} />
+                    <InputField label="NIK" value={parentIdentity.mother_identity_number || ""} onChange={(v) => setParentField("mother_identity_number", v)} />
                   </div>
 
-                  {/* ---------------- Wali ---------------- */}
+                  {/* WALI */}
                   <h4 className="font-semibold text-[#36315B] text-sm mb-3">Wali</h4>
-
                   <div className="grid grid-cols-2 gap-6 text-sm">
-                    <InputField label="Nama Wali" name="nama_wali" />
-                    <InputField label="Tanggal Lahir" name="tanggal_lahir_wali" />
-                    <InputField label="Pekerjaan" name="pekerjaan_wali" />
-                    <InputField label="Nomor Telpon" name="telpon_wali" />
-                    <InputField label="Hubungan dengan Anak" name="hubungan_wali" />
-                    <InputField label="NIK" name="nik_wali" />
+                    <InputField label="Nama Wali" value={parentIdentity.guardian_name || ""} onChange={(v) => setParentField("guardian_name", v)} />
+                    <InputField label="Tanggal Lahir" value={parentIdentity.guardian_birth_date || ""} onChange={(v) => setParentField("guardian_birth_date", v)} />
+                    <InputField label="Pekerjaan" value={parentIdentity.guardian_occupation || ""} onChange={(v) => setParentField("guardian_occupation", v)} />
+                    <InputField label="Nomor Telpon" value={parentIdentity.guardian_phone || ""} onChange={(v) => setParentField("guardian_phone", v)} />
+                    <InputField label="Hubungan dengan Anak" value={parentIdentity.guardian_relationship || ""} onChange={(v) => setParentField("guardian_relationship", v)} />
+                    <InputField label="NIK" value={parentIdentity.guardian_identity_number || ""} onChange={(v) => setParentField("guardian_identity_number", v)} />
                     <div className="flex flex-col col-span-2">
                       <label className="mb-1">Alamat</label>
-                      <input className="border p-2 rounded-md" name="alamat_wali" />
+                      <input className="border p-2 rounded-md" name="alamat_wali" value={parentIdentity.address || ""} onChange={(e) => setParentField("address", e.target.value)} />
                     </div>
                   </div>
-
                 </div>
 
-                {/* SIMPAN BUTTON untuk IDENTITAS */}
-                <div className="flex justify-end pt-6">
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="bg-[#6BB1A0] hover:bg-[#5EA391] text-white px-8 py-2 rounded-xl disabled:opacity-60"
-                  >
-                    {submitting ? "Mengirim..." : "Simpan"}
-                  </button>
+                {/* BUTTON */}
+                <div className="flex justify-between items-center pt-6">
+                  <div />
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => router.push("/orangtua/assessment")}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-xl"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={submitting}
+                      className="bg-[#6BB1A0] hover:bg-[#5EA391] text-white px-8 py-2 rounded-xl disabled:opacity-60"
+                    >
+                      {submitting ? "Mengirim..." : "Simpan Identitas"}
+                    </button>
+                  </div>
                 </div>
               </form>
             )}
 
-            {/* ==========================
-                DYNAMIC QUESTIONS (non-identitas)
-            =========================== */}
+            {/* DYNAMIC QUESTIONS */}
             {activeCategory !== "identitas" && (
               <div className="space-y-6">
                 {loading ? (
@@ -419,9 +521,13 @@ export default function FormAssessmentOrangtua() {
                 ) : (
                   currentQuestions.map((q: any) => {
                     const extra = safeJsonParse(q.extra_schema, {});
-                    const options = Array.isArray(extra?.options)
+                    const optionsRaw = Array.isArray(extra?.options)
                       ? extra.options
                       : safeJsonParse(q.answer_options, []);
+                    // normalize options to string values
+                    const options = (optionsRaw || []).map((opt: any) =>
+                      typeof opt === "string" ? opt : opt?.value ?? opt?.label ?? String(opt)
+                    );
 
                     return (
                       <div key={q.id}>
@@ -614,7 +720,7 @@ export default function FormAssessmentOrangtua() {
                                   <span className="w-48">{label}</span>
                                   <input
                                     className="border p-2 rounded-md w-32"
-                                    value={answers[q.id]?.[label] ?? ""}
+                                    value={(answers[q.id] && answers[q.id][label]) ?? ""}
                                     onChange={(e) => handleTableCell(q.id, label, e.target.value)}
                                   />
                                 </div>
@@ -629,45 +735,37 @@ export default function FormAssessmentOrangtua() {
                   })
                 )}
 
-                {/* NAVIGATION BUTTONS for non-identitas */}
+                {/* BUTTON NAVIGATION */}
                 <div className="flex justify-between pt-6">
-                  {/* Tombol Sebelumnya */}
-                  <div>
-                    {currentIndex > 0 ? (
-                      <button
-                        type="button"
-                        onClick={goPrevCategory}
-                        className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-xl"
-                      >
-                        Sebelumnya
-                      </button>
-                    ) : <div />}
-                  </div>
 
-                  {/* Tombol Selanjutnya (disabled if last) */}
-                  <div>
-                    {currentIndex < categoryOrder.length - 1 ? (
-                      <button
-                        type="button"
-                        onClick={goNextCategory}
-                        className="bg-[#6BB1A0] hover:bg-[#5EA391] text-white px-8 py-2 rounded-xl"
-                      >
-                        Selanjutnya
-                      </button>
-                    ) : (
-                      // jika sudah di akhir grup, tetap tampilkan tombol Selanjutnya non-submit atau bisa diganti sesuai kebutuhan
-                      <button
-                        type="button"
-                        onClick={() => {
-                          // default behavior: kembali ke daftar assessment
-                          router.push("/orangtua/assessment");
-                        }}
-                        className="bg-[#6BB1A0] hover:bg-[#5EA391] text-white px-8 py-2 rounded-xl"
-                      >
-                        Simpan
-                      </button>
-                    )}
-                  </div>
+                  {currentIndex > 0 ? (
+                    <button
+                      type="button"
+                      onClick={goPrevCategory}
+                      className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-xl"
+                    >
+                      Sebelumnya
+                    </button>
+                  ) : <div />}
+
+                  {currentIndex < categoryOrder.length - 1 ? (
+                    <button
+                      type="button"
+                      onClick={goNextCategory}
+                      className="bg-[#6BB1A0] hover:bg-[#5EA391] text-white px-8 py-2 rounded-xl"
+                    >
+                      Selanjutnya
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleSubmitAssessment}
+                      disabled={submitting}
+                      className="bg-[#6BB1A0] hover:bg-[#5EA391] text-white px-8 py-2 rounded-xl disabled:opacity-60"
+                    >
+                      {submitting ? "Mengirim..." : "Simpan"}
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -680,13 +778,27 @@ export default function FormAssessmentOrangtua() {
 
 /* =======================
    SMALL INPUT COMPONENT
-   (Harus capitalized agar dapat dipakai di JSX)
 ========================== */
-function InputField({ label, name }: { label: string; name: string }) {
+function InputField({
+  label,
+  name,
+  value,
+  onChange,
+}: {
+  label: string;
+  name?: string;
+  value?: string;
+  onChange?: (v: string) => void;
+}) {
   return (
     <div className="flex flex-col">
       <label className="mb-1">{label}</label>
-      <input className="border p-2 rounded-md" name={name} />
+      <input
+        className="border p-2 rounded-md"
+        name={name}
+        value={value ?? ""}
+        onChange={(e) => onChange?.(e.target.value)}
+      />
     </div>
   );
 }

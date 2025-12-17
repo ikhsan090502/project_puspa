@@ -116,32 +116,38 @@ export default function PaedagogFormPage() {
   };
 
   const onSave = async () => {
-    if (!assessmentId) {
-      alert("Assessment ID tidak ditemukan");
-      return;
-    }
+  if (!assessmentId) {
+    alert("Assessment ID tidak ditemukan");
+    return;
+  }
 
-    try {
-      // Format jawaban sesuai backend [{ question_id, answer }]
-      const formattedAnswers = Object.values(answers)
-        .flatMap((group) =>
-          Object.entries(group).map(([questionId, answer]) => ({
-            question_id: Number(questionId),
-            answer,
-          }))
-        );
+  try {
+    const formattedAnswers = Object.values(answers).flatMap((group) =>
+      Object.entries(group)
+        .filter(([_, answer]) => answer !== "" && answer !== null)
+        .map(([questionId, answer]) => ({
+          question_id: Number(questionId),
+          answer: {
+            value: answer, // STRING SESUAI BE
+          },
+        }))
+    );
 
-      await submitParentAssessment(assessmentId, "paedagog_parent" as ParentSubmitType, {
-        answers: formattedAnswers,
-      });
+    console.log("PAYLOAD KE BE:", formattedAnswers);
 
-      alert("Jawaban berhasil disimpan");
-      router.push("/orangtua/assessment");
-    } catch (error: any) {
-      console.error(error);
-      alert(error.message || "Gagal submit jawaban");
-    }
-  };
+    await submitParentAssessment(
+      assessmentId,
+      "paedagog_parent",
+      { answers: formattedAnswers }
+    );
+
+    alert("Jawaban berhasil disimpan");
+  } catch (error: any) {
+    console.error(error);
+    alert(error.message || "Gagal submit jawaban");
+  }
+};
+
 
   if (loading) return <p>Loading...</p>;
   if (groups.length === 0) return <p>Tidak ada pertanyaan.</p>;

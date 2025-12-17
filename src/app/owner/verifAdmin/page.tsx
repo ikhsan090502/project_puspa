@@ -3,9 +3,15 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/sidebar_owner";
 import Header from "@/components/layout/header_owner";
-import { getUnverifiedAdmins, activateAdmin } from "@/lib/api/ownerAdmin";
+import {
+  getUnverifiedAdmins,
+  activateAdmin,
+  deactivateAdmin,
+} from "@/lib/api/ownerAdmin";
 
-// Type respons
+// ==========================
+// TYPE
+// ==========================
 interface AdminData {
   user_id: string;
   admin_id: string;
@@ -19,32 +25,57 @@ const VerifikasiAdminPage: React.FC = () => {
   const [admins, setAdmins] = useState<AdminData[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Ambil data dari API
-  useEffect(() => {
-    async function fetchData() {
-      const res = await getUnverifiedAdmins();
-      if (res.success) setAdmins(res.data);
-      setLoading(false);
+  // ==========================
+  // FETCH DATA ADMIN
+  // ==========================
+  const fetchUnverifiedAdmins = async () => {
+    setLoading(true);
+    const res = await getUnverifiedAdmins();
+    if (res.success) {
+      setAdmins(res.data);
+    } else {
+      alert(res.message || "Gagal memuat data admin.");
     }
-    fetchData();
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    fetchUnverifiedAdmins();
   }, []);
 
   // ==========================
   // HANDLE APPROVE ADMIN
   // ==========================
   const handleApprove = async (user_id: string) => {
-    const confirm = window.confirm("Aktifkan admin ini?");
-    if (!confirm) return;
+    const confirmApprove = window.confirm("Aktifkan admin ini?");
+    if (!confirmApprove) return;
 
     const res = await activateAdmin(user_id);
 
     if (res.success) {
       alert("Admin berhasil diaktifkan!");
-
-      // Hapus admin itu dari list
-      setAdmins((prev) => prev.filter((admin) => admin.user_id !== user_id));
+      // Refresh daftar admin belum verifikasi
+      fetchUnverifiedAdmins();
     } else {
-      alert(res.message);
+      alert(res.message || "Gagal mengaktifkan admin.");
+    }
+  };
+
+  // ==========================
+  // HANDLE REJECT ADMIN
+  // ==========================
+  const handleReject = async (user_id: string) => {
+    const confirmReject = window.confirm("Apakah Anda yakin ingin menolak admin ini?");
+    if (!confirmReject) return;
+
+    const result = await deactivateAdmin(user_id);
+
+    if (result.success) {
+      alert("Admin berhasil ditolak.");
+      // reload ulang data admin belum terverifikasi
+      fetchUnverifiedAdmins();
+    } else {
+      alert(result.message || "Gagal menolak admin.");
     }
   };
 
@@ -130,13 +161,10 @@ const VerifikasiAdminPage: React.FC = () => {
                         <td className="py-3 px-4 text-[#757575]">
                           {admin.email}
                         </td>
-
-                        {/* Tanggal saja */}
                         <td className="py-3 px-4 text-[#757575]">
                           {admin.createdAt.split(" ").slice(0, 3).join(" ")}
                         </td>
 
-                        {/* Tombol aksi */}
                         <td className="py-3 px-4 flex gap-3">
                           {/* Approve */}
                           <button
@@ -161,7 +189,10 @@ const VerifikasiAdminPage: React.FC = () => {
                           </button>
 
                           {/* Reject */}
-                          <button className="bg-red-600 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-red-700 transition">
+                          <button
+                            onClick={() => handleReject(admin.user_id)}
+                            className="bg-red-600 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-red-700 transition"
+                          >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
                               className="h-4 w-4"

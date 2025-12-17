@@ -14,11 +14,11 @@ export interface TherapistProfile {
   therapist_id: string;
   therapist_name: string;
   therapist_phone: string;
+   therapist_birth_date: string; 
   therapist_section: string;
   email: string;
   role: string;
   profile_picture: string | null;
-  date_of_birth?: string;
 }
 
 export interface ProfileResponse {
@@ -49,6 +49,7 @@ export const showProfile = async (token?: string): Promise<ProfileResponse | nul
     return null;
   }
 };
+
 export async function updateProfileWithPhoto(
   therapistId: string,
   formData: FormData
@@ -56,15 +57,9 @@ export async function updateProfileWithPhoto(
   try {
     const res = await axiosInstance.post<ProfileResponse>(
       `/asse-thera/${therapistId}/profile`,
-      formData,
-      {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      }
+      formData // ❗ Jangan set Content-Type
     );
 
-    // Normalisasi URL foto setelah update
     if (res.data?.data?.profile_picture) {
       res.data.data.profile_picture = normalizeProfilePictureUrl(
         res.data.data.profile_picture
@@ -72,11 +67,12 @@ export async function updateProfileWithPhoto(
     }
 
     return res.data;
-  } catch (error) {
-    console.error("Error updating profile:", error);
+  } catch (error: any) {
+    console.error("Error updating profile:", error.response?.data || error);
     return null;
   }
 }
+
 
 
 // ===================== UPDATE PASSWORD =====================

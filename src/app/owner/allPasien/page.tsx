@@ -3,12 +3,16 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/sidebar_owner";
 import Header from "@/components/layout/header_owner";
-import { getAllChildren } from "@/lib/api/ownerPasien"; // API LIST ANAK
-import { Eye } from "lucide-react";
+import { getAllChildren } from "@/lib/api/ownerPasien";
+import { getDetailPasien } from "@/lib/api/data_pasien";
+import { Eye, X } from "lucide-react";
 
 const DataAnakListPage: React.FC = () => {
   const [children, setChildren] = useState<any[]>([]);
   const [search, setSearch] = useState("");
+  const [selectedChildDetail, setSelectedChildDetail] = useState<any | null>(null);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   useEffect(() => {
     fetchChildren();
@@ -21,10 +25,26 @@ const DataAnakListPage: React.FC = () => {
     }
   }
 
+  async function handleViewDetail(childId: string) {
+    setLoadingDetail(true);
+    setErrorDetail(null);
+    setSelectedChildDetail(null);
+
+    try {
+      const detail = await getDetailPasien(childId);
+      setSelectedChildDetail(detail);
+    } catch (error) {
+      setErrorDetail("Gagal mengambil detail pasien.");
+      setSelectedChildDetail(null);
+    } finally {
+      setLoadingDetail(false);
+    }
+  }
+
   const filteredChildren = children.filter(
     (item) =>
       item.child_name.toLowerCase().includes(search.toLowerCase()) ||
-      item.child_school.toLowerCase().includes(search.toLowerCase())
+      (item.child_school?.toLowerCase().includes(search.toLowerCase()) ?? false)
   );
 
   return (
@@ -104,16 +124,15 @@ const DataAnakListPage: React.FC = () => {
                       <td className="py-3 px-4 text-[#757575]">
                         {child.child_birth_date}
                       </td>
-                      <td className="py-3 px-4 text-[#757575]">
-                        {child.child_age}
-                      </td>
-                      <td className="py-3 px-4 capitalize">
-                        {child.child_gender}
-                      </td>
+                      <td className="py-3 px-4 text-[#757575]">{child.child_age}</td>
+                      <td className="py-3 px-4 capitalize">{child.child_gender}</td>
                       <td className="py-3 px-4">{child.child_school}</td>
 
                       <td className="py-3 px-4">
-                        <button className="text-[#36315B] hover:text-[#81B7A9]">
+                        <button
+                          className="text-[#36315B] hover:text-[#81B7A9]"
+                          onClick={() => handleViewDetail(child.child_id)}
+                        >
                           <Eye className="w-5 h-5" />
                         </button>
                       </td>
@@ -131,6 +150,122 @@ const DataAnakListPage: React.FC = () => {
           </section>
         </main>
       </div>
+
+      {/* Modal Detail Pasien */}
+      {(selectedChildDetail || loadingDetail || errorDetail) && (
+        <div
+          className="fixed inset-0  bg-opacity-50 flex justify-center items-start pt-20 z-50 overflow-auto"
+          onClick={() => setSelectedChildDetail(null)}
+        >
+          <div
+                className="bg-white rounded-lg p-6 w-96 relative"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <button
+                  className="absolute top-2 right-2 text-gray-600 hover:text-gray-900"
+                  onClick={() => setSelectedChildDetail(null)}
+                  aria-label="Close modal"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+
+            <h2 className="text-xl font-semibold mb-4 border-b border-[#81B7A9] pb-1">
+              Detail Pasien
+            </h2>
+
+            {loadingDetail ? (
+              <p>Loading...</p>
+            ) : errorDetail ? (
+              <p className="text-red-500">{errorDetail}</p>
+            ) : selectedChildDetail ? (
+              <>
+                <div className="mb-4">
+                  <h3 className="font-semibold text-[#36315B] mb-1 border-b border-[#81B7A9] pb-1">
+                    Informasi Anak
+                  </h3>
+                  <ul className="list-disc list-inside text-sm text-[#36315B] space-y-1">
+                    <li>
+                      Nama Lengkap : {selectedChildDetail.child_name}
+                    </li>
+                    <li>
+                      Tempat, Tanggal Lahir : {selectedChildDetail.child_birth_info}
+                    </li>
+                    <li>Usia : {selectedChildDetail.child_age}</li>
+                    <li>Jenis Kelamin : {selectedChildDetail.child_gender}</li>
+                    <li>Agama : {selectedChildDetail.child_religion}</li>
+                    <li>Sekolah : {selectedChildDetail.child_school}</li>
+                    <li>Alamat : {selectedChildDetail.child_address}</li>
+                    <li>Tanggal Ditambahkan : {selectedChildDetail.created_at}</li>
+                    <li>Tanggal Update : {selectedChildDetail.updated_at}</li>
+                  </ul>
+                </div>
+
+                <div className="mb-4">
+                  <h3 className="font-semibold text-[#36315B] mb-1 border-b border-[#81B7A9] pb-1">
+                    Informasi Orangtua / Wali
+                  </h3>
+
+                  <div className="mb-2">
+                    <strong>Ayah</strong>
+                    <ul className="list-disc list-inside text-sm text-[#36315B] space-y-1">
+                      <li>Nama Ayah : {selectedChildDetail.father_name || "-"}</li>
+                      <li>Hubungan : {selectedChildDetail.father_relationship || "-"}</li>
+                      <li>Usia : {selectedChildDetail.father_age || "-"}</li>
+                      <li>Pekerjaan : {selectedChildDetail.father_occupation || "-"}</li>
+                      <li>Nomor Telpon : {selectedChildDetail.father_phone || "-"}</li>
+                      <li>NIK : {selectedChildDetail.father_identity_name || "-"}</li>
+                    </ul>
+                  </div>
+
+                  <div className="mb-2">
+                    <strong>Ibu</strong>
+                    <ul className="list-disc list-inside text-sm text-[#36315B] space-y-1">
+                      <li>Nama Ibu : {selectedChildDetail.mother_name || "-"}</li>
+                      <li>Hubungan : {selectedChildDetail.mother_relationship || "-"}</li>
+                      <li>Usia : {selectedChildDetail.mother_age || "-"}</li>
+                      <li>Pekerjaan : {selectedChildDetail.mother_occupation || "-"}</li>
+                      <li>Nomor Telpon : {selectedChildDetail.mother_phone || "-"}</li>
+                      <li>NIK : {selectedChildDetail.mother_identity_name || "-"}</li>
+                    </ul>
+                  </div>
+
+                  <div>
+                    <strong>Wali (Jika Ada)</strong>
+                    <ul className="list-disc list-inside text-sm text-[#36315B] space-y-1">
+                      <li>Nama Wali : {selectedChildDetail.guardian_name || "-"}</li>
+                      <li>Hubungan : {selectedChildDetail.guardian_relationship || "-"}</li>
+                      <li>Usia : {selectedChildDetail.guardian_age || "-"}</li>
+                      <li>Pekerjaan : {selectedChildDetail.guardian_occupation || "-"}</li>
+                      <li>Nomor Telpon : {selectedChildDetail.guardian_phone || "-"}</li>
+                      <li>NIK : {selectedChildDetail.guardian_identity_name || "-"}</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mb-4">
+                  <h3 className="font-semibold text-[#36315B] mb-1 border-b border-[#81B7A9] pb-1">
+                    Keluhan
+                  </h3>
+                  <p className="text-sm text-[#36315B]">{selectedChildDetail.child_complaint || "-"}</p>
+                </div>
+
+                <div>
+                  <h3 className="font-semibold text-[#36315B] mb-1 border-b border-[#81B7A9] pb-1">
+                    Layanan Terpilih
+                  </h3>
+                  <ul className="list-disc list-inside text-sm text-[#36315B] space-y-1 capitalize">
+                    {selectedChildDetail.child_service_choice
+                      ? selectedChildDetail.child_service_choice.split(",").map((service: string, i: number) => (
+                          <li key={i}>{service.trim()}</li>
+                        ))
+                      : "-"}
+                  </ul>
+                </div>
+              </>
+            ) : null}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -28,10 +28,18 @@ export async function getDetailPasien(childId: string): Promise<Pasien> {
     const res = await api.get(`/children/${childId}`);
     return res.data?.data;
   } catch (error: any) {
-    console.error(`Gagal mengambil detail pasien ID ${childId}:`, error.response || error);
+    if (error.response) {
+      console.error(`Gagal mengambil detail pasien ID ${childId}:`, error.response.data);
+      if(error.response.status === 403) {
+        alert("Anda tidak memiliki izin mengakses data ini.");
+      }
+    } else {
+      console.error(`Gagal mengambil detail pasien ID ${childId}:`, error.message);
+    }
     throw error;
   }
 }
+
 
 
 export async function updatePasien(childId: string, data: Partial<Pasien>) {

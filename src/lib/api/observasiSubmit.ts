@@ -1,5 +1,6 @@
 import axiosInstance from "@/lib/axios";
 
+
 // ==================== Interface ====================
 export interface CompletedObservationDetail {
   observation_id: number;
@@ -44,9 +45,10 @@ export const getObservations = async (
       headers: getAuthHeaders(),
       params,
     });
+
     return res.data?.data ?? [];
   } catch (err: any) {
-    console.error(`❌ Gagal ambil data observasi ${status}:`, err);
+    console.error(`❌ Gagal ambil data observasi (${status}):`, err);
     throw err;
   }
 };

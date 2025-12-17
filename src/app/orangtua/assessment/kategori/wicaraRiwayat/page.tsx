@@ -1,41 +1,105 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
-import dataWicara from "@/data/wicaraAssessment.json";
+import {
+  getParentAssessmentAnswers,
+  ParentSubmitType,
+} from "@/lib/api/asesmentTerapiOrtu";
 
 export default function TerapiWicaraPageReadOnly() {
   const router = useRouter();
-  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const category = (dataWicara as any).categories[0];
-  const questions = category.questions;
+  // Ambil assessment_id dari URL
+  const assessmentId = searchParams.get("assessment_id") as string;
 
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const type: ParentSubmitType = "wicara_parent";
+
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
-    const saved = localStorage.getItem("wicara_answers_v1");
-    if (saved) setAnswers(JSON.parse(saved));
-  }, []);
+    if (!assessmentId) {
+      setErrorMsg("assessment_id tidak ditemukan di URL.");
+      setLoading(false);
+      return;
+    }
 
-  // === STEPPER CONFIG ===
+    const load = async () => {
+      try {
+        const res = await getParentAssessmentAnswers(assessmentId, type);
+
+        if (!res.success) {
+          setErrorMsg("Gagal mengambil data dari server.");
+          setLoading(false);
+          return;
+        }
+
+        const data = res.data;
+
+        if (!Array.isArray(data)) {
+          setErrorMsg("Format data jawaban tidak valid.");
+          setLoading(false);
+          return;
+        }
+
+        // Parsing data, ambil dari answer.value dan set answer_type berdasarkan tipe
+        const parsed = data.map((q: any, idx: number) => {
+          const val = q.answer?.value;
+
+          if (Array.isArray(val)) {
+            return { ...q, answer: val, answer_type: "table" };
+          }
+
+          if (typeof val === "string") {
+            return { ...q, answer: val, answer_type: "textarea" };
+          }
+
+          // fallback
+          return { ...q, answer: "", answer_type: "textarea" };
+        });
+
+        setItems(parsed);
+      } catch (err) {
+        console.error("API ERROR:", err);
+        setErrorMsg("Terjadi kesalahan saat memuat data.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [assessmentId]);
+
   const steps = [
-    { label: "Data Umum" },
-    { label: "Data Fisioterapi" },
-    { label: "Data Terapi Okupasi" },
-    { label: "Data Terapi Wicara" },
-    { label: "Data Paedagog" },
+    "Data Umum",
+    "Data Fisioterapi",
+    "Data Terapi Okupasi",
+    "Data Terapi Wicara",
+    "Data Paedagog",
   ];
 
-  // Step aktif: DATA TERAPI WICARA
-  const activeStep = steps.findIndex(
-    (step) =>
-      step.label.toLowerCase().replace(/\s/g, "-") === "data-terapi-wicara"
-  );
+  const activeStep = 3;
 
-  const radioTextIDs = [5, 6, 7, 8];
+  if (loading) {
+    return (
+      <div className="p-10 text-center text-lg font-medium text-[#36315B]">
+        Memuat jawaban...
+      </div>
+    );
+  }
+
+  if (errorMsg) {
+    return (
+      <div className="p-10 text-center text-red-600 text-lg font-semibold">
+        {errorMsg}
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-[#36315B]">
@@ -45,10 +109,10 @@ export default function TerapiWicaraPageReadOnly() {
         <HeaderOrangtua />
 
         <main className="p-8 flex-1 overflow-y-auto">
-          {/* === STEPPER READ-ONLY === */}
+          {/* Stepper */}
           <div className="flex justify-center mb-12">
             <div className="flex items-center">
-              {steps.map((step, i) => (
+              {steps.map((label, i) => (
                 <div key={i} className="flex items-center">
                   <div className="flex flex-col items-center space-y-2">
                     <div
@@ -65,7 +129,7 @@ export default function TerapiWicaraPageReadOnly() {
                         i === activeStep ? "text-[#36315B]" : "text-gray-500"
                       }`}
                     >
-                      {step.label}
+                      {label}
                     </span>
                   </div>
 
@@ -77,107 +141,47 @@ export default function TerapiWicaraPageReadOnly() {
             </div>
           </div>
 
-          {/* === FORM WRAPPER === */}
+          {/* Konten jawaban */}
           <div className="bg-white rounded-2xl shadow-sm p-8 max-w-4xl mx-auto">
             <div className="space-y-6">
-              {questions.map((q: any) => {
-                const isRadioText = radioTextIDs.includes(q.id);
+              {items.map((q: any, index: number) => (
+                <div key={index} className="mb-6">
+                  <label className="block font-medium mb-2">
+                    {q.question_number || index + 1}. {q.question_text}
+                  </label>
 
-                return (
-                  <div key={q.id} className="mb-6">
-                    <label className="block font-medium mb-2">
-                      {q.id}. {q.question}
-                    </label>
+                  {/* Textarea */}
+                  {(q.answer_type === "textarea" || q.answer_type === "text") && (
+                    <textarea
+                      className="w-full border rounded-lg p-3 h-24 bg-gray-100 text-gray-700 resize-none"
+                      value={q.answer || ""}
+                      readOnly
+                      disabled
+                    />
+                  )}
 
-                    {/* === TEXTAREA === */}
-                    {q.type === "textarea" && !isRadioText && (
-                      <textarea
-                        className="w-full border rounded-lg p-3 h-24 bg-gray-100 text-gray-700"
-                        value={answers[q.id] || ""}
-                        readOnly
-                        disabled
-                      ></textarea>
-                    )}
-
-                    {/* === RADIO + FIELDS UNTUK 5–8 === */}
-                    {isRadioText && (
-                      <div className="space-y-3 mt-2">
-                        {["Ya", "Tidak"].map((op: string) => (
-                          <label key={op} className="flex items-center gap-2">
-                            <input
-                              type="radio"
-                              name={"q" + q.id}
-                              value={op}
-                              checked={answers[q.id]?.status === op}
-                              readOnly
-                              disabled
-                            />
-                            {op}
-                          </label>
-                        ))}
-
-                        {answers[q.id]?.status === "Ya" && (
-                          <div className="grid gap-3 mt-2">
-                            {(q.fields || ["Keterangan"]).map(
-                              (f: string, idx: number) => (
-                                <input
-                                  key={idx}
-                                  placeholder={f}
-                                  value={answers[q.id]?.[f] || ""}
-                                  className="border rounded-lg p-2 bg-gray-100 text-gray-700"
-                                  readOnly
-                                  disabled
-                                />
-                              )
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {/* === RADIO NORMAL === */}
-                    {q.type === "radio" && !isRadioText && (
-                      <div className="flex gap-6 mt-2">
-                        {q.options.map((op: string) => (
-                          <label key={op} className="flex items-center gap-2">
-                            <input
-                              type="radio"
-                              name={"q" + q.id}
-                              value={op}
-                              checked={answers[q.id] === op}
-                              readOnly
-                              disabled
-                            />
-                            {op}
-                          </label>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* === TABLE === */}
-                    {q.type === "table" && (
-                      <div className="space-y-3 mt-2">
-                        {q.rows.map((row: string, idx: number) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-4 border-b pb-2"
-                          >
-                            <span className="w-72">{row}</span>
-                            <input
-                              type="text"
-                              placeholder="Usia (bulan/tahun)"
-                              value={answers[q.id]?.[row] || ""}
-                              className="border rounded-lg p-2 flex-1 bg-gray-100 text-gray-700"
-                              readOnly
-                              disabled
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+                  {/* Table */}
+                  {q.answer_type === "table" && Array.isArray(q.answer) && (
+                    <div className="space-y-3 mt-2">
+                      {q.answer.map((row: any, idx: number) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-4 border-b pb-2"
+                        >
+                          <span className="w-72">{row.kegiatan}</span>
+                          <input
+                            type="text"
+                            value={row.usia ?? ""}
+                            className="border rounded-lg p-2 flex-1 bg-gray-100 text-gray-700"
+                            readOnly
+                            disabled
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
 
             <button

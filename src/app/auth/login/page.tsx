@@ -35,7 +35,7 @@ export default function LoginPage() {
 
     case "terapis":
     case "asesor": 
-      router.push("/terapis/observasi");
+      router.push("/terapis/dashboard");
       break;
 
     case "orangtua":

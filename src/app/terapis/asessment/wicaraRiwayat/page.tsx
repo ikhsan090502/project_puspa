@@ -7,8 +7,44 @@ import { useSearchParams } from "next/navigation";
 
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
-
 import { getAssessmentAnswers } from "@/lib/api/asesment";
+
+/* ================== SUB GROUP LIDAH ================== */
+const LIDAH_ASPEK = [
+  { title: "Evaluasi Lidah (Istirahat)", range: [135, 139] },
+  { title: "Evaluasi Lidah (Keluar)", range: [140, 144] },
+  { title: "Evaluasi Lidah (Masuk)", range: [145, 148] },
+  { title: "Evaluasi Lidah (Kanan)", range: [149, 151] },
+  { title: "Evaluasi Lidah (Kiri)", range: [152, 154] },
+  { title: "Evaluasi Lidah (Atas)", range: [155, 157] },
+  { title: "Evaluasi Lidah (Bawah)", range: [158, 160] },
+  { title: "Evaluasi Lidah (Alternatif)", range: [161, 163] },
+];
+
+/* ================== ORAL GROUP ================== */
+const ORAL_GROUP_MAP = [
+  { title: "Evaluasi Wajah", ids: [113, 114, 115, 116] },
+  { title: "Evaluasi Rahang dan Gigi", ids: [117, 118, 119, 120, 121] },
+  { title: "Observasi Gigi", ids: [122, 123, 124, 125, 126, 127] },
+  { title: "Evaluasi Bibir", ids: [128, 129, 130, 131, 132, 133, 134] },
+  { title: "Evaluasi Lidah", ids: [] },
+  { title: "Evaluasi Faring", ids: [164, 165] },
+  {
+    title: "Evaluasi Langit-langit Keras dan Lunak",
+    ids: [166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178],
+  },
+];
+
+/* ================== BAHASA ================== */
+const BAHASA_GROUP_MAP = [
+  { title: "Usia 0–6 Bulan", range: [200, 212] },
+  { title: "Usia 13–18 Bulan", range: [213, 221] },
+  { title: "Usia 19–24 Bulan", range: [222, 235] },
+  { title: "Usia 3–4 Tahun", range: [236, 258] },
+  { title: "Usia 4–5 Tahun", range: [259, 271] },
+  { title: "Usia 5–6 Tahun", range: [272, 298] },
+  { title: "Usia 6–7 Tahun", range: [299, 308] },
+];
 
 export default function RiwayatWicaraPage() {
   const tabs = ["Oral Fasial", "Kemampuan Bahasa"];
@@ -17,116 +53,91 @@ export default function RiwayatWicaraPage() {
 
   const [oralFasial, setOralFasial] = useState<any[]>([]);
   const [kemampuanBahasa, setKemampuanBahasa] = useState<any[]>([]);
-
-  const [responses, setResponses] = useState<any>({});
-  const [notes, setNotes] = useState<any>({});
   const [loading, setLoading] = useState(true);
 
   const params = useSearchParams();
-  const assessmentId = params.get("assessment_id") || "0";
+  const assessmentId = params.get("assessment_id") || "";
 
-  // ================== LOAD JSON TEMPLATE ==================
   useEffect(() => {
-    const loadJson = async () => {
-      const oral = await import("@/data/wicaraOral.json");
-      const bahasa = await import("@/data/wicaraKemampuanbahasa.json");
+    const load = async () => {
+      setLoading(true);
+      const res = await getAssessmentAnswers(assessmentId, "wicara");
+      const list = Array.isArray(res) ? res : res?.data ?? [];
 
-      setOralFasial(oral.default);
-      setKemampuanBahasa(bahasa.default);
+      /* ===== ORAL ===== */
+      const oral = ORAL_GROUP_MAP.map((g) => {
+        if (g.title === "Evaluasi Lidah") {
+          return {
+            title: g.title,
+            aspek: LIDAH_ASPEK.map((a) => ({
+              title: a.title,
+              questions: list.filter((q: any) => {
+                const id = Number(q.question_id);
+                return id >= a.range[0] && id <= a.range[1];
+              }),
+            })).filter((a) => a.questions.length > 0),
+          };
+        }
+
+        return {
+          title: g.title,
+          questions: list.filter((q: any) =>
+            g.ids.includes(Number(q.question_id))
+          ),
+        };
+      }).filter(
+        (g) => Boolean(g.questions?.length) || Boolean(g.aspek?.length)
+      );
+
+      /* ===== BAHASA ===== */
+      const bahasa = BAHASA_GROUP_MAP.map((g) => ({
+        title: g.title,
+        questions: list.filter((q: any) => {
+          const id = Number(q.question_id);
+          return id >= g.range[0] && id <= g.range[1];
+        }),
+      })).filter((g) => g.questions.length > 0);
+
+      setOralFasial(oral);
+      setKemampuanBahasa(bahasa);
+      setLoading(false);
     };
-    loadJson();
-  }, []);
+
+    if (assessmentId) load();
+  }, [assessmentId]);
 
   const data = activeTab === "Oral Fasial" ? oralFasial : kemampuanBahasa;
 
- // ================== LOAD RIWAYAT JAWABAN DARI API ==================
-useEffect(() => {
-  if (oralFasial.length === 0) return;  // ⛔ JANGAN JALAN KALAU TEMPLATE BELUM ADA
-
-  const fetchData = async () => {
-    try {
-      const result = await getAssessmentAnswers(assessmentId, "wicara");
-
-      const resp: any = {};
-      const nt: any = {};
-
-      // ======== ORAL FASIAL (FIXED) ========
-      if (result?.oral_facial_aspect) {
-        const oral = result.oral_facial_aspect;
-
-        oralFasial.forEach((section: any) => {
-          const sectionKey = section.key; 
-          const apiSection = oral[sectionKey]; // ⛔ ini sebelumnya undefined
-
-          if (!apiSection) return;
-
-          section.questions.forEach((q: any) => {
-            const field = q.field;
-
-            const value = apiSection[field] ?? "";
-            const note = apiSection[`${field}_note`] ?? "";
-
-            const qKey = `${section.title}-${q.label}`;
-
-            resp[qKey] = value;
-            nt[qKey] = note;
-          });
-        });
-      }
-
-      // ====== KEMAMPUAN BAHASA ======
-      if (result?.language_skill_aspect?.answers) {
-        const answers = result.language_skill_aspect.answers;
-
-        answers.forEach((item: any) => {
-          const qKey = `Kemampuan Bahasa-${item.skill}`;
-
-          if (!resp[qKey]) resp[qKey] = [];
-
-          if (item.checked === true) resp[qKey].push(item.skill);
-        });
-      }
-
-      setResponses(resp);
-      setNotes(nt);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchData();
-}, [assessmentId, oralFasial]); // ← Tambah dependency oralFasial
-
-  if (loading || oralFasial.length === 0) {
-    return <p className="p-6">Memuat riwayat...</p>;
-  }
+  if (loading) return <p className="p-6">Memuat riwayat...</p>;
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <SidebarTerapis />
-
       <div className="flex-1">
         <HeaderTerapis />
 
         <div className="p-6">
            <div className="flex justify-end mb-4">
-  <button
-    onClick={() => (window.location.href = "/terapis/asessment")}
-    className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
-  >
-    ✕
-  </button>
-</div>
-          {/* TAB HEADER */}
-          <div className="flex gap-3 mb-6 border-b border-gray-200">
+            <button
+              onClick={() => (window.location.href = "/terapis/asessment")}
+              className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+            >
+              ✕
+            </button>
+          </div>
+          {/* TAB */}
+          <div className="flex gap-3 mb-6 border-b">
             {tabs.map((tab) => (
               <button
                 key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-5 py-2 font-medium transition ${
+                onClick={() => {
+                  setActiveTab(tab);
+                  setOpenSection(0);
+                }}
+                className={`px-5 py-2 font-medium ${
                   activeTab === tab
                     ? "border-b-4 border-[#409E86] text-[#409E86]"
-                    : "text-[#36315B] hover:text-[#409E86]"
+                    : "text-gray-600"
                 }`}
               >
                 {tab}
@@ -134,99 +145,102 @@ useEffect(() => {
             ))}
           </div>
 
-          {/* SECTION LIST */}
+          {/* ACCORDION */}
           {data.map((section, i) => (
-            <div
-              key={i}
-              className="mb-6 rounded-2xl bg-white shadow-md overflow-hidden"
-            >
-              {/* HEADER */}
+            <div key={i} className="mb-6 bg-white rounded-xl shadow">
               <button
                 onClick={() => setOpenSection(openSection === i ? null : i)}
                 className="w-full flex justify-between items-center px-5 py-4 bg-[#36315B] text-white"
               >
                 <span className="font-semibold">{section.title}</span>
                 <ChevronDown
-                  className={`w-5 h-5 transition-transform ${
+                  className={`w-5 h-5 ${
                     openSection === i ? "rotate-180" : ""
                   }`}
                 />
               </button>
 
-              {/* CONTENT */}
               <AnimatePresence>
                 {openSection === i && (
                   <motion.div
                     initial={{ height: 0, opacity: 0 }}
                     animate={{ height: "auto", opacity: 1 }}
                     exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="px-6 py-5 space-y-6"
+                    className="px-6 py-5 space-y-4"
                   >
-                    {section.questions.map((q: any, j: number) => {
-                      const qKey = `${section.title}-${q.label}`;
-
-                      return activeTab === "Oral Fasial" ? (
+                    {/* ===== BAHASA (SESUI REFERENSI) ===== */}
+                    {activeTab === "Kemampuan Bahasa" &&
+                      section.questions.map((q: any) => (
                         <div
-                          key={j}
-                          className="flex flex-col md:flex-row justify-between gap-4 border-b pb-4"
-                        >
-                          <div className="md:w-2/3">
-                            <p className="text-gray-700 font-medium text-sm mb-2">
-                              {q.label}:
-                            </p>
-
-                            <div className="flex flex-col gap-2">
-                              {q.options?.map((opt: string, k: number) => (
-                                <label
-                                  key={k}
-                                  className="flex items-center gap-2 text-sm"
-                                >
-                                  <div className="flex items-center gap-2 text-sm">
-  <div
-    className={`w-4 h-4 rounded-full border-2 flex items-center justify-center
-      ${responses[qKey] === opt ? "border-[#36315B]" : "border-gray-400"}
-    `}
-  >
-    {responses[qKey] === opt && (
-      <div className="w-2.5 h-2.5 rounded-full bg-[#36315B]" />
-    )}
-  </div>
-
-  <span>{opt}</span>
-</div>
-
-                                </label>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="md:w-1/3">
-                            <input
-                              type="text"
-                              value={notes[qKey] || ""}
-                              readOnly
-                              className="w-full border rounded-lg p-2 text-sm bg-gray-100"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        <div
-                          key={j}
-                          className="flex items-start gap-3 border-b pb-2"
+                          key={q.question_id}
+                          className="flex items-center gap-3 border-b pb-2"
                         >
                           <input
                             type="checkbox"
                             disabled
-                            checked={
-                              Array.isArray(responses[qKey]) &&
-                              responses[qKey].includes(q.label)
-                            }
+                            checked={!!q.answer?.value}
                           />
-                          <p className="text-gray-700 text-sm">{q.label}</p>
+                          <span className="text-sm font-medium">
+                            {q.question_text}
+                          </span>
                         </div>
-                      );
-                    })}
+                      ))}
+
+                    {/* ===== ORAL FASIAL ===== */}
+                    {activeTab === "Oral Fasial" && (
+                      <>
+                        {section.aspek?.map((a: any, idx: number) => (
+                          <div key={idx}>
+                            <h4 className="font-semibold text-[#409E86] mb-3">
+                              {a.title}
+                            </h4>
+
+                            {a.questions.map((q: any) => (
+                              <div
+                                key={q.question_id}
+                                className="border-b pb-4 mb-4"
+                              >
+                                <p className="text-sm font-semibold mb-1">
+                                  {q.question_text}
+                                </p>
+                                <p className="font-medium capitalize mb-2">
+                                  {String(q.answer?.value ?? "-")}
+                                </p>
+
+                                <label className="block text-xs text-gray-500 mb-1">
+                                  Keterangan
+                                </label>
+                                <input
+                                  readOnly
+                                  value={q.note || ""}
+                                  className="w-full rounded-lg border bg-gray-100 px-3 py-2 text-sm"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        ))}
+
+                        {section.questions?.map((q: any) => (
+                          <div key={q.question_id} className="border-b pb-4">
+                            <p className="text-sm font-semibold mb-1">
+                              {q.question_text}
+                            </p>
+                            <p className="font-medium capitalize mb-2">
+                              {String(q.answer?.value ?? "-")}
+                            </p>
+
+                            <label className="block text-xs text-gray-500 mb-1">
+                              Keterangan
+                            </label>
+                            <input
+                              readOnly
+                              value={q.note || ""}
+                              className="w-full rounded-lg border bg-gray-100 px-3 py-2 text-sm"
+                            />
+                          </div>
+                        ))}
+                      </>
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>

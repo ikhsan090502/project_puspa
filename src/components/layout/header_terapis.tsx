@@ -6,7 +6,11 @@ import { usePathname } from "next/navigation";
 import { baseMenu } from "@/components/layout/sidebar_terapis";
 import { useTherapistProfile } from "@/context/ProfileTerapisContext";
 
-export default function HeaderTerapis() {
+interface HeaderTerapisProps {
+  pageTitle?: string;
+}
+
+export default function HeaderTerapis({ pageTitle }: HeaderTerapisProps) {
   const pathname = usePathname();
   const { profile } = useTherapistProfile();
 
@@ -20,9 +24,7 @@ export default function HeaderTerapis() {
           item.dropdown.some((sub) => pathname.startsWith(sub.href)))
     ) || null;
 
-  const title =
-    activeItem?.name ||
-    "Dashboard";
+  const title = pageTitle || activeItem?.name || "Dashboard";
 
   return (
     <header className="w-full flex justify-between items-center px-6 py-4 bg-white shadow text-[#36315B]">
@@ -35,12 +37,13 @@ export default function HeaderTerapis() {
 
         <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
           <Image
+            key={profile?.profile_picture || "default"} // 🔥 PAKSA REMOUNT
             src={profile?.profile_picture || "/profil.png"}
             alt="Terapis"
             width={40}
             height={40}
             className="object-cover"
-            priority
+            unoptimized // 🔥 MATIKAN CACHE NEXT IMAGE
           />
         </div>
 

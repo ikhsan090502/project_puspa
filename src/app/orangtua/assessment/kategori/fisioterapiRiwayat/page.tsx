@@ -1,13 +1,18 @@
 "use client";
 
-import React from "react";
-import { useRouter, usePathname } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
+import { getParentAssessmentAnswers, ParentSubmitType } from "@/lib/api/asesmentTerapiOrtu";
 
 export default function DataFisioterapiPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  // Ambil ID dari query param
+  const assessmentId = searchParams.get("assessment_id");
 
   const steps = [
     { label: "Data Umum", path: "/orangtua/assessment/kategori/data-umum" },
@@ -19,11 +24,61 @@ export default function DataFisioterapiPage() {
 
   const activeStep = steps.findIndex((step) => pathname.includes(step.path));
 
-  // Dummy Data Riwayat
-  const dataRiwayat = {
-    keluhan: "Sering mengeluhkan nyeri pada kaki kanan terutama setelah berjalan lama.",
-    riwayat: "Riwayat kelahiran normal. Mulai berjalan pada usia 20 bulan. Sempat mengalami infeksi lutut." 
-  };
+  const [dataRiwayat, setDataRiwayat] = useState({
+    keluhan: "",
+    riwayat: "",
+  });
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!assessmentId) {
+      console.warn("assessment_id tidak ditemukan di URL");
+      setLoading(false);
+      return;
+    }
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const res = await getParentAssessmentAnswers(
+          assessmentId as string,
+          "fisio_parent" as ParentSubmitType
+        );
+
+        // res.data adalah array of objects dengan struktur sesuai BE terbaru
+        // Cari pertanyaan keluhan dan riwayat berdasarkan question_text atau index
+
+        const dataArray = res?.data || [];
+
+        // Biasanya urutan tetap, ambil index 0 dan 1 (jika ada)
+        const keluhanObj = dataArray.find(
+          (item: any) =>
+            item.question_text.toLowerCase().includes("keluhan utama")
+        );
+
+        const riwayatObj = dataArray.find(
+          (item: any) =>
+            item.question_text.toLowerCase().includes("riwayat penyakit")
+        );
+
+        setDataRiwayat({
+          keluhan: keluhanObj?.answer?.value || "",
+          riwayat: riwayatObj?.answer?.value || "",
+        });
+      } catch (err: any) {
+        console.error(err);
+        setError(err.message || "Gagal mengambil data jawaban");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [assessmentId]);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -67,33 +122,42 @@ export default function DataFisioterapiPage() {
 
           {/* Card utama read-only */}
           <div className="bg-white rounded-2xl shadow-sm p-8">
-            <h3 className="text-lg font-semibold mb-6">II. Data Fisioterapi (Riwayat Jawaban)</h3>
+            <h3 className="text-lg font-semibold mb-6">
+              II. Data Fisioterapi (Riwayat Jawaban)
+            </h3>
 
-            <div className="space-y-6">
-              {/* Keluhan */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Keluhan utama yang dialami anak saat ini:
-                </label>
-                <textarea
-                  readOnly
-                  value={dataRiwayat.keluhan}
-                  className="w-full border border-gray-300 rounded-lg p-3 bg-gray-100 text-gray-700 min-h-[120px] resize-none"
-                />
-              </div>
+            {loading ? (
+              <p>Loading...</p>
+            ) : error ? (
+              <p className="text-red-500">{error}</p>
+            ) : (
+              <div className="space-y-6">
 
-              {/* Riwayat Penyakit */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Riwayat / perjalanan penyakit anak:
-                </label>
-                <textarea
-                  readOnly
-                  value={dataRiwayat.riwayat}
-                  className="w-full border border-gray-300 rounded-lg p-3 bg-gray-100 text-gray-700 min-h-[120px] resize-none"
-                />
+                {/* Keluhan */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Keluhan utama yang dialami anak saat ini:
+                  </label>
+                  <textarea
+                    readOnly
+                    value={dataRiwayat.keluhan}
+                    className="w-full border border-gray-300 rounded-lg p-3 bg-gray-100 text-gray-700 min-h-[120px] resize-none"
+                  />
+                </div>
+
+                {/* Riwayat */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Riwayat penyakit atau kondisi yang berhubungan dengan fisioterapi:
+                  </label>
+                  <textarea
+                    readOnly
+                    value={dataRiwayat.riwayat}
+                    className="w-full border border-gray-300 rounded-lg p-3 bg-gray-100 text-gray-700 min-h-[120px] resize-none"
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Button Back */}
             <div className="flex justify-end mt-8">

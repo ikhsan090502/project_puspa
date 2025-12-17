@@ -17,7 +17,7 @@ import PasienChart from "@/components/dashboard/pasien_chart";
 
 import {
   getDashboardMetrics,
-  getUpcomingObservations,
+  getUpcomingSchedules,
 } from "@/lib/api/dashboardTerapis";
 
 export default function DashboardPage() {
@@ -32,37 +32,34 @@ export default function DashboardPage() {
     async function load() {
       try {
         const dashboardRes = await getDashboardMetrics();
-        const upcomingRes = await getUpcomingObservations();
+        const upcomingRes = await getUpcomingSchedules();
 
         const d = dashboardRes.data;
-
-        console.log("🔵 TREND API RESULT:", d.trend_chart);
 
         setMetrics(d.metrics);
 
         setCategories(
-          d.patient_categories.map((c: any) => ({
-            name: c.category ?? "-",
-            value: Number(c.percentage ?? 0),
-          }))
-        );
+  (d.patient_categories ?? []).map((c: any) => ({
+    name: c.type,               // FIX
+    value: Number(c.percentage) // persen
+  }))
+);
+
 
         setTrend(
-          d.trend_chart.map((t: any) => ({
+          (d.trend_chart ?? []).map((t: any) => ({
             name: t.label,
-            value: Number(t.value ?? 0),
+            value: Number(t.value),
           }))
         );
 
-        setSchedule(upcomingRes.data.data);
+        setSchedule(upcomingRes.data ?? []);
 
-        // periode bulan
-        const now = new Date();
-        const month = now.toLocaleString("id-ID", { month: "long" });
-        const year = now.getFullYear();
-        setCurrentPeriod(`${month} ${year}`);
-      } catch (e) {
-        console.error("Dashboard Error:", e);
+        if (d.period) {
+          setCurrentPeriod(d.period.month_name);
+        }
+      } catch (error) {
+        console.error("Dashboard error:", error);
       } finally {
         setLoading(false);
       }
@@ -80,76 +77,66 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="flex h-screen text-[#36315B] font-playpen">
+    <div className="flex h-screen bg-gray-50 text-[#36315B]">
       <SidebarTerapis />
 
-      <div className="flex flex-col flex-1 bg-gray-50">
+      <div className="flex flex-col flex-1">
         <HeaderTerapis />
 
-        <main className="p-6 sm:p-10 overflow-y-auto space-y-10">
-          {/* ===================== METRIC CARDS ======================= */}
-          <div className="grid grid-cols-4 gap-10">
-            {metrics && (
-              <>
-                <MetricCard
-                  label="Total Observasi"
-                  current={metrics.total_observations.current}
-                  change={`${metrics.total_observations.change_percent}% dari bulan lalu`}
-                />
-                <MetricCard
-                  label="Total Terapis"
-                  current={metrics.total_therapists.current}
-                  change={`${metrics.total_therapists.change_percent}% dari bulan lalu`}
-                />
-                <MetricCard
-                  label="Tingkat Penyelesaian"
-                  current={`${metrics.completion_rate.current}%`}
-                  change={`${metrics.completion_rate.change_percent}% dari bulan lalu`}
-                />
-                <MetricCard
-                  label="Total Assessor"
-                  current={metrics.total_assessors.current}
-                  change={`${metrics.total_assessors.change_percent}% dari bulan lalu`}
-                />
-              </>
-            )}
+        <main className="p-8 space-y-10 overflow-y-auto">
+          {/* ================= METRIC CARDS ================= */}
+          <div className="grid grid-cols-4 gap-6">
+            <MetricCard
+              label="Total Observasi"
+              value={metrics?.total_observations.current}
+              percent={metrics?.total_observations.change_percent}
+            />
+            <MetricCard
+              label="Total Assessment"
+              value={metrics?.total_assessments.current}
+              percent={metrics?.total_assessments.change_percent}
+            />
+            <MetricCard
+              label="Tingkat Penyelesaian"
+              value={metrics?.completion_rate.current}
+              percent={metrics?.completion_rate.change_percent}
+              isPercent
+            />
+            <MetricCard
+              label="Total Assessor"
+              value={metrics?.total_assessors.current}
+              percent={metrics?.total_assessors.change_percent}
+            />
           </div>
 
-          {/* ===================== CHART ROW ======================= */}
-          <div className="grid grid-cols-3 gap-10">
-            {/* PIE CHART */}
-            <div className="col-span-1">
+          {/* ================= CHART SECTION ================= */}
+          <div className="grid grid-cols-3 gap-6">
+            {/* Pie */}
+            <div className="bg-white rounded-xl p-6 shadow">
+              <h3 className="font-semibold mb-4"></h3>
               <PasienChart apiData={categories} />
             </div>
 
-            {/* TREND AREA CHART */}
-            <div className="col-span-2 bg-white rounded-xl p-6 shadow-md">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-slate-700">
-                  Trend Bulanan
-                </h3>
-                <div className="text-sm text-gray-400">{currentPeriod}</div>
+            {/* Area */}
+            <div className="col-span-2 bg-white rounded-xl p-6 shadow">
+              <div className="flex justify-between mb-4">
+                <h3 className="font-semibold">Trend Bulanan</h3>
+                <span className="text-sm text-gray-400">{currentPeriod}</span>
               </div>
 
-              <div className="w-full h-72">
+              <div className="h-72">
                 <ResponsiveContainer>
-                  <AreaChart
-                    data={trend}
-                    margin={{ top: 10, right: 20, left: 0, bottom: 0 }}
-                  >
+                  <AreaChart data={trend}>
                     <defs>
-                      <linearGradient id="colorCurve" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#C7B2FF" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#C7B2FF" stopOpacity={0.1} />
+                      <linearGradient id="trendColor" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#A78BFA" stopOpacity={0.8} />
+                        <stop offset="95%" stopColor="#A78BFA" stopOpacity={0.1} />
                       </linearGradient>
                     </defs>
 
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                     <XAxis dataKey="name" />
-
-                    {/* === FIX: buat skala 0 → 100 === */}
-                    <YAxis domain={[0, 100]} ticks={[0, 20, 40, 60, 80, 100]} />
-
+                    <YAxis domain={[0, 100]} />
                     <ReTooltip />
 
                     <Area
@@ -157,8 +144,8 @@ export default function DashboardPage() {
                       dataKey="value"
                       stroke="#8B5CF6"
                       strokeWidth={3}
-                      dot={{ r: 5, strokeWidth: 2, stroke: "#8B5CF6", fill: "white" }}
-                      fill="url(#colorCurve)"
+                      fill="url(#trendColor)"
+                      dot={{ r: 5 }}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -166,39 +153,47 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* ===================== UPCOMING SCHEDULE ======================= */}
-          <div className="bg-white rounded-xl p-6 shadow-md">
-            <h3 className="text-lg font-semibold text-slate-700 mb-6">
-              Jadwal Mendatang
-            </h3>
+          {/* ================= UPCOMING SCHEDULE ================= */}
+          <div className="bg-white rounded-xl p-6 shadow">
+            <h3 className="font-semibold mb-6">Jadwal Mendatang</h3>
 
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="text-sm text-gray-500 border-b">
-                    <th className="py-3 px-4">Nama Pasien</th>
-                    <th className="py-3 px-4">Jenis Layanan</th>
-                    <th className="py-3 px-4">Status</th>
-                    <th className="py-3 px-4">Tanggal</th>
-                    <th className="py-3 px-4">Waktu</th>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-[#36315B] border-b">
+                  <th className="py-3 text-left">Nama Pasien</th>
+                  <th className="py-3 text-left">Jenis Layanan</th>
+                  <th className="py-3 text-left">Status</th>
+                  <th className="py-3 text-left">Tanggal</th>
+                  <th className="py-3 text-left">Waktu</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {schedule.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="text-center py-6 text-gray-400">
+                      Tidak ada jadwal
+                    </td>
                   </tr>
-                </thead>
+                )}
 
-                <tbody>
-                  {schedule.map((r: any, i: number) => (
-                    <tr key={i} className="text-sm text-slate-700">
-                      <td className="py-3 px-4 border-b">{r.nama_pasien}</td>
-                      <td className="py-3 px-4 border-b">{r.jenis_layanan}</td>
-                      <td className="py-3 px-4 border-b">{r.status}</td>
-                      <td className="py-3 px-4 border-b">
-                        {new Date(r.tanggal).toLocaleDateString("id-ID")}
-                      </td>
-                      <td className="py-3 px-4 border-b">{r.waktu}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                {schedule.map((s: any, i: number) => (
+                  <tr key={i} className="border-b">
+                    <td className="py-3">{s.nama_pasien ?? "-"}</td>
+                    <td className="py-3">{s.jenis_layanan ?? "-"}</td>
+                    <td className="py-3 text-emerald-500">
+                      {s.status ?? "-"}
+                    </td>
+                    <td className="py-3">
+                      {s.tanggal
+                        ? new Date(s.tanggal).toLocaleDateString("id-ID")
+                        : "-"}
+                    </td>
+                    <td className="py-3">{s.waktu ?? "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </main>
       </div>
@@ -206,21 +201,35 @@ export default function DashboardPage() {
   );
 }
 
-/* ======================================================================
-   METRIC CARD COMPONENT
-====================================================================== */
-function MetricCard({ label, current, change }: any) {
+/* ================= METRIC CARD ================= */
+function MetricCard({
+  label,
+  value,
+  percent,
+  isPercent,
+}: {
+  label: string;
+  value: any;
+  percent: number;
+  isPercent?: boolean;
+}) {
   return (
-    <div className="bg-white rounded-xl p-6 shadow-md flex flex-col justify-between">
+    <div className="bg-white rounded-xl p-6 shadow">
       <div className="text-xs text-gray-400">{label}</div>
 
-      <div className="mt-4 flex items-end justify-between">
-        <div>
-          <div className="text-2xl font-bold text-slate-800">{current}</div>
-          <div className="text-xs text-emerald-500 mt-1">{change}</div>
+      <div className="mt-4">
+        <div className="text-2xl font-bold">
+          {value}
+          {isPercent ? "" : ""}
         </div>
 
-        <div className="text-3xl text-gray-200 opacity-60">●</div>
+        <div
+          className={`text-xs mt-1 ${
+            percent >= 0 ? "text-emerald-500" : "text-red-500"
+          }`}
+        >
+          {percent >= 0 ? "↑" : "↓"} {Math.abs(percent)}% dari bulan lalu
+        </div>
       </div>
     </div>
   );

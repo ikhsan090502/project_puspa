@@ -29,26 +29,27 @@ export default function DataPasienPage() {
 
   const [loading, setLoading] = useState(false);
 
+  // Fetch data
   useEffect(() => {
-    async function fetchPasien() {
-      try {
-        setLoading(true);
-        const data = await getAllPasien();
-        setPasienList(data || []);
-      } catch (err) {
-        console.error("Gagal memuat data pasien:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
     fetchPasien();
   }, []);
+
+  const fetchPasien = async () => {
+    try {
+      setLoading(true);
+      const data = await getAllPasien();
+      setPasienList(data || []);
+    } catch (err) {
+      console.error("Gagal memuat data pasien:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filtered = pasienList.filter((p) =>
     (p.child_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
-  
   const handleDetail = async (childId: string) => {
     try {
       setLoading(true);
@@ -62,7 +63,6 @@ export default function DataPasienPage() {
     }
   };
 
-  
   const handleUbah = async (data: Partial<Pasien>) => {
     if (!selectedPasien) return;
 
@@ -79,18 +79,22 @@ export default function DataPasienPage() {
     }
   };
 
-  
-  const handleHapus = async (childId: string) => {
+  // ================================
+  // ✅ HANDLE DELETE TERBARU (PASTI CONNECT)
+  // ================================
+  const handleDelete = async (id: string) => {
     try {
-      await deletePasien(childId);
-
-      const refreshed = await getAllPasien();
-      setPasienList(refreshed);
+      await deletePasien(id); // delete langsung ke BE
+      alert("Data anak berhasil dihapus");
 
       setShowHapus(false);
       setDeleteId(null);
-    } catch (err) {
-      alert("Gagal menghapus data pasien");
+
+      // Refresh data
+      await fetchPasien();
+    } catch (error) {
+      console.error("Gagal hapus anak:", error);
+      alert("Gagal menghapus data anak");
     }
   };
 
@@ -204,7 +208,7 @@ export default function DataPasienPage() {
       <FormHapusPasien
         open={showHapus}
         onClose={() => setShowHapus(false)}
-        onConfirm={() => deleteId && handleHapus(deleteId)}
+        onConfirm={() => deleteId && handleDelete(deleteId)}
       />
 
       <FormDetailPasien

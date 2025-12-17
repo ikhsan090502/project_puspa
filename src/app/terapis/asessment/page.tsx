@@ -8,10 +8,6 @@ import HeaderTerapis from "@/components/layout/header_terapis";
 import { useRouter, useSearchParams } from "next/navigation";
 import { getAssessments } from "@/lib/api/asesment";
 
-/* -------------------------------------------------------------------------- */
-/*                              TYPES & INTERFACE                              */
-/* -------------------------------------------------------------------------- */
-
 type TerapiTab =
   | "PLB (Paedagog)"
   | "Terapi Okupasi"
@@ -35,10 +31,6 @@ interface Assessment {
   status: string;
 }
 
-/* -------------------------------------------------------------------------- */
-/*                                COMPONENT PAGE                               */
-/* -------------------------------------------------------------------------- */
-
 export default function AssessmentPage() {
   const router = useRouter();
   const params = useSearchParams();
@@ -55,11 +47,12 @@ export default function AssessmentPage() {
   const [assessments, setAssessments] = useState<Assessment[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
+
   const mappedStatus = activeFilter === "Terjadwal" ? "scheduled" : "completed";
 
-  /* -------------------------------------------------------------------------- */
-  /*                               MAPPING TYPE                                 */
-  /* -------------------------------------------------------------------------- */
   const getType = () => {
     switch (activeTab) {
       case "Terapi Okupasi":
@@ -73,17 +66,14 @@ export default function AssessmentPage() {
     }
   };
 
-  /* -------------------------------------------------------------------------- */
-  /*                              SYNC URL STATUS                               */
-  /* -------------------------------------------------------------------------- */
-
   useEffect(() => {
     router.replace(`?type=${getType()}&status=${mappedStatus}`);
   }, [activeFilter, activeTab]);
 
-  /* -------------------------------------------------------------------------- */
-  /*                               FETCH DATA                                   */
-  /* -------------------------------------------------------------------------- */
+  // Reset page ke 1 setiap filter berubah
+  useEffect(() => {
+    setPage(1);
+  }, [activeTab, activeFilter, dateFilter, searchName]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -119,10 +109,6 @@ export default function AssessmentPage() {
     fetchData();
   }, [activeTab, activeFilter, dateFilter, searchName]);
 
-  /* -------------------------------------------------------------------------- */
-  /*                              EVENT HANDLERS                                */
-  /* -------------------------------------------------------------------------- */
-
   const handleStartAssessment = (id: number) => {
     const type = getType();
     router.push(
@@ -133,9 +119,12 @@ export default function AssessmentPage() {
   const toggleDropdown = (id: number) =>
     setOpenDropdown((prev) => (prev === id ? null : id));
 
-  /* -------------------------------------------------------------------------- */
-  /*                                RENDER UI                                   */
-  /* -------------------------------------------------------------------------- */
+  // Pagination logic
+  const totalPages = Math.ceil(assessments.length / itemsPerPage);
+  const paginatedData = assessments.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -215,123 +204,157 @@ export default function AssessmentPage() {
                 Tidak ada data asesmen.
               </p>
             ) : (
-              <table className="min-w-full text-sm text-[#36315B] border-collapse">
-                <thead className="bg-[#F8FAF9] border-b-2 border-[#81B7A9]">
-                  <tr className="text-left">
-                    {[
-                      "Nama Pasien",
-                      "Nama Orang Tua",
-                      "Telepon",
-                      "Tipe Assessment",
-                      activeFilter === "Selesai" ? "Assessor" : "Administrator",
-                      "Tanggal Asesmen",
-                      "Waktu",
-                      "Aksi",
-                    ].map((head) => (
-                      <th key={head} className="px-3 py-2 font-semibold">
-                        {head}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {assessments.map((item) => (
-                    <tr
-                      key={item.assessment_id}
-                      className="border-t border-[#81B7A9] hover:bg-[#F8FAF9]"
-                    >
-                      <td className="px-3 py-2">{item.child_name}</td>
-                      <td className="px-3 py-2">{item.guardian_name}</td>
-                      <td className="px-3 py-2">{item.guardian_phone}</td>
-                      <td className="px-3 py-2">{item.type}</td>
-
-                      {/* ADMIN vs ASSESSOR */}
-                      <td className="px-3 py-2">
-                        {activeFilter === "Selesai"
-                          ? item.assessor
-                          : item.administrator}
-                      </td>
-
-                      <td className="px-3 py-2">{item.scheduled_date}</td>
-                      <td className="px-3 py-2">{item.scheduled_time}</td>
-
-                      {/* ACTION DROPDOWN */}
-                      <td className="px-3 py-2 relative">
-                        <button
-                          onClick={() => toggleDropdown(item.assessment_id)}
-                          className="flex items-center gap-1 border border-[#81B7A9] text-[#81B7A9] rounded-md px-4 py-1 text-sm hover:bg-[#E9F4F1]"
-                        >
-                          Aksi <ChevronDown size={14} />
-                        </button>
-
-                        <AnimatePresence>
-                          {openDropdown === item.assessment_id && (
-                            <motion.div
-                              initial={{ opacity: 0, y: -5 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              exit={{ opacity: 0, y: -5 }}
-                              className="absolute bg-white border border-[#81B7A9] shadow-md rounded-md right-0 mt-2 w-44 z-10"
-                            >
-                              {activeFilter === "Terjadwal" ? (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      handleStartAssessment(item.assessment_id)
-                                    }
-                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
-                                  >
-                                    <Play size={14} /> Mulai
-                                  </button>
-
-                                  <div className="border-t border-[#81B7A9]" />
-
-                                  <button
-                                    onClick={() =>
-                                      router.push(
-                                        `/terapis/asessment/detailAsesment?assessment_id=${item.assessment_id}&type=${getType()}&status=${mappedStatus}`
-                                      )
-                                    }
-                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
-                                  >
-                                    <Clock3 size={14} /> Detail
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  <button
-                                    onClick={() =>
-                                      router.push(
-                                        `/terapis/asessment/${getType()}Riwayat?assessment_id=${item.assessment_id}&status=${mappedStatus}`
-                                      )
-                                    }
-                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
-                                  >
-                                    <Clock3 size={14} /> Riwayat Jawaban
-                                  </button>
-
-                                  <div className="border-t border-[#81B7A9]" />
-
-                                  <button
-                                    onClick={() =>
-                                      router.push(
-                                        `/terapis/asessment/${item.assessment_id}/result?type=${getType()}&status=${mappedStatus}`
-                                      )
-                                    }
-                                    className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
-                                  >
-                                    <Play size={14} /> Lihat Hasil
-                                  </button>
-                                </>
-                              )}
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-                      </td>
+              <>
+                <table className="min-w-full text-sm text-[#36315B] border-collapse">
+                  <thead className="bg-[#F8FAF9] border-b-2 border-[#81B7A9]">
+                    <tr className="text-left">
+                      {[
+                        "Nama Pasien",
+                        "Nama Orang Tua",
+                        "Telepon",
+                        "Tipe Assessment",
+                        activeFilter === "Selesai" ? "Assessor" : "Administrator",
+                        "Tanggal Asesmen",
+                        "Waktu",
+                        "Aksi",
+                      ].map((head) => (
+                        <th key={head} className="px-3 py-2 font-semibold">
+                          {head}
+                        </th>
+                      ))}
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+
+                  <tbody>
+                    {paginatedData.map((item) => (
+                      <tr
+                        key={item.assessment_id}
+                        className="border-t border-[#81B7A9] hover:bg-[#F8FAF9]"
+                      >
+                        <td className="px-3 py-2">{item.child_name}</td>
+                        <td className="px-3 py-2">{item.guardian_name}</td>
+                        <td className="px-3 py-2">{item.guardian_phone}</td>
+                        <td className="px-3 py-2">{item.type}</td>
+
+                        <td className="px-3 py-2">
+                          {activeFilter === "Selesai"
+                            ? item.assessor
+                            : item.administrator}
+                        </td>
+
+                        <td className="px-3 py-2">{item.scheduled_date}</td>
+                        <td className="px-3 py-2">{item.scheduled_time}</td>
+
+                        <td className="px-3 py-2 relative">
+                          <button
+                            onClick={() => toggleDropdown(item.assessment_id)}
+                            className="flex items-center gap-1 border border-[#81B7A9] text-[#81B7A9] rounded-md px-4 py-1 text-sm hover:bg-[#E9F4F1]"
+                          >
+                            Aksi <ChevronDown size={14} />
+                          </button>
+
+                          <AnimatePresence>
+                            {openDropdown === item.assessment_id && (
+                              <motion.div
+                                initial={{ opacity: 0, y: -5 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -5 }}
+                                className="absolute bg-white border border-[#81B7A9] shadow-md rounded-md right-0 mt-2 w-44 z-10"
+                              >
+                                {activeFilter === "Terjadwal" ? (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        handleStartAssessment(item.assessment_id)
+                                      }
+                                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
+                                    >
+                                      <Play size={14} /> Mulai
+                                    </button>
+
+                                    <div className="border-t border-[#81B7A9]" />
+
+                                    <button
+                                      onClick={() =>
+                                        router.push(
+                                          `/terapis/asessment/detailAsesment?assessment_id=${item.assessment_id}&type=${getType()}&status=${mappedStatus}`
+                                        )
+                                      }
+                                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
+                                    >
+                                      <Clock3 size={14} /> Detail
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      onClick={() =>
+                                        router.push(
+                                          `/terapis/asessment/${getType()}Riwayat?assessment_id=${item.assessment_id}&status=${mappedStatus}`
+                                        )
+                                      }
+                                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
+                                    >
+                                      <Clock3 size={14} /> Riwayat Jawaban
+                                    </button>
+
+                                    <div className="border-t border-[#81B7A9]" />
+
+                                    <button
+                                      onClick={() =>
+                                        router.push(
+                                          `/terapis/asessment/${item.assessment_id}/result?type=${getType()}&status=${mappedStatus}`
+                                        )
+                                      }
+                                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
+                                    >
+                                      <Play size={14} /> Lihat Hasil
+                                    </button>
+                                  </>
+                                )}
+                              </motion.div>
+                            )}
+                          </AnimatePresence>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+
+                {/* PAGINATION */}
+                {/* PAGINATION */}
+<div className="flex justify-center mt-4">
+  <div className="flex items-center gap-4">
+    <button
+      disabled={page === 1}
+      onClick={() => setPage(page - 1)}
+      className={`px-3 py-1 rounded border ${
+        page === 1
+          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+          : "bg-white hover:bg-gray-100"
+      }`}
+    >
+      Prev
+    </button>
+    <span className="text-sm font-medium">
+      Page {page} / {totalPages}
+    </span>
+    <button
+      disabled={page === totalPages || totalPages === 0}
+      onClick={() => setPage(page + 1)}
+      className={`px-3 py-1 rounded border ${
+        page === totalPages || totalPages === 0
+          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+          : "bg-white hover:bg-gray-100"
+      }`}
+    >
+      Next
+    </button>
+  </div>
+</div>
+
+                
+              </>
             )}
           </div>
         </main>

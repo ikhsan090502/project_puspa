@@ -8,105 +8,104 @@ import { updateProfileWithPhoto } from "@/lib/api/ProfileTerapis";
 import { useTherapistProfile } from "@/context/ProfileTerapisContext";
 
 export default function ProfilePage() {
-  const { profile, setProfile, refreshProfile } = useTherapistProfile();
+  const { profile, refreshProfile } = useTherapistProfile();
 
   const [form, setForm] = useState({
     therapist_name: "",
     therapist_phone: "",
     email: "",
-    date_of_birth: "",
+    therapist_birth_date: "",
   });
 
   const [loading, setLoading] = useState(true);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
+  // 🔥 FLAG PENTING
+  const [isLocalPreview, setIsLocalPreview] = useState(false);
+
   const [updating, setUpdating] = useState(false);
   const [updateError, setUpdateError] = useState<string | null>(null);
   const [updateSuccess, setUpdateSuccess] = useState(false);
 
-  // =====================================
-  // LOAD PROFILE TO FORM
-  // =====================================
+  // 🔥 LOAD PROFILE KE FORM (TIDAK MENIMPA PREVIEW LOKAL)
   useEffect(() => {
-    if (!profile) {
-      setLoading(true);
-      return;
-    }
+    if (!profile) return;
 
     setForm({
       therapist_name: profile.therapist_name ?? "",
       therapist_phone: profile.therapist_phone ?? "",
       email: profile.email ?? "",
-      date_of_birth: profile.date_of_birth ?? "",
+      therapist_birth_date: profile.therapist_birth_date ?? "",
     });
 
-    setPreviewUrl(profile.profile_picture || null);
-    setLoading(false);
-  }, [profile]);
+    // ⛔ JANGAN TIMPA PREVIEW JIKA BARU UPLOAD FOTO
+    if (!isLocalPreview) {
+      setPreviewUrl(profile.profile_picture || null);
+    }
 
-  // =====================================
-  // FORM INPUT
-  // =====================================
+    setLoading(false);
+  }, [profile, isLocalPreview]);
+
+  // 🔥 INPUT FORM
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm((prev) => ({
       ...prev,
       [e.target.name]: e.target.value,
     }));
-    setUpdateSuccess(false);
     setUpdateError(null);
+    setUpdateSuccess(false);
   };
 
-  // =====================================
-  // FOTO PROFIL
-  // =====================================
+  // 🔥 INPUT GAMBAR
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setSelectedFile(file);
     setPreviewUrl(URL.createObjectURL(file));
+    setIsLocalPreview(true); // 🔥 KUNCI
   };
 
-  // =====================================
-  // SUBMIT UPDATE
-  // =====================================
+  // 🔥 SUBMIT FORM
   const handleSubmit = async () => {
-  if (!profile?.therapist_id) {
-    setUpdateError("ID terapis tidak ditemukan.");
-    return;
-  }
-
-  setUpdating(true);
-  setUpdateError(null);
-  setUpdateSuccess(false);
-
-  try {
-    const payload: any = { ...form };
-
-    if (selectedFile) {
-      payload.profile_picture = selectedFile;
+    if (!profile?.therapist_id) {
+      setUpdateError("ID terapis tidak ditemukan.");
+      return;
     }
 
-    // 1. Update ke backend
-    await updateProfileWithPhoto(profile.therapist_id, payload);
+    setUpdating(true);
+    setUpdateError(null);
+    setUpdateSuccess(false);
 
-    // ❗ WAJIB → ambil ulang data paling baru
-    await refreshProfile();
+    try {
+      const formData = new FormData();
+      formData.append("therapist_name", form.therapist_name);
+      formData.append("therapist_phone", form.therapist_phone);
+      formData.append("email", form.email);
+      formData.append("therapist_birth_date", form.therapist_birth_date);
 
-    setSelectedFile(null);
-    setUpdateSuccess(true);
-  } catch (err: any) {
-    setUpdateError(err?.message || "Gagal memperbarui profil.");
-  } finally {
-    setUpdating(false);
-  }
-};
+      if (selectedFile) {
+        formData.append("profile_picture", selectedFile);
+      }
 
+      await updateProfileWithPhoto(profile.therapist_id, formData);
 
-  // =====================================
-  // LOADING
-  // =====================================
+      // 🔁 REFRESH CONTEXT
+      await refreshProfile();
+
+      // ✅ RESET FLAG SETELAH REFRESH
+      setIsLocalPreview(false);
+      setSelectedFile(null);
+      setUpdateSuccess(true);
+    } catch {
+      setUpdateError("Gagal memperbarui profil.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // 🔥 LOADING
   if (loading) {
     return (
       <p className="text-[#36315B] flex justify-center items-center min-h-screen">
@@ -115,9 +114,6 @@ export default function ProfilePage() {
     );
   }
 
-  // =====================================
-  // UI
-  // =====================================
   return (
     <div className="flex min-h-screen bg-gray-100 text-[#36315B]">
       <SidebarTerapis />
@@ -134,18 +130,14 @@ export default function ProfilePage() {
             {/* FOTO PROFIL */}
             <div className="flex flex-col items-center flex-shrink-0">
               <div className="w-32 h-32 relative rounded-full overflow-hidden border border-green-200">
-                {previewUrl ? (
-                  <Image
-                    src={previewUrl}
-                    alt="Foto Profil"
-                    fill
-                    className="object-cover"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
-                    Foto
-                  </div>
-                )}
+                <Image
+                  key={previewUrl || "default"} // 🔥 PAKSA REMOUNT
+                  src={previewUrl || "/profil.png"}
+                  alt="Foto Profil"
+                  fill
+                  className="object-cover"
+                  unoptimized // 🔥 WAJIB
+                />
               </div>
 
               <input
@@ -183,8 +175,8 @@ export default function ProfilePage() {
                   </label>
                   <input
                     type="date"
-                    name="date_of_birth"
-                    value={form.date_of_birth}
+                    name="therapist_birth_date"
+                    value={form.therapist_birth_date}
                     onChange={handleChange}
                     className="block w-full p-3 border border-gray-300 rounded-md"
                   />
@@ -219,7 +211,7 @@ export default function ProfilePage() {
                 <button
                   disabled={updating}
                   onClick={handleSubmit}
-                  className="px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+                  className="px-6 py-3 bg-[#8EC3AA] text-white rounded hover:bg-green-600 disabled:opacity-50"
                 >
                   {updating ? "Memperbarui..." : "Perbarui"}
                 </button>

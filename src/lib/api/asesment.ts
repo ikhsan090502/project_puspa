@@ -114,7 +114,7 @@ export const completeAssessment = async (
 // ================== SUBMIT ASSESSMENT ================== // Pastikan axiosInstance di-import
 export const submitAssessment = async (
   assessmentId: string,
-  type: "paedagog" | "okupasi" | "wicara_oral" | "wicara_bahasa" | "fisio",
+  type: "paedagog" | "okupasi" | "wicara" | "fisio",
   payload: 
     | { answers: { question_id: number; answer: { score: number; note: string } }[] }
     | { answers: { question_id: number; answer: "yes" | "no" }[] }
@@ -138,23 +138,27 @@ export const submitAssessment = async (
 
 
 // ================== GET ASSESSMENT ANSWERS ==================
+export interface AssessmentAnswerItem {
+  question_id: string;
+  question_text: string;
+  answer: any;
+  note: string | null;
+}
+
 export const getAssessmentAnswers = async (
   assessmentId: string,
-  type: "paedagog" | "okupasi" | "wicara_oral" | "wicara_bahasa" | "fisio"
+  type: "paedagog" | "okupasi" | "wicara" | "fisio"
 ) => {
   try {
-    const { data } = await axiosInstance.get(
+    const res = await axiosInstance.get(
       `/assessments/${assessmentId}/answer/${type}_assessor`
     );
 
-    return data?.data || {};
+    // ✅ BE RETURN ARRAY DI data
+    return res.data?.data ?? [];
   } catch (error: any) {
-    console.error("❌ Gagal mengambil jawaban assessment:", {
-      url: `/assessments/${assessmentId}/answer/${type}_assessor`,
-      status: error.response?.status,
-      message: error.response?.data || error.message,
-    });
-    return {};
+    console.error("❌ Gagal mengambil jawaban assessment:", error);
+    return [];
   }
 };
 
@@ -190,3 +194,35 @@ export const getAssessmentQuestions = async (
     return { assessment_type: type, groups: [] };
   }
 };
+
+export async function submitAssessmentWicara(
+  assessmentId: string,
+  payload: {
+    answers: {
+      question_id: number;
+      answer: any;
+    }[];
+  }
+) {
+  try {
+    console.log("POST ->", `/assessments/${assessmentId}/submit/wicara_assessor`);
+    console.log("PAYLOAD:", payload);
+
+    const res = await axiosInstance.post(
+      `/assessments/${assessmentId}/submit/wicara_assessor`,
+      payload,
+      {
+        headers: { "Content-Type": "application/json" },
+      }
+    );
+
+    return res.data;
+  } catch (err: any) {
+    console.error(
+      "ERROR submitAssessmentWicara:",
+      err.response?.data || err
+    );
+    throw err;
+  }
+}
+

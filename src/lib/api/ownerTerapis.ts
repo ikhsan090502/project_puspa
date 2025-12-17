@@ -101,3 +101,66 @@ export async function getAllTherapists() {
     };
   }
 }
+
+export async function deactivateTherapist(user_id: string) {
+  try {
+    const response = await axiosInstance.get(`/users/${user_id}/deactive`);
+    return {
+      success: response.data.success,
+      message: response.data.message,
+      data: response.data.data || null,
+    };
+  } catch (error: any) {
+    console.error("API Error deactivateTherapist:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Terjadi kesalahan",
+      data: null,
+    };
+  }
+}
+
+export async function promoteToAssessor(user_id: string) {
+  try {
+    const response = await axiosInstance.get(`/users/${user_id}/promote-to-assessor`);
+
+    return {
+      success: response.data.success,
+      message: response.data.message,
+      data: response.data.data || null,
+    };
+  } catch (error: any) {
+    console.error("API Error promoteToAssessor:", error);
+    return {
+      success: false,
+      message: error.response?.data?.message || "Terjadi kesalahan saat mempromosikan ke asesor",
+      data: null,
+    };
+  }
+}
+
+export async function getDetailTerapis(therapist_id: string) {
+  try {
+    const res = await axiosInstance.get(`/therapists/${therapist_id}`);
+    if (!res.data.success) return null;
+
+    const data = res.data.data;
+
+    // 🔹 Map field sesuai response backend
+    return {
+      user_id: data.user_id, // ✅ langsung ambil dari backend
+      therapist_id: data.therapist_id,
+      nama: data.therapist_name,
+      bidang: data.therapist_section,
+      username: data.username,
+      email: data.email,
+      telepon: data.therapist_phone,
+      status: data.status,
+      ditambahkan: data.created_at,
+      diubah: data.updated_at,
+    };
+  } catch (error) {
+    console.error("❌ getDetailTerapis error:", error);
+    return null;
+  }
+}

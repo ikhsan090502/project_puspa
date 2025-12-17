@@ -6,137 +6,138 @@ import HeaderTerapis from "@/components/layout/header_terapis";
 import { useSearchParams } from "next/navigation";
 import { getAssessmentAnswers } from "@/lib/api/asesment";
 
+/* ================== RANGE SESUAI BE ================== */
+/* ================== RANGE SESUAI BE (FIXED) ================== */
+const GROUP_RANGE: Record<string, [number, number]> = {
+  /* ===== TAB 1 ===== */
+  "Pemeriksaan Umum": [316, 324],
+
+  /* ===== TAB 2 ===== */
+  "Anamnesis Sistem": [325, 333],
+
+  /* ===== TAB 3 : PEMERIKSAAN KHUSUS ===== */
+  pemeriksaan_sensoris: [334, 340],
+
+  pemeriksaan_refleks_primitif: [341, 356],
+
+  gross_motor_pola_gerak: [357, 394],
+
+  test_joint_laxity: [395, 399],
+
+  pemeriksaan_spastisitas: [400, 405],
+
+  pemeriksaan_kekuatan_otot: [406, 410],
+
+  palpasi_otot: [411, 414],
+  
+  jenis_spastisitas: [415, 419],
+
+  test_fungsi_bermain: [420, 426],
+
+  /* ===== DIAGNOSA ===== */
+  "Diagnosa Fisioterapi": [427, 429],
+};
+
+
 export default function Page() {
   const searchParams = useSearchParams();
   const assessmentId = searchParams.get("assessment_id");
 
-  const [step, setStep] = useState(1);
+  const [activeTab, setActiveTab] = useState("Pemeriksaan Umum");
+  const [selectedKhusus, setSelectedKhusus] =
+    useState("pemeriksaan_sensoris");
+  const [answers, setAnswers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // TAB UTAMA (WAJIB SESUAI DENGAN KEY BE)
   const tabs = [
     { key: "Pemeriksaan Umum", label: "Pemeriksaan Umum" },
     { key: "Anamnesis Sistem", label: "Anamnesis Sistem" },
-    { key: "pemeriksaan_khusus", label: "Pemeriksaan Khusus" }
+    { key: "pemeriksaan_khusus", label: "Pemeriksaan Khusus" },
   ];
-  const [activeTab, setActiveTab] = useState(tabs[0].key);
 
-  // SUB–TAB PEMERIKSAAN KHUSUS
+  /* 🔥 DIAGNOSA MASUK DROPDOWN */
   const pemeriksaanKhususList = [
     { key: "pemeriksaan_sensoris", label: "Pemeriksaan Sensoris" },
     { key: "pemeriksaan_refleks_primitif", label: "Pemeriksaan Reflek Primitif" },
     { key: "gross_motor_pola_gerak", label: "Gross Motor & Pola Gerak" },
     { key: "test_joint_laxity", label: "Test Joint Laxity" },
     { key: "pemeriksaan_spastisitas", label: "Pemeriksaan Spastisitas" },
-    { key: "pemeriksaan_kekuatan_otot", label: "Pemeriksaan Kekuatan Otot" },
-    { key: "palpasi_otot", label: "Palpasi Otot" },
     { key: "jenis_spastisitas", label: "Jenis Spastisitas" },
     { key: "test_fungsi_bermain", label: "Test Fungsi Bermain" },
     { key: "Diagnosa Fisioterapi", label: "Diagnosa Fisioterapi" },
   ];
-  const [selectedKhusus, setSelectedKhusus] = useState("pemeriksaan_sensoris");
 
-  const [answers, setAnswers] = useState<any>({});
-  const [loading, setLoading] = useState(true);
-
-  // ================== FETCH ANSWER DARI API ==================
+  /* ================== FETCH DATA ================== */
   useEffect(() => {
     if (!assessmentId) return;
 
     const load = async () => {
       setLoading(true);
-      const res = await getAssessmentAnswers(assessmentId, "fisio");
-
-      console.log("RAW ANSWERS RESULT ==>", res);
-      console.log("KEYS:", Object.keys(res || {}));
-
-      // FIX PALING PENTING
-      setAnswers(res || {});
-
+      const data = await getAssessmentAnswers(assessmentId, "fisio");
+      setAnswers(Array.isArray(data) ? data : []);
       setLoading(false);
     };
 
     load();
   }, [assessmentId]);
 
-  // ================== FILTER PERTANYAAN BERDASARKAN TAB ==================
+  /* ================== FILTER ================== */
   const filteredQuestions = () => {
-    if (!answers) return [];
+    let key = activeTab;
 
     if (activeTab === "pemeriksaan_khusus") {
-      return answers[selectedKhusus] || [];
+      key = selectedKhusus;
     }
 
-    return answers[activeTab] || [];
+    const range = GROUP_RANGE[key];
+    if (!range) return [];
+
+    return answers.filter((q) => {
+      const id = Number(q.question_id);
+      return id >= range[0] && id <= range[1];
+    });
   };
 
-  // ================== RENDER VALUE JAWABAN ==================
+  /* ================== RENDER JAWABAN ================== */
   const renderAnswer = (q: any) => {
-    if (!q.answer_value) return "-";
+    const ans = q.answer;
+    if (!ans) return "-";
 
-    const value = q.answer_value;
-
-    switch (q.answer_type) {
-      case "text":
-      case "number":
-      case "radio":
-      case "select":
-        return value;
-
-      case "textarea":
-        return <div className="whitespace-pre-line">{value}</div>;
-
-      case "checkbox":
-        try {
-          const arr = JSON.parse(value);
-          return (
-            <ul className="list-disc ml-5">
-              {arr.map((item: any, i: number) => (
-                <li key={i}>{item}</li>
-              ))}
-            </ul>
-          );
-        } catch {
-          return value;
-        }
-
-      case "radio_with_text":
-        try {
-          const obj = JSON.parse(value);
-          return (
-            <div>
-              <div>Jawaban: <b>{obj.answer}</b></div>
-              {obj.text && <div>Keterangan: {obj.text}</div>}
-            </div>
-          );
-        } catch {
-          return value;
-        }
-
-      case "multi_segment":
-        try {
-          const obj = JSON.parse(value);
-          return (
-            <div className="space-y-1">
-              {Object.entries(obj).map(([seg, val], i) => (
-                <div key={i} className="flex gap-3">
-                  <div className="font-semibold w-24">{seg}:</div>
-                  <div>{String(val ?? "-")}</div>
-                </div>
-              ))}
-            </div>
-          );
-        } catch {
-          return value;
-        }
-
-      default:
-        return value;
+    // ARRAY (Diagnosa)
+    if (Array.isArray(ans.value)) {
+      return (
+        <ul className="list-disc ml-5">
+          {ans.value.map((v: string, i: number) => (
+            <li key={i}>{v}</li>
+          ))}
+        </ul>
+      );
     }
+
+    // OBJECT KOMPLEKS
+    if (typeof ans === "object" && !ans.value) {
+      return (
+        <div className="space-y-1">
+          {Object.entries(ans).map(([k, v]: any, i) => (
+            <div key={i} className="flex gap-3">
+              <div className="font-semibold w-32">{k}</div>
+              <div>
+                {typeof v === "object"
+                  ? v.value ?? JSON.stringify(v)
+                  : String(v)}
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    return ans.value ?? "-";
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen text-lg">
+      <div className="flex items-center justify-center min-h-screen">
         Memuat jawaban...
       </div>
     );
@@ -150,7 +151,6 @@ export default function Page() {
         <HeaderTerapis />
 
         <div className="p-6">
-
           <div className="flex justify-end mb-4">
             <button
               onClick={() => (window.location.href = "/terapis/asessment")}
@@ -160,102 +160,75 @@ export default function Page() {
             </button>
           </div>
 
-          {/* ================== STEP 1 LIST JAWABAN ================== */}
-          {step === 1 && (
-            <div className="bg-white p-6 rounded-2xl shadow">
-              <h2 className="text-xl font-semibold mb-4">Riwayat Jawaban Pemeriksaan</h2>
+          <div className="bg-white p-6 rounded-xl shadow">
+            <h2 className="text-xl font-semibold mb-4">
+              Riwayat Jawaban Pemeriksaan
+            </h2>
 
-              <div className="flex gap-6 border-b mb-6">
-                {tabs.map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`pb-2 ${
-                      activeTab === tab.key
-                        ? "border-b-4 border-[#3A9C85] text-[#3A9C85] font-semibold"
-                        : "text-gray-600"
-                    }`}
-                  >
-                    {tab.label}
-                  </button>
+            {/* TAB */}
+            <div className="flex gap-6 border-b mb-6">
+              {tabs.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
+                  className={`pb-2 ${
+                    activeTab === t.key
+                      ? "border-b-4 border-[#3A9C85] text-[#3A9C85]"
+                      : "text-gray-500"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* DROPDOWN */}
+            {activeTab === "pemeriksaan_khusus" && (
+              <select
+                className="border p-2 rounded mb-6 w-full"
+                value={selectedKhusus}
+                onChange={(e) => setSelectedKhusus(e.target.value)}
+              >
+                {pemeriksaanKhususList.map((i) => (
+                  <option key={i.key} value={i.key}>
+                    {i.label}
+                  </option>
                 ))}
+              </select>
+            )}
+
+            {/* CONTENT */}
+            {filteredQuestions().length === 0 && (
+              <div className="text-gray-500">
+                Tidak ada jawaban pada bagian ini.
               </div>
+            )}
 
-              {/* Dropdown pemeriksaan khusus */}
-              {activeTab === "pemeriksaan_khusus" && (
-                <div className="mb-6">
-                  <label className="text-sm font-medium">Aspek Pemeriksaan Khusus</label>
-                  <select
-                    value={selectedKhusus}
-                    onChange={(e) => setSelectedKhusus(e.target.value)}
-                    className="border rounded-lg px-3 py-2 mt-1 w-full"
-                  >
-                    {pemeriksaanKhususList.map((item) => (
-                      <option key={item.key} value={item.key}>
-                        {item.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              {/* Daftar jawaban */}
-              {filteredQuestions().length === 0 && (
-                <div className="text-gray-500">Tidak ada jawaban pada grup ini.</div>
-              )}
-
-             {filteredQuestions().map((q: any) => (
+          
+          {filteredQuestions().map((q) => (
   <div key={q.question_id} className="mb-6">
-    <div className="font-medium mb-2">
-      {q.question_text}
-    </div>
+    <div className="font-medium mb-2">{q.question_text}</div>
 
-    <div className="text-gray-700 border rounded p-3 bg-gray-50">
+    {/* FIELD JAWABAN */}
+    <div className="bg-gray-50 border p-3 rounded">
       {renderAnswer(q)}
     </div>
+
+    {/* FIELD CATATAN (HANYA JIKA ADA) */}
+    {q.note && (
+      <div className="mt-3">
+        <div className="text-sm font-bold text-[#3A9C85] mb-1">
+          Catatan
+        </div>
+        <div className="bg-gray-50 border p-3 rounded">
+          {q.note}
+        </div>
+      </div>
+    )}
   </div>
 ))}
 
-
-
-              <div className="flex justify-between mt-8">
-                <button className="px-4 py-2 border rounded-lg" onClick={() => setStep(0)}>
-                  Sebelumnya
-                </button>
-
-                <button
-                  className="px-6 py-2 rounded-lg bg-[#3A9C85] text-white"
-                  onClick={() => setStep(2)}
-                >
-                  Diagnosa Fisioterapi
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* ================== STEP 2 – DIAGNOSA ================== */}
-          {step === 2 && (
-            <div className="bg-white p-6 rounded-2xl shadow">
-              <h2 className="text-xl font-semibold mb-6">Diagnosa Fisioterapi</h2>
-
-              {answers["Diagnosa Fisioterapi"]?.length ? (
-                answers["Diagnosa Fisioterapi"].map((q: any) => (
-                  <div key={q.question_id} className="mb-6">
-                    <div className="font-medium mb-2">{q.question_text}</div>
-                    <div className="border rounded p-3 bg-gray-50 whitespace-pre-line">
-                      {q.answer_value}
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-gray-500">Belum ada diagnosa.</div>
-              )}
-
-              <button className="mt-4 px-6 py-2 border rounded-lg" onClick={() => setStep(1)}>
-                Kembali
-              </button>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

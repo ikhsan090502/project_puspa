@@ -5,13 +5,22 @@ import { useRouter } from "next/navigation";
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
 import { CalendarDays, User } from "lucide-react";
-import { getMyAssessments, AssessmentItem } from "@/lib/api/childrenAsesment";
+
+import { 
+  getMyAssessments, 
+  AssessmentItem 
+} from "@/lib/api/childrenAsesment";
+
+import { 
+  getMyAssessmentDetail 
+} from "@/lib/api/childrenAsesment"; // ← API DETAIL BARU
 
 export default function DataUmumPage() {
   const router = useRouter();
 
   const [assessments, setAssessments] = useState<AssessmentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingDetail, setLoadingDetail] = useState(false);
 
   useEffect(() => {
     async function fetchData() {
@@ -28,17 +37,34 @@ export default function DataUmumPage() {
     fetchData();
   }, []);
 
-  // PUSH ASSESSMENT ID KE URL
-  const handleSelectAssessment = (assessment_id: string) => {
+  // ================================
+  // HANDLE KETIKA USER PILIH ASSESSMENT
+  // ================================
+  const handleSelectAssessment = async (assessment_id: string) => {
     if (!assessment_id) {
       console.error("Assessment ID missing!");
       return;
     }
 
-    router.push(`/orangtua/assessment/kategori?assessment_id=${assessment_id}`);
+    setLoadingDetail(true);
+
+    try {
+      // 🔥 PANGGIL API DETAIL ASSESSMENT
+      const res = await getMyAssessmentDetail(assessment_id);
+
+      console.log("Detail Assessment:", res);
+
+      // 🔥 LANJUT KE HALAMAN KATEGORI
+      router.push(`/orangtua/assessment/kategori?assessment_id=${assessment_id}`);
+    } catch (error) {
+      console.error("Failed to load assessment detail:", error);
+      alert("Gagal memuat detail assessment. Silakan coba lagi.");
+    } finally {
+      setLoadingDetail(false);
+    }
   };
 
-  // LOADING SPINNER
+  // LOADING SPINNER UTAMA
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
@@ -59,7 +85,14 @@ export default function DataUmumPage() {
             Pilih Assessment Anak
           </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Jika loading detail tampilkan overlay busy */}
+          {loadingDetail && (
+            <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-50">
+              <div className="h-10 w-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
             {assessments.length === 0 && (
               <p className="text-center text-gray-600 w-full">
                 Tidak ada assessment ditemukan.
@@ -68,7 +101,7 @@ export default function DataUmumPage() {
 
             {assessments.map((item) => (
               <div
-                key={item.assessment_id} // sudah benar & unik
+                key={item.assessment_id}
                 onClick={() => handleSelectAssessment(item.assessment_id)}
                 className="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition cursor-pointer p-5"
               >

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Eye, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -21,7 +21,6 @@ interface Anak {
   admin_name?: string;
   scheduled_date?: string;
   scheduled_time?: string;
-  // optional detail fields
   child_birth_date?: string;
   child_age?: string;
   child_gender?: string;
@@ -70,13 +69,17 @@ const kategori: Kategori[] = [
 export default function ObservasiPage() {
   const router = useRouter();
   const [selected, setSelected] = useState<Anak | null>(null);
-  const [activeKategori, setActiveKategori] = useState<number>(0); // default pilih kategori pertama
+  const [activeKategori, setActiveKategori] = useState<number>(0);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [detailObservasi, setDetailObservasi] = useState<any | null>(null);
   const [loadingDetail, setLoadingDetail] = useState(false);
 
   const [searchName, setSearchName] = useState("");
   const [filterDate, setFilterDate] = useState("");
+
+  // Pagination states
+  const [page, setPage] = useState(1);
+  const itemsPerPage = 10;
 
   const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["observations", filterDate, searchName],
@@ -106,7 +109,7 @@ export default function ObservasiPage() {
       }))
     : [];
 
-  // Filter hanya berdasarkan kategori aktif (tanpa opsi semua)
+  // Filter hanya berdasarkan kategori aktif
   const filteredByKategori = children.filter((d) =>
     kategori[activeKategori].filter(d)
   );
@@ -120,6 +123,19 @@ export default function ObservasiPage() {
       String(d.guardian_name || "").toLowerCase().includes(q)
     );
   });
+
+  // Pagination logic
+  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+
+  // Reset page ke 1 jika filterDate, searchName atau kategori berubah
+  useEffect(() => {
+    setPage(1);
+  }, [filterDate, searchName, activeKategori]);
+
+  const paginatedData = useMemo(() => {
+    const start = (page - 1) * itemsPerPage;
+    return filtered.slice(start, start + itemsPerPage);
+  }, [filtered, page]);
 
   const handleStartObservasi = (child: Anak) => {
     const kategoriUsia = child.age_category ?? "lainnya";
@@ -240,7 +256,7 @@ export default function ObservasiPage() {
           {/* Tabel anak */}
           <AnimatePresence mode="wait">
             <motion.div
-              key={String(activeKategori) + "|" + filterDate + "|" + searchName}
+              key={String(activeKategori) + "|" + filterDate + "|" + searchName + "|" + page}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
@@ -250,62 +266,91 @@ export default function ObservasiPage() {
               {isLoading ? (
                 <p className="text-center py-4">Memuat data...</p>
               ) : isError ? (
-                <p className="text-center py-4 text-red-500">
-                  Gagal memuat data
-                </p>
+                <p className="text-center py-4 text-red-500">Gagal memuat data</p>
               ) : filtered.length === 0 ? (
                 <p className="text-center py-4 text-[#36315B]">
                   Tidak ada data observasi terjadwal
                 </p>
               ) : (
-                <table className="w-full text-xs sm:text-sm table-auto border-collapse min-w-[700px]">
-                  <thead>
-                    <tr className="border-b border-[#81B7A9] bg-gray-100">
-                      <th className="py-2 px-4 text-center">Nama Anak</th>
-                      <th className="py-2 px-4 text-center">Nama Orang Tua</th>
-                      <th className="py-2 px-4 text-center">Telepon</th>
-                      <th className="py-2 px-4 text-center">Administrator</th>
-                      <th className="py-2 px-4 text-center">Tanggal Observasi</th>
-                      <th className="py-2 px-4 text-center">Waktu</th>
-                      <th className="py-2 px-4 text-center">Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filtered.map((d, index) => (
-                      <tr
-                        key={d.observation_id ?? `row-${index}`}
-                        className={`border-b border-[#81B7A9] hover:bg-gray-50 ${
-                          selected?.observation_id === d.observation_id
-                            ? "bg-[#C0DCD6]"
-                            : ""
-                        }`}
-                      >
-                        <td className="py-2 px-4 text-center">{d.child_name}</td>
-                        <td className="py-2 px-4 text-center">{d.guardian_name}</td>
-                        <td className="py-2 px-4 text-center">{d.guardian_phone}</td>
-                        <td className="py-2 px-4 text-center">{d.admin_name}</td>
-                        <td className="py-2 px-4 text-center">{d.scheduled_date || "-"}</td>
-                        <td className="py-2 px-4 text-center">{d.scheduled_time || "-"}</td>
-                        <td className="py-2 px-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              className="bg-[#81B7A9] hover:bg-[#36315B] text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded"
-                              onClick={() => handleStartObservasi(d)}
-                            >
-                              Mulai
-                            </button>
-                            <button
-                              className="p-1 text-[#81B7A9] hover:text-[#36315B]"
-                              onClick={() => handleViewDetail(d.observation_id!)}
-                            >
-                              <Eye className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
+                <>
+                  <table className="w-full text-xs sm:text-sm table-auto border-collapse min-w-[700px]">
+                    <thead>
+                      <tr className="border-b border-[#81B7A9] bg-gray-100">
+                        <th className="py-2 px-4 text-center">Nama Anak</th>
+                        <th className="py-2 px-4 text-center">Nama Orang Tua</th>
+                        <th className="py-2 px-4 text-center">Telepon</th>
+                        <th className="py-2 px-4 text-center">Administrator</th>
+                        <th className="py-2 px-4 text-center">Tanggal Observasi</th>
+                        <th className="py-2 px-4 text-center">Waktu</th>
+                        <th className="py-2 px-4 text-center">Aksi</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {paginatedData.map((d, index) => (
+                        <tr
+                          key={d.observation_id ?? `row-${index}`}
+                          className={`border-b border-[#81B7A9] hover:bg-gray-50 ${
+                            selected?.observation_id === d.observation_id
+                              ? "bg-[#C0DCD6]"
+                              : ""
+                          }`}
+                        >
+                          <td className="py-2 px-4 text-center">{d.child_name}</td>
+                          <td className="py-2 px-4 text-center">{d.guardian_name}</td>
+                          <td className="py-2 px-4 text-center">{d.guardian_phone}</td>
+                          <td className="py-2 px-4 text-center">{d.admin_name}</td>
+                          <td className="py-2 px-4 text-center">{d.scheduled_date || "-"}</td>
+                          <td className="py-2 px-4 text-center">{d.scheduled_time || "-"}</td>
+                          <td className="py-2 px-4 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <button
+                                className="bg-[#81B7A9] hover:bg-[#36315B] text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded"
+                                onClick={() => handleStartObservasi(d)}
+                              >
+                                Mulai
+                              </button>
+                              <button
+                                className="p-1 text-[#81B7A9] hover:text-[#36315B]"
+                                onClick={() => handleViewDetail(d.observation_id!)}
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+
+                  {/* Pagination */}
+                  <div className="flex justify-center items-center gap-4 mt-4">
+                    <button
+                      disabled={page === 1}
+                      onClick={() => setPage(page - 1)}
+                      className={`px-3 py-1 rounded border ${
+                        page === 1
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-white hover:bg-gray-100"
+                      }`}
+                    >
+                      Prev
+                    </button>
+                    <span className="text-sm font-medium">
+                      Page {page} / {totalPages}
+                    </span>
+                    <button
+                      disabled={page === totalPages || totalPages === 0}
+                      onClick={() => setPage(page + 1)}
+                      className={`px-3 py-1 rounded border ${
+                        page === totalPages || totalPages === 0
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-white hover:bg-gray-100"
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                </>
               )}
             </motion.div>
           </AnimatePresence>

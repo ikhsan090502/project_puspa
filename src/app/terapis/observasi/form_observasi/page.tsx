@@ -63,7 +63,7 @@ export default function FormObservasiPage() {
   );
   const [kesimpulan, setKesimpulan] = useState("");
   const [rekomendasiLanjutan, setRekomendasiLanjutan] = useState("");
-  const [rekomendasiAssessment, setRekomendasiAssessment] = useState("");
+  const [rekomendasiAssessment, setRekomendasiAssessment] = useState<string[]>([]); // ✅ array untuk checkbox
   const [submitting, setSubmitting] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -80,10 +80,6 @@ export default function FormObservasiPage() {
         setLoading(true);
         // Ambil pertanyaan dengan type "scheduled"
         const data = await getObservationQuestions(pasien.observation_id);
-(
-          
-          "scheduled"
-        );
         if (Array.isArray(data) && data.length > 0) {
           setQuestionsData(data);
           const firstPrefix = data[0].question_code.split("-")[0];
@@ -145,17 +141,34 @@ export default function FormObservasiPage() {
     if (idx > 0) setActiveTab(kategoriList[idx - 1]);
   };
 
+  // ✅ Handler checkbox rekomendasi assessment
+  const handleAssessmentChange = (value: string, checked: boolean) => {
+    setRekomendasiAssessment((prev) => {
+      if (checked) {
+        return [...prev, value];
+      } else {
+        return prev.filter((v) => v !== value);
+      }
+    });
+  };
+
   const handleSimpan = async () => {
     setSubmitting(true);
+
     const payload = {
       answers: Object.entries(answers).map(([id, ans]) => ({
-        question_id: parseInt(id),
+        question_id: parseInt(id, 10),
         answer: ans.jawaban || false,
         note: ans.keterangan || "",
       })),
       conclusion: kesimpulan,
       recommendation: rekomendasiLanjutan,
-      assessment: rekomendasiAssessment,
+
+      // 🔥 Translate checkbox array into boolean fields expected by BE
+      paedagog: rekomendasiAssessment.includes("(PLB) Paedagog"),
+      okupasi: rekomendasiAssessment.includes("Terapi Okupasi"),
+      wicara: rekomendasiAssessment.includes("Terapi Wicara"),
+      fisio: rekomendasiAssessment.includes("Fisioterapi"),
     };
 
     try {
@@ -180,15 +193,15 @@ export default function FormObservasiPage() {
       <div className="flex flex-col flex-1 bg-gray-50">
         <HeaderTerapis />
         <main className="p-6 overflow-y-auto">
-         {/* 🔹 Tombol Close di atas Total Skor */}
-<div className="flex justify-end mb-4">
-  <button
-    onClick={() => (window.location.href = "/terapis/observasi")}
-    className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
-  >
-    ✕
-  </button>
-</div>
+          {/* 🔹 Tombol Close di atas Total Skor */}
+          <div className="flex justify-end mb-4">
+            <button
+              onClick={() => (window.location.href = "/terapis/observasi")}
+              className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+            >
+              ✕
+            </button>
+          </div>
 
           {loading ? (
             <div className="flex flex-col items-center justify-center mt-20 text-gray-500">
@@ -251,7 +264,7 @@ export default function FormObservasiPage() {
                   {groupedQuestions[activeTab]?.map((q: Question) => (
                     <div key={q.question_id} className="p-4 bg-white rounded-lg shadow-sm">
                       <p className="font-medium">
-                        {q.question_number}. {q.question_text}{" "}
+                        {q.question_number}. {q.question_text} {" "}
                         <span className="text-sm text-[#36315B]">(Score {q.score})</span>
                       </p>
                       <div className="flex gap-4 mt-2 items-center">
@@ -352,6 +365,7 @@ export default function FormObservasiPage() {
                     />
                   </div>
 
+                  {/* 🔹 REKOMENDASI ASSESSMENT - CHECKBOX */}
                   <div>
                     <label className="block font-semibold mb-2">Rekomendasi Assessment</label>
                     <div className="flex flex-wrap gap-6">
@@ -359,11 +373,10 @@ export default function FormObservasiPage() {
                         (item) => (
                           <label key={item} className="flex items-center gap-2">
                             <input
-                              type="radio"
-                              name="assessment"
+                              type="checkbox"
                               value={item}
-                              checked={rekomendasiAssessment === item}
-                              onChange={(e) => setRekomendasiAssessment(e.target.value)}
+                              checked={rekomendasiAssessment.includes(item)}
+                              onChange={(e) => handleAssessmentChange(item, e.target.checked)}
                             />
                             {item}
                           </label>
@@ -406,7 +419,10 @@ export default function FormObservasiPage() {
                     <b>Rekomendasi Lanjutan:</b> {rekomendasiLanjutan || "-"}
                   </p>
                   <p>
-                    <b>Rekomendasi Assessment:</b> {rekomendasiAssessment || "-"}
+                    <b>Rekomendasi Assessment:</b> {" "}
+                    {rekomendasiAssessment.length > 0
+                      ? rekomendasiAssessment.join(", ")
+                      : "-"}
                   </p>
 
                   <div className="flex justify-end gap-4">

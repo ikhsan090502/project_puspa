@@ -8,23 +8,11 @@ import { ChevronDown } from "lucide-react";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
 
-// API
 import { submitAssessment, getAssessmentQuestions } from "@/lib/api/asesment";
 
 // ==========================================================
-// =============== API INTERFACES ============================
+// API INTERFACES
 // ==========================================================
-
-export interface ExtraSchemaColumn {
-  key: string;
-  label: string;
-  type: string;
-}
-
-export interface ExtraSchema {
-  columns: ExtraSchemaColumn[];
-}
-
 export interface Question {
   id: number;
   question_code: string;
@@ -33,7 +21,7 @@ export interface Question {
   answer_type: string;
   answer_options: string;
   answer_format: string | null;
-  extra_schema: string;
+  extra_schema: string | null;
 }
 
 export interface Group {
@@ -50,21 +38,15 @@ export interface PaedagogData {
   groups: Group[];
 }
 
-export interface PaedagogResponse {
-  success: boolean;
-  message: string;
-  data: PaedagogData;
-}
-
 // ==========================================================
-// =============== FRONTEND TYPES ===========================
+// FRONTEND TYPES
 // ==========================================================
-
 type QuestionItem = {
   field: string;
   label: string;
   options: number[];
-  id: number; // tambahkan id untuk mapping payload
+  id: number;
+  answer_type: string;
 };
 
 type AspectItem = {
@@ -79,29 +61,42 @@ type Answer = { desc?: string; score?: number };
 type AnswersState = Record<string, Record<number, Answer>>;
 
 // ==========================================================
-// =============== MAP ANSWERS → PAYLOAD ====================
+// MAP ANSWERS → PAYLOAD
 // ==========================================================
+export const mapAnswersToPayloadBE = (
+  answersState: AnswersState,
+  questionsData: QuestionsData
+) => {
+  const answersPayload: any[] = [];
 
-export const mapAnswersToPayload = (answers: {
-  questionId: number;
-  score: number;
-  note?: string;
-}[]) => {
-  return {
-    answers: answers.map((item) => ({
-      question_id: Number(item.questionId),
-      answer: {
-        score: Number(item.score),
-        note: item.note || "",
-      },
-    })),
-  };
+  for (const aspek of questionsData) {
+    const akey = aspek.key;
+    const aspekAnswers = answersState[akey] || {};
+
+    Object.entries(aspekAnswers).forEach(([idx, val]) => {
+      const q = aspek.questions[Number(idx)];
+      const payloadItem: any = {
+        question_id: q.id,
+      };
+
+      if (q.answer_type === "text") {
+        // Untuk pertanyaan text (kesimpulan) simpan desc saja
+        payloadItem.answer = { value: val.desc || "" };
+      } else if (val.score !== undefined) {
+        payloadItem.answer = { value: val.score };
+        if (val.desc) payloadItem.note = val.desc;
+      }
+
+      answersPayload.push(payloadItem);
+    });
+  }
+
+  return { answers: answersPayload };
 };
 
 // ==========================================================
-// =============== COMPONENT START ===========================
+// COMPONENT
 // ==========================================================
-
 export default function PLBAssessmentPage() {
   const params = useSearchParams();
   const router = useRouter();
@@ -115,18 +110,13 @@ export default function PLBAssessmentPage() {
   const [activeAspek, setActiveAspek] = useState<string>("");
   const [answers, setAnswers] = useState<AnswersState>({});
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
-  const [kesimpulan, setKesimpulan] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ==========================================================
-  // FETCH PERTANYAAN
-  // ==========================================================
-
+  // FETCH QUESTIONS
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
         setLoadingQuestions(true);
-
         const res = await getAssessmentQuestions("paedagog");
         const groups: Group[] = res?.groups ?? [];
 
@@ -141,14 +131,15 @@ export default function PLBAssessmentPage() {
           questions: g.questions.map((q) => ({
             field: q.question_code,
             label: q.question_text,
-            options: JSON.parse(q.answer_options || "[]"),
-            id: q.id, // simpan id question untuk payload
+            options: q.answer_options ? JSON.parse(q.answer_options) : [],
+            id: q.id,
+            answer_type: q.answer_type,
           })),
         }));
 
         setAllQuestions(mapped);
         if (mapped.length > 0) setActiveAspek(mapped[0].key);
-      } catch (e) {
+      } catch {
         alert("❌ Gagal memuat pertanyaan dari server.");
         setAllQuestions([]);
       } finally {
@@ -159,74 +150,40 @@ export default function PLBAssessmentPage() {
     fetchQuestions();
   }, []);
 
-  // ==========================================================
-  // HOOKS
-  // ==========================================================
-
   const aspekTabs = useMemo(() => allQuestions.map((a) => a.key), [allQuestions]);
-
-  const activeAspectObj = useMemo(() => {
-    return allQuestions.find((x) => x.key === activeAspek) ?? allQuestions[0];
-  }, [activeAspek, allQuestions]);
-
-  const currentQuestions = useMemo(() => {
-    return activeAspectObj?.questions ?? [];
-  }, [activeAspectObj]);
+  const activeAspectObj = useMemo(
+    () => allQuestions.find((x) => x.key === activeAspek) ?? allQuestions[0],
+    [activeAspek, allQuestions]
+  );
+  const currentQuestions = useMemo(() => activeAspectObj?.questions ?? [], [activeAspectObj]);
 
   const validationStatus = useMemo(() => {
     const status: Record<string, "completed" | "scheduled"> = {};
-
     aspekTabs.forEach((key) => {
       const aspek = allQuestions.find((a) => a.key === key);
       if (!aspek) {
         status[key] = "scheduled";
         return;
       }
-
       const total = aspek.questions.length;
-      const answered = Object.values(answers[key] || {}).filter(
-        (a) => a.score !== undefined
+      const answered = Object.values(answers[key] || {}).filter((a) =>
+        a.score !== undefined || a.desc
       ).length;
-
       status[key] = answered >= total ? "completed" : "scheduled";
     });
-
     return status;
   }, [answers, aspekTabs, allQuestions]);
 
   const isLast = aspekTabs.indexOf(activeAspek) === aspekTabs.length - 1;
   const isFirst = aspekTabs.indexOf(activeAspek) === 0;
 
-  // ==========================================================
-  // CONDITIONAL RETURN
-  // ==========================================================
-
-  if (loadingQuestions) {
-    return (
-      <div className="flex h-screen justify-center items-center text-lg">
-        Memuat pertanyaan...
-      </div>
-    );
-  }
-
-  if (!allQuestions.length) {
-    return (
-      <div className="flex h-screen justify-center items-center text-lg">
-        ❌ Tidak ada pertanyaan tersedia.
-      </div>
-    );
-  }
-
-  // ==========================================================
-  // FUNCTIONS
-  // ==========================================================
-
   const validateCurrentAspek = () => {
     const qList = currentQuestions;
     const currentAnswers = answers[activeAspek] || {};
-
     for (let i = 0; i < qList.length; i++) {
-      if (!currentAnswers[i] || currentAnswers[i].score === undefined) return false;
+      const q = qList[i];
+      if (q.answer_type !== "text" && (!currentAnswers[i] || currentAnswers[i].score === undefined))
+        return false;
     }
     return true;
   };
@@ -256,28 +213,9 @@ export default function PLBAssessmentPage() {
     if (!assessmentId) return alert("❌ assessment_id tidak ditemukan");
 
     const allComplete = Object.values(validationStatus).every((v) => v === "completed");
-
     if (!allComplete) return alert("❌ Lengkapi semua penilaian sebelum menyimpan!");
 
-    // Flatten answers menjadi array sesuai payload baru
-    const answersPayload: { questionId: number; score: number; note?: string }[] = [];
-
-    for (const aspek of allQuestions) {
-      const akey = aspek.key;
-
-      Object.entries(answers[akey] || {}).forEach(([idx, val]) => {
-        const q = aspek.questions[Number(idx)];
-        if (val.score !== undefined) {
-          answersPayload.push({
-            questionId: q.id,
-            score: val.score,
-            note: val.desc ?? "",
-          });
-        }
-      });
-    }
-
-    const payload = mapAnswersToPayload(answersPayload);
+    const payload = mapAnswersToPayloadBE(answers, allQuestions);
 
     try {
       setLoading(true);
@@ -291,16 +229,18 @@ export default function PLBAssessmentPage() {
     }
   };
 
-  // ==========================================================
-  // RENDER UI
-  // ==========================================================
+  if (loadingQuestions) {
+    return <div className="flex h-screen justify-center items-center text-lg">Memuat pertanyaan...</div>;
+  }
+  if (!allQuestions.length) {
+    return <div className="flex h-screen justify-center items-center text-lg">❌ Tidak ada pertanyaan tersedia.</div>;
+  }
 
   return (
     <div className="flex h-screen text-[#36315B] font-playpen">
       <SidebarTerapis />
       <div className="flex flex-col flex-1 bg-gray-50">
         <HeaderTerapis />
-
         <main className="p-6 overflow-y-auto">
           <div className="flex justify-end mb-4">
             <button
@@ -339,12 +279,29 @@ export default function PLBAssessmentPage() {
             {currentQuestions.map((q, i) => {
               const current = answers[activeAspek]?.[i];
 
+              // Jika pertanyaan tipe text (kesimpulan), render input biasa tanpa dropdown
+              if (q.answer_type === "text") {
+                return (
+                  <div key={i} className="mb-6 p-4 rounded-lg shadow-md">
+                    <p className="font-semibold mb-3">
+                      {i + 1}. {q.label}
+                    </p>
+                    <input
+                      className="w-full border rounded-md p-2"
+                      placeholder="Tulis kesimpulan..."
+                      value={current?.desc || ""}
+                      onChange={(e) => handleDescChange(i, e.target.value)}
+                    />
+                  </div>
+                );
+              }
+
+              // Untuk pertanyaan biasa dengan score
               return (
                 <div key={i} className="mb-6 p-4 rounded-lg shadow-md">
                   <p className="font-semibold mb-3">
                     {i + 1}. {q.label}
                   </p>
-
                   <div className="flex items-center gap-4">
                     <input
                       className="flex-1 border rounded-md p-2"
@@ -352,23 +309,17 @@ export default function PLBAssessmentPage() {
                       value={current?.desc || ""}
                       onChange={(e) => handleDescChange(i, e.target.value)}
                     />
-
                     <div className="relative w-36">
                       <button
-                        onClick={() =>
-                          setOpenDropdown(openDropdown === i ? null : i)
-                        }
+                        onClick={() => setOpenDropdown(openDropdown === i ? null : i)}
                         className="flex justify-between items-center w-full px-3 py-2 border rounded-md bg-gray-50"
                       >
                         {current?.score ?? "Penilaian"}
                         <ChevronDown
-                          className={`ml-2 ${
-                            openDropdown === i ? "rotate-180" : ""
-                          }`}
+                          className={`ml-2 ${openDropdown === i ? "rotate-180" : ""}`}
                           size={16}
                         />
                       </button>
-
                       <AnimatePresence>
                         {openDropdown === i && (
                           <motion.div
@@ -396,54 +347,30 @@ export default function PLBAssessmentPage() {
             })}
 
             {isLast && (
-              <>
-                <div className="mt-10 mb-6 bg-[#F8F8F8] p-4 rounded-lg text-sm leading-relaxed">
-                  <p className="font-semibold mb-2">Keterangan Penilaian:</p>
-
-                  <p>Nilai 0 : Buruk / Anak belum menguasai aspek</p>
-                  <p>
-                    Nilai 1 : Kurang baik / Anak menguasai aspek namun tidak
-                    konsisten dan butuh bantuan dalam mengerjakannya
-                  </p>
-                  <p>
-                    Nilai 2 : Cukup baik / Anak menguasai aspek secara konsisten
-                    dengan sedikit bantuan
-                  </p>
-                  <p>Nilai 3 : Baik / Anak menguasai aspek</p>
-                </div>
-
-                <div className="border-t pt-6">
-                  <h2 className="font-bold mb-3">Kesimpulan Assessment</h2>
-                  <textarea
-                    placeholder="Tulis kesimpulan..."
-                    className="w-full border rounded-md p-3 text-sm"
-                    value={kesimpulan}
-                    onChange={(e) => setKesimpulan(e.target.value)}
-                    rows={4}
-                  />
-                </div>
-              </>
+              <div className="mt-10 mb-6 bg-[#F8F8F8] p-4 rounded-lg text-sm leading-relaxed">
+                <p className="font-semibold mb-2">Keterangan Penilaian:</p>
+                <p>Nilai 0 : Buruk / Anak belum menguasai aspek</p>
+                <p>Nilai 1 : Kurang baik / Anak menguasai aspek namun tidak konsisten dan butuh bantuan dalam mengerjakannya</p>
+                <p>Nilai 2 : Cukup baik / Anak menguasai aspek secara konsisten dengan sedikit bantuan</p>
+                <p>Nilai 3 : Baik / Anak menguasai aspek</p>
+              </div>
             )}
           </div>
 
+          {/* NAVIGATION BUTTONS */}
           <div className="flex justify-between mt-6">
             <button
               disabled={isFirst}
-              onClick={() =>
-                setActiveAspek(aspekTabs[aspekTabs.indexOf(activeAspek) - 1])
-              }
+              onClick={() => setActiveAspek(aspekTabs[aspekTabs.indexOf(activeAspek) - 1])}
               className="px-6 py-2 rounded-lg border border-[#81B7A9] text-[#81B7A9] disabled:opacity-50"
             >
               ← Sebelumnya
             </button>
-
             {isLast ? (
               <button
                 onClick={handleSubmit}
                 disabled={loading}
-                className={`px-6 py-2 rounded-lg text-white ${
-                  loading ? "bg-gray-400" : "bg-[#36315B]"
-                }`}
+                className={`px-6 py-2 rounded-lg text-white ${loading ? "bg-gray-400" : "bg-[#36315B]"}`}
               >
                 {loading ? "Menyimpan..." : "Simpan & Selesai"}
               </button>

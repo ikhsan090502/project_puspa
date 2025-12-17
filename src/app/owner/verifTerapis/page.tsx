@@ -6,13 +6,16 @@ import Header from "@/components/layout/header_owner";
 import {
   getUnverifiedTherapists,
   activateTherapist,
+  deactivateTherapist,
 } from "@/lib/api/ownerTerapis";
 
-const VerifikasitherapistsPage: React.FC = () => {
+const VerifikasiTerapisPage: React.FC = () => {
   const [therapists, setTherapists] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch data dari API
+  // ==========================
+  // FETCH DATA TERAPIS
+  // ==========================
   const loadTherapists = async () => {
     setLoading(true);
     const response = await getUnverifiedTherapists();
@@ -20,7 +23,7 @@ const VerifikasitherapistsPage: React.FC = () => {
     if (response.success) {
       setTherapists(response.data);
     } else {
-      console.error(response.message);
+      alert(response.message || "Gagal memuat data terapis.");
     }
     setLoading(false);
   };
@@ -29,9 +32,11 @@ const VerifikasitherapistsPage: React.FC = () => {
     loadTherapists();
   }, []);
 
-  // Handle Setujui
+  // ==========================
+  // HANDLE SETUJUI TERAPIS
+  // ==========================
   const handleApprove = async (user_id: string) => {
-    const confirmApprove = confirm("Yakin ingin menyetujui terapis ini?");
+    const confirmApprove = window.confirm("Yakin ingin menyetujui terapis ini?");
     if (!confirmApprove) return;
 
     const response = await activateTherapist(user_id);
@@ -41,6 +46,23 @@ const VerifikasitherapistsPage: React.FC = () => {
       loadTherapists(); // refresh list
     } else {
       alert("Gagal mengaktifkan: " + response.message);
+    }
+  };
+
+  // ==========================
+  // HANDLE TOLAK TERAPIS
+  // ==========================
+  const handleReject = async (user_id: string) => {
+    const confirmReject = window.confirm("Apakah Anda yakin ingin menolak terapis ini?");
+    if (!confirmReject) return;
+
+    const response = await deactivateTherapist(user_id);
+
+    if (response.success) {
+      alert("Terapis berhasil ditolak!");
+      loadTherapists(); // refresh list
+    } else {
+      alert("Gagal menolak terapis: " + response.message);
     }
   };
 
@@ -83,7 +105,7 @@ const VerifikasitherapistsPage: React.FC = () => {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr>
-                    {[ 
+                    {[
                       { label: "No", width: "w-12" },
                       { label: "Nama Terapis" },
                       { label: "Email" },
@@ -111,26 +133,20 @@ const VerifikasitherapistsPage: React.FC = () => {
                   ) : therapists.length === 0 ? (
                     <tr>
                       <td colSpan={5} className="text-center py-4 text-gray-500">
-                        Tidak ada data terapis menunggu verifikasi
+                        Tidak ada data terapis menunggu verifikasi.
                       </td>
                     </tr>
                   ) : (
                     therapists.map((item, idx) => (
                       <tr
                         key={item.user_id}
-                        className={`border-b ${
-                          idx % 2 === 0 ? "bg-white" : "bg-gray-50"
-                        }`}
+                        className={`border-b ${idx % 2 === 0 ? "bg-white" : "bg-gray-50"}`}
                         style={{ borderBottomColor: "#81B7A9" }}
                       >
                         <td className="py-3 px-4">{idx + 1}</td>
                         <td className="py-3 px-4">{item.therapist_name}</td>
-                        <td className="py-3 px-4 text-[#757575]">
-                          {item.email}
-                        </td>
-                        <td className="py-3 px-4 text-[#757575]">
-                          {item.createdAt}
-                        </td>
+                        <td className="py-3 px-4 text-[#757575]">{item.email}</td>
+                        <td className="py-3 px-4 text-[#757575]">{item.createdAt}</td>
 
                         <td className="py-3 px-4 flex gap-3">
                           {/* Approve */}
@@ -153,6 +169,7 @@ const VerifikasitherapistsPage: React.FC = () => {
 
                           {/* Reject */}
                           <button
+                            onClick={() => handleReject(item.user_id)}
                             className="bg-red-600 text-white px-3 py-1 rounded-md flex items-center gap-1 hover:bg-red-700 transition"
                           >
                             <svg
@@ -181,4 +198,4 @@ const VerifikasitherapistsPage: React.FC = () => {
   );
 };
 
-export default VerifikasitherapistsPage;
+export default VerifikasiTerapisPage;

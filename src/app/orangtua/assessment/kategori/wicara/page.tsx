@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
+
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
+
 import {
   getParentAssessmentQuestions,
   submitParentAssessment,
@@ -15,30 +17,41 @@ export default function TerapiWicaraPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const assessmentId = searchParams.get("assessment_id") as string;
+
+  const assessmentId = searchParams.get("assessment_id") ?? "";
 
   const [questions, setQuestions] = useState<any[]>([]);
   const [answers, setAnswers] = useState<Record<number, any>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch questions
+  const parseSchema = (schema: any): any => {
+    if (!schema) return {};
+    try {
+      if (typeof schema === "string") return JSON.parse(schema);
+      return schema;
+    } catch {
+      return {};
+    }
+  };
+
   useEffect(() => {
-    const fetchQuestions = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         const res = await getParentAssessmentQuestions(
           "parent_wicara" as ParentAssessmentType
         );
-        const questionsFromAPI = res.data.groups[0].questions;
-        setQuestions(questionsFromAPI);
+
+        const q = res?.data?.groups?.[0]?.questions ?? [];
+        setQuestions(q);
       } catch (err) {
-        console.error(err);
+        console.error("Fetch question error:", err);
       } finally {
         setLoading(false);
       }
     };
-    fetchQuestions();
+    fetchData();
   }, []);
 
   const handleChange = (id: number, value: any) =>
@@ -52,16 +65,43 @@ export default function TerapiWicaraPage() {
     { label: "Data Paedagog", path: "/orangtua/assessment/kategori/paedagog" },
   ];
 
-  const activeStep = steps.findIndex((step) => pathname.includes(step.path));
+  const activeStep = steps.findIndex((s) => pathname.includes(s.path));
+
+  const resolveAnswerForWhen = (when: number | string) => {
+    const whenNum = typeof when === "string" && /^\d+$/.test(when) ? Number(when) : when;
+    if (typeof whenNum === "number" && answers[whenNum] !== undefined) {
+      return answers[whenNum];
+    }
+
+    const whenStr = String(when);
+    const found = questions.find((q: any) => {
+      if (String(q.id) === whenStr) return true;
+      if (q.question_id && String(q.question_id) === whenStr) return true;
+      if (q.question_number && String(q.question_number) === whenStr) return true;
+      if (q.question_code && String(q.question_code).includes(whenStr)) return true;
+      return false;
+    });
+
+    if (!found) return undefined;
+
+    return answers[found.id];
+  };
 
   const shouldShowQuestion = (q: any) => {
-    if (!q.extra_schema) return true;
-    const schema = typeof q.extra_schema === "string" ? JSON.parse(q.extra_schema) : q.extra_schema;
-    if (!schema.conditional_rules) return true;
-    return schema.conditional_rules.every((rule: any) => {
-      const prevAnswer = answers[rule.when];
-      if (!prevAnswer) return false;
-      return prevAnswer === rule.value || prevAnswer.status === rule.value;
+    const schema = parseSchema(q.extra_schema);
+    const rules = schema?.conditional_rules;
+    if (!rules || !Array.isArray(rules)) return true;
+
+    return rules.every((r: any) => {
+      const rawAnswer = resolveAnswerForWhen(r.when);
+      if (rawAnswer == null) return false;
+
+      const val = typeof rawAnswer === "object" ? rawAnswer.status ?? rawAnswer : rawAnswer;
+
+      if (r.operator === "==" || r.operator === "===") {
+        return String(val) === String(r.value);
+      }
+      return String(val) === String(r.value);
     });
   };
 
@@ -76,54 +116,64 @@ export default function TerapiWicaraPage() {
           .filter((q) => shouldShowQuestion(q))
           .map((q) => {
             const ans = answers[q.id];
+            const schema = parseSchema(q.extra_schema);
 
-            if (!ans) return { question_code: q.question_code, answer: "" };
-
-            // TABLE
             if (q.answer_type === "table") {
-              const extraSchema = q.extra_schema ? JSON.parse(q.extra_schema) : {};
-              const rows = extraSchema.rows || [];
-              const columns = extraSchema.columns || [];
+              const rows = schema.rows || [];
+              const cols = schema.columns || [];
+
+              const tableAnswer = rows.map((row: string) => {
+                const rowAns: Record<string, any> = { kegiatan: row };
+                cols.forEach((col: string) => {
+                  rowAns[col] = ans?.[row]?.[col] ?? null;
+                });
+                return rowAns;
+              });
+
               return {
-                question_code: q.question_code,
-                answer: rows.map((row: string) => {
-                  const rowAnswer: any = { row };
-                  columns.forEach((col: string) => {
-                    rowAnswer[col] = ans?.[row]?.[col] || "";
-                  });
-                  return rowAnswer;
-                }),
+                question_id: q.id,
+                answer: {
+                  value: tableAnswer,
+                },
               };
             }
 
-            // RADIO (bisa ada field tambahan)
             if (q.answer_type === "radio") {
-              if (ans && typeof ans === "object") {
-                const combinedAnswer: { status?: any; [key: string]: any } = { status: ans.status };
-                Object.keys(ans).forEach((key) => {
-                  if (key !== "status") combinedAnswer[key] = ans[key];
-                });
-                return { question_code: q.question_code, answer: combinedAnswer };
-              }
-              return { question_code: q.question_code, answer: ans.status || ans };
+              const out = typeof ans === "object" ? ans.status ?? ans : ans ?? null;
+
+              return {
+                question_id: q.id,
+                answer: {
+                  value: out,
+                },
+              };
             }
 
-            // TEXT / TEXTAREA
-            return { question_code: q.question_code, answer: ans };
+            return {
+              question_id: q.id,
+              answer: {
+                value: ans ?? null,
+              },
+            };
           }),
       };
 
-      await submitParentAssessment(assessmentId, "wicara_parent" as ParentSubmitType, payload);
+      await submitParentAssessment(
+        assessmentId,
+        "wicara_parent" as ParentSubmitType,
+        payload
+      );
+
       alert("Jawaban berhasil disimpan!");
     } catch (err: any) {
-      console.error(err);
-      alert(err.response?.data?.message || err.message || "Gagal submit jawaban");
+      console.error("Submit error:", err);
+      alert(err?.response?.data?.message || "Gagal submit jawaban");
     } finally {
       setSubmitting(false);
     }
   };
 
-  if (loading) return <div>Loading pertanyaan...</div>;
+  if (loading) return <div className="p-8">Memuat pertanyaan...</div>;
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-[#36315B]">
@@ -131,23 +181,20 @@ export default function TerapiWicaraPage() {
       <div className="flex-1 flex flex-col ml-64">
         <HeaderOrangtua />
         <main className="p-8 flex-1 overflow-y-auto">
+
           <div className="flex justify-end mb-4">
             <button
-              onClick={() => (window.location.href = "/orangtua/assessment")}
+              onClick={() => router.push("/orangtua/assessment")}
               className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
             >
               ✕
             </button>
           </div>
-          {/* STEPPER */}
+
           <div className="flex justify-center mb-12">
             <div className="flex items-center">
               {steps.map((step, i) => (
-                <div
-                  key={i}
-                  className="flex items-center cursor-pointer"
-                  
-                >
+                <div key={i} className="flex items-center">
                   <div className="flex flex-col items-center space-y-2">
                     <div
                       className={`w-9 h-9 flex items-center justify-center rounded-full border-2 text-sm font-semibold ${
@@ -158,29 +205,37 @@ export default function TerapiWicaraPage() {
                     >
                       {i + 1}
                     </div>
-                    <span className="text-sm font-medium text-[#36315B]">{step.label}</span>
+                    <span className="text-sm font-medium">{step.label}</span>
                   </div>
-                  {i < steps.length - 1 && <div className="w-10 h-px bg-gray-300 mx-2 translate-y-[-12px]" />}
+
+                  {i < steps.length - 1 && (
+                    <div className="w-10 h-px bg-gray-300 mx-2 translate-y-[-12px]" />
+                  )}
                 </div>
               ))}
             </div>
           </div>
 
-          {/* FORM */}
           <div className="bg-white rounded-2xl shadow-sm p-8 max-w-4xl mx-auto">
             <div className="space-y-6">
               {questions.map((q) => {
                 if (!shouldShowQuestion(q)) return null;
-                const extraSchema = q.extra_schema ? JSON.parse(q.extra_schema) : {};
-                const radioOptions = extraSchema.options || (q.answer_options ? JSON.parse(q.answer_options) : []);
-                const tableRows = extraSchema.rows || [];
-                const tableColumns = extraSchema.columns || [];
+
+                const schema = parseSchema(q.extra_schema);
+
+                const radioOptions =
+                  schema.options ||
+                  (q.answer_options ? JSON.parse(q.answer_options) : []);
+
+                const tableRows = schema.rows || [];
+                const tableColumns = schema.columns || [];
 
                 return (
                   <div key={q.id} className="mb-6">
-                    <label className="block font-medium mb-2">{q.question_text}</label>
+                    <label className="block font-medium mb-2">
+                      {q.question_number}. {q.question_text}
+                    </label>
 
-                    {/* TEXTAREA */}
                     {q.answer_type === "textarea" && (
                       <textarea
                         className="w-full border rounded-lg p-3 h-24"
@@ -189,7 +244,6 @@ export default function TerapiWicaraPage() {
                       />
                     )}
 
-                    {/* TEXT */}
                     {q.answer_type === "text" && (
                       <input
                         type="text"
@@ -199,7 +253,6 @@ export default function TerapiWicaraPage() {
                       />
                     )}
 
-                    {/* RADIO */}
                     {q.answer_type === "radio" && (
                       <div className="flex gap-6 mt-2">
                         {radioOptions.map((op: string) => (
@@ -208,13 +261,8 @@ export default function TerapiWicaraPage() {
                               type="radio"
                               name={"q" + q.id}
                               value={op}
-                              checked={answers[q.id]?.status === op}
-                              onChange={() =>
-                                handleChange(q.id, {
-                                  ...answers[q.id],
-                                  status: op,
-                                })
-                              }
+                              checked={answers[q.id] === op}
+                              onChange={() => handleChange(q.id, op)}
                               className="accent-[#6BB1A0]"
                             />
                             {op}
@@ -223,12 +271,12 @@ export default function TerapiWicaraPage() {
                       </div>
                     )}
 
-                    {/* TABLE */}
                     {q.answer_type === "table" && (
                       <div className="space-y-3 mt-2">
                         {tableRows.map((row: string, idx: number) => (
                           <div key={idx} className="flex items-center gap-4 border-b pb-2">
                             <span className="w-72">{row}</span>
+
                             {tableColumns.map((col: string) => (
                               <input
                                 key={col}
@@ -239,7 +287,10 @@ export default function TerapiWicaraPage() {
                                 onChange={(e) =>
                                   handleChange(q.id, {
                                     ...answers[q.id],
-                                    [row]: { ...answers[q.id]?.[row], [col]: e.target.value },
+                                    [row]: {
+                                      ...answers[q.id]?.[row],
+                                      [col]: e.target.value,
+                                    },
                                   })
                                 }
                               />

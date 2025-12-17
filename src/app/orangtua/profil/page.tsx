@@ -5,6 +5,7 @@ import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
 import { getParentProfile, updateParentProfile } from "@/lib/api/profile";
 import { useProfile } from "@/context/ProfileContext";
+import { User } from "lucide-react";
 
 export default function ProfileOrangtuaPage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -13,9 +14,6 @@ export default function ProfileOrangtuaPage() {
 
   const { refreshProfile } = useProfile();
 
-  // ==========================
-  // STATE FORM
-  // ==========================
   interface FormData {
     guardian_name: string;
     guardian_type: string;
@@ -40,17 +38,10 @@ export default function ProfileOrangtuaPage() {
     profile_picture: null,
   });
 
-  // ==========================
-  // LOAD PROFILE
-  // ==========================
   useEffect(() => {
     async function loadProfile() {
-      // Ambil token dari localStorage
       const token = localStorage.getItem("token");
-      if (!token) {
-        console.error("Token tidak tersedia");
-        return;
-      }
+      if (!token) return;
 
       const res = await getParentProfile(token);
       if (res?.success && res.data) {
@@ -70,20 +61,13 @@ export default function ProfileOrangtuaPage() {
         });
       }
     }
-
     loadProfile();
   }, []);
 
-  // ==========================
-  // HANDLE INPUT
-  // ==========================
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // ==========================
-  // UPDATE PROFILE
-  // ==========================
   const handleUpdate = async () => {
     const fd = new FormData();
     if (selectedFile) fd.append("file", selectedFile);
@@ -96,14 +80,12 @@ export default function ProfileOrangtuaPage() {
     fd.append("email", formData.email);
     fd.append("guardian_occupation", formData.guardian_occupation);
 
-    // Hanya 2 argumen: guardianId + FormData
     const res = await updateParentProfile(guardianId, fd);
 
     if (res?.success) {
       alert("Profil berhasil diperbarui!");
       setIsEditing(false);
 
-      // Update profile_picture jika ada
       if (res.data?.profile_picture) {
         setFormData((prev) => ({
           ...prev,
@@ -111,14 +93,10 @@ export default function ProfileOrangtuaPage() {
         }));
       }
 
-      // refresh header/sidebar info
       refreshProfile();
     }
   };
 
-  // ==========================
-  // UI
-  // ==========================
   return (
     <div className="flex min-h-screen bg-gray-50">
       <SidebarOrangtua />
@@ -131,11 +109,17 @@ export default function ProfileOrangtuaPage() {
               {!isEditing ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex flex-col items-center text-center p-6 shadow rounded-xl bg-white">
-                    <img
-                      src={formData.profile_picture || "/profil.png"}
-                      className="w-44 h-44 rounded-full object-cover"
-                      alt="Foto Profil"
-                    />
+                    {formData.profile_picture ? (
+                      <img
+                        src={formData.profile_picture}
+                        className="w-44 h-44 rounded-full object-cover"
+                        alt="Foto Profil"
+                      />
+                    ) : (
+                      <div className="w-44 h-44 bg-gray-200 rounded-full flex items-center justify-center">
+                        <User className="w-16 h-16 text-gray-500" />
+                      </div>
+                    )}
                     <h2 className="text-xl font-semibold text-[#4A8B73] mt-4">
                       {formData.guardian_name}
                     </h2>
@@ -182,15 +166,24 @@ export default function ProfileOrangtuaPage() {
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <div className="flex flex-col items-center shadow p-5 rounded-xl">
-                      <img
-                        src={
-                          selectedFile
-                            ? URL.createObjectURL(selectedFile)
-                            : formData.profile_picture || "/profil.png"
-                        }
-                        className="w-40 h-40 rounded-full object-cover"
-                        alt="Foto Profil"
-                      />
+                      {selectedFile ? (
+                        <img
+                          src={URL.createObjectURL(selectedFile)}
+                          className="w-40 h-40 rounded-full object-cover"
+                          alt="Foto Profil"
+                        />
+                      ) : formData.profile_picture ? (
+                        <img
+                          src={formData.profile_picture}
+                          className="w-40 h-40 rounded-full object-cover"
+                          alt="Foto Profil"
+                        />
+                      ) : (
+                        <div className="w-40 h-40 bg-gray-200 rounded-full flex items-center justify-center">
+                          <User className="w-16 h-16 text-gray-500" />
+                        </div>
+                      )}
+
                       <input
                         type="file"
                         accept="image/*"
@@ -201,6 +194,7 @@ export default function ProfileOrangtuaPage() {
                       />
                     </div>
 
+                    {/* FORM EDIT */}
                     <div className="shadow rounded-xl p-5 space-y-4">
                       <div>
                         <label className="text-sm font-semibold">Nama</label>
@@ -286,7 +280,6 @@ export default function ProfileOrangtuaPage() {
                   </div>
                 </div>
               )}
-
             </div>
           </div>
         </main>

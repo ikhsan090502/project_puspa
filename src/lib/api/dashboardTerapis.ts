@@ -2,44 +2,69 @@
 
 import axiosInstance from "@/lib/axios";
 
-const base_url = process.env.NEXT_PUBLIC_API_BASE_URL;
-
 // -----------------------------------------------------
-// 1. Upcoming Observations
+// 1. Upcoming Schedules (Dashboard Terapis)
 // -----------------------------------------------------
-export async function getUpcomingObservations(page: number = 1) {
+export async function getUpcomingSchedules(page: number = 1) {
   try {
     const res = await axiosInstance.get(
-      `/asse-thera/upcoming-observations?page=${page}`
+      `/asse-thera/upcoming-schedules`,
+      {
+        params: { page },
+      }
     );
 
+    /**
+     * Response BE:
+     * {
+     *   success: true,
+     *   message: "Upcoming schedules",
+     *   data: []
+     * }
+     */
     return res.data;
   } catch (error: any) {
-    console.error("Error fetching upcoming observations:", error);
+    console.error("Error fetching upcoming schedules:", error);
     throw new Error(
       error.response?.data?.message ||
-        "Gagal mengambil jadwal observasi mendatang"
+        "Gagal mengambil jadwal terdekat"
     );
   }
 }
 
 // -----------------------------------------------------
-// 2. Dashboard Metrics (month + year filter)
+// 2. Dashboard Metrics (Filter Month & Year)
 // -----------------------------------------------------
 export async function getDashboardMetrics(
-  month?: string | number,
-  year?: string | number
+  month?: number | string,
+  year?: number | string
 ) {
   try {
-    const params = new URLSearchParams();
+    const params: Record<string, string | number> = {};
 
-    if (month) params.append("month", String(month));
-    if (year) params.append("year", String(year));
+    if (month !== undefined && month !== "")
+      params.month = month;
+
+    if (year !== undefined && year !== "")
+      params.year = year;
 
     const res = await axiosInstance.get(
-      `/asse-thera/dashboard?${params.toString()}`
+      `/asse-thera/dashboard`,
+      { params }
     );
 
+    /**
+     * Response BE:
+     * {
+     *   success: true,
+     *   data: {
+     *     period: {...},
+     *     metrics: {...},
+     *     patient_categories: [],
+     *     trend_chart: []
+     *   }
+     * }
+     */
     return res.data;
   } catch (error: any) {
     console.error("Error fetching dashboard metrics:", error);
