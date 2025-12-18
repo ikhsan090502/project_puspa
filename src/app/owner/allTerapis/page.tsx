@@ -237,6 +237,7 @@ const TherapistListPage: React.FC = () => {
                     <p>
                       <b>Bidang:</b> {detailTerapis.bidang}
                     </p>
+                    <p><b>Role:</b> {detailTerapis.role}</p> {/* ✅ tambahan */}
                     <p>
                       <b>Nama Pengguna:</b> {detailTerapis.username}
                     </p>
@@ -254,18 +255,23 @@ const TherapistListPage: React.FC = () => {
                     </p>
 
                     <button
-                      onClick={() =>
-                        handlePromoteAssessor(detailTerapis.user_id)
-                      }
-                      disabled={loadingPromote}
-                      className={`w-full mt-4 py-2 rounded-md font-medium text-white ${
-                        loadingPromote
-                          ? "bg-gray-400"
-                          : "bg-[#81B7A9] hover:bg-[#6aa093]"
-                      }`}
-                    >
-                      {loadingPromote ? "Memproses..." : "Jadikan Asesor"}
-                    </button>
+  onClick={() =>
+    handlePromoteAssessor(detailTerapis.user_id)
+  }
+  disabled={loadingPromote || detailTerapis.role === "asesor"}
+  className={`w-full mt-4 py-2 rounded-md font-medium text-white ${
+    loadingPromote || detailTerapis.role === "asesor"
+      ? "bg-gray-400 cursor-not-allowed"
+      : "bg-[#81B7A9] hover:bg-[#6aa093]"
+  }`}
+>
+  {detailTerapis.role === "asesor"
+    ? "Sudah Menjadi Asesor"
+    : loadingPromote
+    ? "Memproses..."
+    : "Jadikan Asesor"}
+</button>
+
                   </div>
                 )}
               </div>

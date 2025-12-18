@@ -41,10 +41,15 @@ export default function ProfilePage() {
       therapist_birth_date: profile.therapist_birth_date ?? "",
     });
 
-    setPreviewUrl(profile.profile_picture || null);
+    // ✅ TAMBAHAN: cache busting foto
+    setPreviewUrl(
+      profile.profile_picture
+        ? `${profile.profile_picture}?t=${Date.now()}`
+        : null
+    );
+
     setLoading(false);
   }, [profile]);
-
 
   // =====================================
   // FORM INPUT
@@ -83,16 +88,27 @@ export default function ProfilePage() {
     setUpdateSuccess(false);
 
     try {
-      const payload: any = { ...form };
+      const formData = new FormData();
 
-      if (selectedFile) {
-        payload.profile_picture = selectedFile;
+      formData.append("therapist_name", form.therapist_name);
+      formData.append("therapist_phone", form.therapist_phone);
+      formData.append("email", form.email);
+      formData.append("therapist_birth_date", form.therapist_birth_date);
+
+     if (selectedFile) {
+        formData.append("file", selectedFile);
+      }
+
+      // ✅ TAMBAHAN: debug FormData
+      console.log("FILE:", selectedFile);
+      for (const pair of formData.entries()) {
+        console.log(pair[0], pair[1]);
       }
 
       // 1. Update ke backend
-      await updateProfileWithPhoto(profile.therapist_id, payload);
+      await updateProfileWithPhoto(profile.therapist_id, formData);
 
-      // ❗ WAJIB → ambil ulang data paling baru
+      // ❗ ambil ulang data terbaru
       await refreshProfile();
 
       setSelectedFile(null);
@@ -103,7 +119,6 @@ export default function ProfilePage() {
       setUpdating(false);
     }
   };
-
 
   // =====================================
   // LOADING
@@ -134,7 +149,11 @@ export default function ProfilePage() {
                 {/* FOTO & NAMA */}
                 <div className="flex flex-col items-center text-center p-6 shadow rounded-xl bg-white">
                   <img
-                    src={profile?.profile_picture || "/profil.png"}
+                    src={
+                      profile?.profile_picture
+                        ? `${profile.profile_picture}?t=${Date.now()}` // ✅ TAMBAHAN
+                        : "/profil.png"
+                    }
                     className="w-44 h-44 rounded-full object-cover"
                     alt="Foto Profil"
                   />
@@ -165,6 +184,7 @@ export default function ProfilePage() {
 
                     <p className="font-semibold">Email</p>
                     <p>{profile?.email}</p>
+
                     <p className="font-semibold">Role</p>
                     <p>{profile?.role}</p>
 
@@ -271,7 +291,11 @@ export default function ProfilePage() {
                       onClick={() => {
                         setIsEditing(false);
                         setSelectedFile(null);
-                        setPreviewUrl(profile?.profile_picture || null);
+                        setPreviewUrl(
+                          profile?.profile_picture
+                            ? `${profile.profile_picture}?t=${Date.now()}`
+                            : null
+                        );
                       }}
                       className="px-6 py-3 bg-gray-300 rounded"
                     >
@@ -301,7 +325,6 @@ export default function ProfilePage() {
             </div>
           )}
         </main>
-
       </div>
     </div>
   );

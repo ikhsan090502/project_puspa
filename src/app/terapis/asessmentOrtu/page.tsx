@@ -18,7 +18,7 @@ interface Patient {
   guardian_name: string;
   guardian_phone: string;
   types: string;
-  administrator: string;
+  admin_name: string;
   scheduled_date?: string;
   scheduled_time?: string;
   parent_completed_at: string | null;
@@ -195,7 +195,7 @@ export default function AssessmentPage() {
                       <td className="px-4 py-3">{row.guardian_name}</td>
                       <td className="px-4 py-3">{row.guardian_phone}</td>
                       <td className="px-4 py-3">{row.types}</td>
-                      <td className="px-4 py-3">{row.administrator}</td>
+                      <td className="px-4 py-3">{row.admin_name}</td>
                       <td className="px-4 py-3">{row.scheduled_date}</td>
                       <td className="px-4 py-3">{row.scheduled_time}</td>
 

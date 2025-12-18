@@ -155,6 +155,7 @@ export async function getDetailTerapis(therapist_id: string) {
       username: data.username,
       email: data.email,
       telepon: data.therapist_phone,
+      role: data.role ?? "terapis",
       status: data.status,
       ditambahkan: data.created_at,
       diubah: data.updated_at,
