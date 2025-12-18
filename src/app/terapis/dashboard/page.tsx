@@ -27,6 +27,11 @@ export default function DashboardPage() {
   const [schedule, setSchedule] = useState<any[]>([]);
   const [currentPeriod, setCurrentPeriod] = useState("");
   const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    setRole(localStorage.getItem("role"));
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -39,12 +44,11 @@ export default function DashboardPage() {
         setMetrics(d.metrics);
 
         setCategories(
-  (d.patient_categories ?? []).map((c: any) => ({
-    name: c.type,               // FIX
-    value: Number(c.percentage) // persen
-  }))
-);
-
+          (d.patient_categories ?? []).map((c: any) => ({
+            name: c.type,
+            value: Number(c.percentage),
+          }))
+        );
 
         setTrend(
           (d.trend_chart ?? []).map((t: any) => ({
@@ -68,7 +72,7 @@ export default function DashboardPage() {
     load();
   }, []);
 
-  if (loading) {
+  if (loading || !role) {
     return (
       <div className="min-h-screen flex items-center justify-center text-lg">
         Loading dashboard...
@@ -85,39 +89,52 @@ export default function DashboardPage() {
 
         <main className="p-8 space-y-10 overflow-y-auto">
           {/* ================= METRIC CARDS ================= */}
-          <div className="grid grid-cols-4 gap-6">
+          <div
+            className={`grid gap-6 ${
+              role === "terapis" ? "grid-cols-3" : "grid-cols-4"
+            }`}
+          >
             <MetricCard
               label="Total Observasi"
-              value={metrics?.total_observations.current}
-              percent={metrics?.total_observations.change_percent}
+              value={metrics?.total_observations?.current}
+              percent={metrics?.total_observations?.change_percent}
             />
-            <MetricCard
-              label="Total Assessment"
-              value={metrics?.total_assessments.current}
-              percent={metrics?.total_assessments.change_percent}
-            />
+
+            {role === "asesor" && (
+              <MetricCard
+                label="Total Assessment"
+                value={metrics?.total_assessments?.current}
+                percent={metrics?.total_assessments?.change_percent}
+              />
+            )}
+
             <MetricCard
               label="Tingkat Penyelesaian"
-              value={metrics?.completion_rate.current}
-              percent={metrics?.completion_rate.change_percent}
-              isPercent
+              value={metrics?.completion_rate?.current}
+              percent={metrics?.completion_rate?.change_percent}
             />
-            <MetricCard
-              label="Total Assessor"
-              value={metrics?.total_assessors.current}
-              percent={metrics?.total_assessors.change_percent}
-            />
+
+            {role === "terapis" ? (
+              <MetricCard
+                label="Total Terapis"
+                value={metrics?.total_therapists?.current}
+                percent={metrics?.total_therapists?.change_percent}
+              />
+            ) : (
+              <MetricCard
+                label="Total Asesor"
+                value={metrics?.total_assessors?.current}
+                percent={metrics?.total_assessors?.change_percent}
+              />
+            )}
           </div>
 
           {/* ================= CHART SECTION ================= */}
           <div className="grid grid-cols-3 gap-6">
-            {/* Pie */}
             <div className="bg-white rounded-xl p-6 shadow">
-              <h3 className="font-semibold mb-4"></h3>
               <PasienChart apiData={categories} />
             </div>
 
-            {/* Area */}
             <div className="col-span-2 bg-white rounded-xl p-6 shadow">
               <div className="flex justify-between mb-4">
                 <h3 className="font-semibold">Trend Bulanan</h3>
@@ -127,25 +144,16 @@ export default function DashboardPage() {
               <div className="h-72">
                 <ResponsiveContainer>
                   <AreaChart data={trend}>
-                    <defs>
-                      <linearGradient id="trendColor" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#A78BFA" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#A78BFA" stopOpacity={0.1} />
-                      </linearGradient>
-                    </defs>
-
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
                     <XAxis dataKey="name" />
-                    <YAxis domain={[0, 100]} />
+                    <YAxis domain={[0, 100]} ticks={[0, 20, 40, 60, 80, 100]} />
                     <ReTooltip />
-
                     <Area
                       type="monotone"
                       dataKey="value"
                       stroke="#8B5CF6"
                       strokeWidth={3}
-                      fill="url(#trendColor)"
-                      dot={{ r: 5 }}
+                      fillOpacity={0.3}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -159,7 +167,7 @@ export default function DashboardPage() {
 
             <table className="w-full text-sm">
               <thead>
-                <tr className="text-[#36315B] border-b">
+                <tr className="border-b">
                   <th className="py-3 text-left">Nama Pasien</th>
                   <th className="py-3 text-left">Jenis Layanan</th>
                   <th className="py-3 text-left">Status</th>
@@ -177,19 +185,18 @@ export default function DashboardPage() {
                   </tr>
                 )}
 
-                {schedule.map((s: any, i: number) => (
-                  <tr key={i} className="border-b">
-                    <td className="py-3">{s.nama_pasien ?? "-"}</td>
-                    <td className="py-3">{s.jenis_layanan ?? "-"}</td>
-                    <td className="py-3 text-emerald-500">
-                      {s.status ?? "-"}
-                    </td>
+                {schedule.map((s: any, index: number) => (
+                  <tr
+                    key={`${s.id}-${s.date}-${s.time}-${index}`}
+                    className="border-b"
+                  >
+                    <td className="py-3">{s.child_name}</td>
                     <td className="py-3">
-                      {s.tanggal
-                        ? new Date(s.tanggal).toLocaleDateString("id-ID")
-                        : "-"}
+                      {Array.isArray(s.types) ? s.types.join(", ") : "-"}
                     </td>
-                    <td className="py-3">{s.waktu ?? "-"}</td>
+                    <td className="py-3 text-emerald-500">{s.status}</td>
+                    <td className="py-3">{s.date}</td>
+                    <td className="py-3">{s.time}</td>
                   </tr>
                 ))}
               </tbody>
@@ -206,22 +213,17 @@ function MetricCard({
   label,
   value,
   percent,
-  isPercent,
 }: {
   label: string;
   value: any;
   percent: number;
-  isPercent?: boolean;
 }) {
   return (
     <div className="bg-white rounded-xl p-6 shadow">
       <div className="text-xs text-gray-400">{label}</div>
 
       <div className="mt-4">
-        <div className="text-2xl font-bold">
-          {value}
-          {isPercent ? "" : ""}
-        </div>
+        <div className="text-2xl font-bold">{value}</div>
 
         <div
           className={`text-xs mt-1 ${

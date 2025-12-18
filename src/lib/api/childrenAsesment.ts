@@ -231,16 +231,40 @@ export const updateChild = async (childId: string, data: any) => {
 /// =============================
 //  DELETE ANAK (POST + _method DELETE) — FIXED WITH CHILD_ID
 // =============================
+// =======================
+//  DELETE ANAK (POST + _method DELETE)
+// =======================
 export async function deleteChild(childId: string) {
-  const token = localStorage.getItem("token");
+  try {
+    const token = localStorage.getItem("token");
 
-  const response = await axiosInstance.delete(`/my/children/${childId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+    if (!childId) {
+      throw new Error("Child ID undefined");
+    }
 
-  return response.data;
+    // Samakan dengan pola ULID (seperti update)
+    const fixedId = String(childId).toUpperCase();
+
+    console.log("🗑️ Menghapus anak:", `/my/children/${fixedId}`);
+
+    const response = await axiosInstance.post(
+      `/my/children/${fixedId}`,
+      {
+        _method: "DELETE",
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log("✅ Delete anak sukses:", response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error("❌ Gagal delete anak:", error.response?.data || error);
+    throw error;
+  }
 }
 
 

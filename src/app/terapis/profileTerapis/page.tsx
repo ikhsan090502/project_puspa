@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, ChangeEvent } from "react";
 import Image from "next/image";
+import { User } from "lucide-react";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
 import { updateProfileWithPhoto } from "@/lib/api/ProfileTerapis";
 import { useTherapistProfile } from "@/context/ProfileTerapisContext";
 
 export default function ProfilePage() {
-  const { profile, setProfile, refreshProfile } = useTherapistProfile();
+  const { profile, refreshProfile } = useTherapistProfile();
 
   const [form, setForm] = useState({
     therapist_name: "",
@@ -26,7 +27,7 @@ export default function ProfilePage() {
   const [updateSuccess, setUpdateSuccess] = useState(false);
 
   // =====================================
-  // LOAD PROFILE TO FORM
+  // LOAD PROFILE
   // =====================================
   useEffect(() => {
     if (!profile) {
@@ -41,9 +42,8 @@ export default function ProfilePage() {
       therapist_birth_date: profile.therapist_birth_date ?? "",
     });
 
-    // ✅ TAMBAHAN: cache busting foto
     setPreviewUrl(
-      profile.profile_picture
+      profile.profile_picture && profile.profile_picture !== ""
         ? `${profile.profile_picture}?t=${Date.now()}`
         : null
     );
@@ -64,7 +64,7 @@ export default function ProfilePage() {
   };
 
   // =====================================
-  // FOTO PROFIL
+  // FOTO
   // =====================================
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -75,7 +75,7 @@ export default function ProfilePage() {
   };
 
   // =====================================
-  // SUBMIT UPDATE
+  // SUBMIT
   // =====================================
   const handleSubmit = async () => {
     if (!profile?.therapist_id) {
@@ -95,20 +95,11 @@ export default function ProfilePage() {
       formData.append("email", form.email);
       formData.append("therapist_birth_date", form.therapist_birth_date);
 
-     if (selectedFile) {
+      if (selectedFile) {
         formData.append("file", selectedFile);
       }
 
-      // ✅ TAMBAHAN: debug FormData
-      console.log("FILE:", selectedFile);
-      for (const pair of formData.entries()) {
-        console.log(pair[0], pair[1]);
-      }
-
-      // 1. Update ke backend
       await updateProfileWithPhoto(profile.therapist_id, formData);
-
-      // ❗ ambil ulang data terbaru
       await refreshProfile();
 
       setSelectedFile(null);
@@ -146,17 +137,20 @@ export default function ProfilePage() {
             /* ================= VIEW MODE ================= */
             <div className="bg-white rounded-xl shadow-lg p-6 max-w-5xl w-full">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* FOTO & NAMA */}
+                {/* FOTO */}
                 <div className="flex flex-col items-center text-center p-6 shadow rounded-xl bg-white">
-                  <img
-                    src={
-                      profile?.profile_picture
-                        ? `${profile.profile_picture}?t=${Date.now()}` // ✅ TAMBAHAN
-                        : "/profil.png"
-                    }
-                    className="w-44 h-44 rounded-full object-cover"
-                    alt="Foto Profil"
-                  />
+                  <div className="w-44 h-44 rounded-full overflow-hidden border border-gray-300 flex items-center justify-center bg-gray-100">
+                    {previewUrl ? (
+                      <img
+                        src={previewUrl}
+                        alt="Foto Profil"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-20 h-20 text-gray-400" />
+                    )}
+                  </div>
+
                   <h2 className="text-xl font-semibold text-[#4A8B73] mt-4">
                     {profile?.therapist_name}
                   </h2>
@@ -204,18 +198,17 @@ export default function ProfilePage() {
               <div className="bg-white border border-green-200 rounded-lg p-10 flex gap-12">
                 {/* FOTO */}
                 <div className="flex flex-col items-center flex-shrink-0">
-                  <div className="w-32 h-32 relative rounded-full overflow-hidden border border-green-200">
+                  <div className="w-32 h-32 relative rounded-full overflow-hidden border border-green-200 flex items-center justify-center bg-gray-100">
                     {previewUrl ? (
                       <Image
                         src={previewUrl}
                         alt="Foto Profil"
                         fill
                         className="object-cover"
+                        unoptimized
                       />
                     ) : (
-                      <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-500">
-                        Foto
-                      </div>
+                      <User className="w-12 h-12 text-gray-400" />
                     )}
                   </div>
 
@@ -237,53 +230,34 @@ export default function ProfilePage() {
                 {/* FORM */}
                 <div className="flex-1 flex flex-col">
                   <div className="grid grid-cols-2 gap-6 mb-8">
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Nama</label>
-                      <input
-                        type="text"
-                        name="therapist_name"
-                        value={form.therapist_name}
-                        onChange={handleChange}
-                        className="block w-full p-3 border border-gray-300 rounded-md"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Tanggal Lahir
-                      </label>
-                      <input
-                        type="date"
-                        name="date_of_birth"
-                        value={form.therapist_birth_date}
-                        onChange={handleChange}
-                        className="block w-full p-3 border border-gray-300 rounded-md"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">
-                        Telepon
-                      </label>
-                      <input
-                        type="text"
-                        name="therapist_phone"
-                        value={form.therapist_phone}
-                        onChange={handleChange}
-                        className="block w-full p-3 border border-gray-300 rounded-md"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Email</label>
-                      <input
-                        type="email"
-                        name="email"
-                        value={form.email}
-                        onChange={handleChange}
-                        className="block w-full p-3 border border-gray-300 rounded-md"
-                      />
-                    </div>
+                    <input
+                      name="therapist_name"
+                      value={form.therapist_name}
+                      onChange={handleChange}
+                      className="p-3 border rounded"
+                      placeholder="Nama"
+                    />
+                    <input
+                      type="date"
+                      name="therapist_birth_date"
+                      value={form.therapist_birth_date}
+                      onChange={handleChange}
+                      className="p-3 border rounded"
+                    />
+                    <input
+                      name="therapist_phone"
+                      value={form.therapist_phone}
+                      onChange={handleChange}
+                      className="p-3 border rounded"
+                      placeholder="Telepon"
+                    />
+                    <input
+                      name="email"
+                      value={form.email}
+                      onChange={handleChange}
+                      className="p-3 border rounded"
+                      placeholder="Email"
+                    />
                   </div>
 
                   <div className="mt-auto flex justify-end gap-3">
@@ -308,7 +282,7 @@ export default function ProfilePage() {
                         await handleSubmit();
                         setIsEditing(false);
                       }}
-                      className="px-6 py-3 bg-green-500 text-white rounded hover:bg-green-600 disabled:opacity-50"
+                      className="px-6 py-3 bg-green-500 text-white rounded"
                     >
                       {updating ? "Memperbarui..." : "Perbarui"}
                     </button>

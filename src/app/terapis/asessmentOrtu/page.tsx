@@ -355,7 +355,7 @@ export default function AssessmentPage() {
               >
                 <p className="mb-1">Letakkan file Anda di sini</p>
                 <p className="text-sm underline">atau klik untuk menelusuri</p>
-                <p className="text-xs mt-3">File yang didukung: pdf, docx, png, txt</p>
+                <p className="text-xs mt-3">File yang didukung: pdf</p>
                 <p className="text-xs">Ukuran Maksimal : 10MB</p>
                 {selectedFileName && (
                   <p className="mt-2 text-sm text-green-600">
@@ -369,7 +369,7 @@ export default function AssessmentPage() {
                   ref={fileInputRef}
                   className="hidden"
                   onChange={handleFileChange}
-                  accept=".pdf,.docx,.png,.txt"
+                  accept=".pdf"
                 />
               </div>
 

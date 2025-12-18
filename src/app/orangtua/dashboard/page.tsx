@@ -43,63 +43,69 @@ export default function DashboardOrtuPage() {
       setLoading(true);
 
       try {
-        // ===================== STATS =====================
+        /* ===================== STATS ===================== */
         const ST = (await getOrtuDashboardStats())?.data ?? {};
-
         setStats({
           total_children: ST.total_children,
           total_observations: ST.total_observations,
           total_assessments: ST.total_assessments,
         });
 
-        // ===================== CHART =====================
+        /* ===================== CHART ===================== */
         const CH = (await getOrtuDashboardChart())?.data ?? [];
 
         const monthFormatter = (monthString: string) => {
           try {
-            const dt = new Date(monthString + "-01");
-            return dt.toLocaleString("id-ID", { month: "short" });
+            return new Date(monthString + "-01").toLocaleString("id-ID", {
+              month: "short",
+            });
           } catch {
             return monthString;
           }
         };
 
-        const mapped = Array.isArray(CH)
-          ? CH.map((x: any) => ({
-              name: monthFormatter(x.month),
-              total_children: x.total_children,
-              total_observations: x.total_observations,
-              total_assessments: x.total_assessments,
-            }))
-          : [];
+        setChartData(
+          CH.map((x: any) => ({
+            name: monthFormatter(x.month),
+            total_children: x.total_children,
+            total_observations: x.total_observations,
+            total_assessments: x.total_assessments,
+          }))
+        );
 
-        setChartData(mapped);
-
-        // ===================== SCHEDULE (IMPORTANT FIX) =====================
+        /* ===================== SCHEDULE ===================== */
         const SC = (await getOrtuUpcomingSchedules("all"))?.data ?? [];
 
-        // 🔥 FIX: gunakan service_type sebagai jenis layanan
-        const fixed = Array.isArray(SC)
-          ? SC.map((r: any) => ({
-              id: r.id ?? Math.random(),
-              jenis: r.service_type ?? "-", // <-- FIX UTAMA
-              nama_pasien: r.child_name ?? "-",
+        const fixed = SC.map((r: any) => {
+          const raw = (r.service_type ?? "").toLowerCase();
 
-              // BE data untuk Assessment
-              asesor: r.therapist ?? "-", // bisa diganti jika BE beda
+          const jenis =
+            raw.includes("assessment") ? "assessment" : "observation";
 
-              // BE tidak punya tipe assessment → isi "-"
-              tipe_assessment:
-                r.service_type === "Assessment" ? "Assessment" : "-",
+          return {
+            id: r.id ?? Math.random(),
 
-              // BE data untuk Observasi
-              observer: r.therapist ?? "-",
+            /* 🔥 NORMALIZED VALUE (UNTUK FILTER) */
+            jenis,
 
-              status: r.status ?? "-",
-              tanggal: r.date ?? null,
-              waktu: r.time ?? "-",
-            }))
-          : [];
+            /* 🔥 LABEL (UNTUK TAMPILAN) */
+            jenis_label: jenis === "assessment" ? "Assessment" : "Observasi",
+
+            /* SERVICE TYPE ASLI, untuk ditampilkan */
+            service_type: r.service_type ?? "-",
+
+            nama_pasien: r.child_name ?? "-",
+            observer: r.therapist ?? "-",
+            asesor: r.therapist ?? "-",
+
+            /* tipe_assessment di tab Assessment adalah service_type asli */
+            tipe_assessment: jenis === "assessment" ? r.service_type ?? "-" : "-",
+
+            status: r.status ?? "-",
+            tanggal: r.date ?? null,
+            waktu: r.time ?? "-",
+          };
+        });
 
         setSchedule(fixed);
       } catch (err) {
@@ -112,16 +118,14 @@ export default function DashboardOrtuPage() {
     load();
   }, []);
 
-  // ===================== FILTER =====================
+  /* ===================== FILTER ===================== */
   const filteredSchedule = useMemo(() => {
     const qLower = q.toLowerCase();
 
     return schedule
       .filter((s) => {
-        if (activeTab === "Observasi")
-          return s.jenis.toLowerCase() === "observation";
-        if (activeTab === "Assessment")
-          return s.jenis.toLowerCase() === "assessment";
+        if (activeTab === "Observasi") return s.jenis === "observation";
+        if (activeTab === "Assessment") return s.jenis === "assessment";
         return true;
       })
       .filter((s) => s.nama_pasien.toLowerCase().includes(qLower));
@@ -129,7 +133,7 @@ export default function DashboardOrtuPage() {
 
   function formatDate(d: string | null) {
     if (!d) return "-";
-    return d; // BE format sudah DD/MM/YYYY → langsung tampilkan
+    return d;
   }
 
   if (loading)
@@ -139,10 +143,10 @@ export default function DashboardOrtuPage() {
       </div>
     );
 
-  // ===================== TABEL =====================
+  /* ===================== TABLE ===================== */
 
   const renderTableHeader = () => {
-    if (activeTab === "Observasi") {
+    if (activeTab === "Observasi")
       return (
         <tr>
           <th className="py-3 px-4">Nama Pasien</th>
@@ -152,9 +156,8 @@ export default function DashboardOrtuPage() {
           <th className="py-3 px-4">Waktu</th>
         </tr>
       );
-    }
 
-    if (activeTab === "Assessment") {
+    if (activeTab === "Assessment")
       return (
         <tr>
           <th className="py-3 px-4">Nama Pasien</th>
@@ -165,7 +168,6 @@ export default function DashboardOrtuPage() {
           <th className="py-3 px-4">Waktu</th>
         </tr>
       );
-    }
 
     return (
       <tr>
@@ -179,7 +181,7 @@ export default function DashboardOrtuPage() {
   };
 
   const renderTableRow = (r: any) => {
-    if (activeTab === "Observasi") {
+    if (activeTab === "Observasi")
       return (
         <tr key={r.id} className="text-sm border-b">
           <td className="py-3 px-4">{r.nama_pasien}</td>
@@ -189,9 +191,8 @@ export default function DashboardOrtuPage() {
           <td className="py-3 px-4">{r.waktu}</td>
         </tr>
       );
-    }
 
-    if (activeTab === "Assessment") {
+    if (activeTab === "Assessment")
       return (
         <tr key={r.id} className="text-sm border-b">
           <td className="py-3 px-4">{r.nama_pasien}</td>
@@ -202,19 +203,18 @@ export default function DashboardOrtuPage() {
           <td className="py-3 px-4">{r.waktu}</td>
         </tr>
       );
-    }
 
+    // Tab Semua
     return (
       <tr key={r.id} className="text-sm border-b">
         <td className="py-3 px-4">{r.nama_pasien}</td>
-        <td className="py-3 px-4">{r.jenis}</td>
+        <td className="py-3 px-4">{r.service_type}</td>
         <td className="py-3 px-4">{r.status}</td>
         <td className="py-3 px-4">{formatDate(r.tanggal)}</td>
         <td className="py-3 px-4">{r.waktu}</td>
       </tr>
     );
   };
-
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] text-[#36315B]">
       <div className="fixed left-0 top-0 h-full w-[250px] bg-white shadow-md z-20">

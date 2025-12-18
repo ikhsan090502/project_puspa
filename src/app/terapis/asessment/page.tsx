@@ -300,16 +300,7 @@ export default function AssessmentPage() {
 
                                     <div className="border-t border-[#81B7A9]" />
 
-                                    <button
-                                      onClick={() =>
-                                        router.push(
-                                          `/terapis/asessment/${item.assessment_id}/result?type=${getType()}&status=${mappedStatus}`
-                                        )
-                                      }
-                                      className="w-full flex items-center gap-2 px-3 py-2 hover:bg-[#E9F4F1] text-[#81B7A9] text-sm"
-                                    >
-                                      <Play size={14} /> Lihat Hasil
-                                    </button>
+                                    
                                   </>
                                 )}
                               </motion.div>

@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Bell } from "lucide-react";
+import { Bell, User } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { baseMenu } from "@/components/layout/sidebar_terapis";
 import { useTherapistProfile } from "@/context/ProfileTerapisContext";
@@ -26,6 +26,12 @@ export default function HeaderTerapis({ pageTitle }: HeaderTerapisProps) {
 
   const title = pageTitle || activeItem?.name || "Dashboard";
 
+  // ✅ pastikan STRING, bukan null
+  const profileImage: string | null =
+    profile?.profile_picture && profile.profile_picture !== ""
+      ? profile.profile_picture
+      : null;
+
   return (
     <header className="w-full flex justify-between items-center px-6 py-4 bg-white shadow text-[#36315B]">
       <h2 className="text-xl font-semibold">{title}</h2>
@@ -35,16 +41,21 @@ export default function HeaderTerapis({ pageTitle }: HeaderTerapisProps) {
           Hallo, {profile?.therapist_name || "Terapis"}
         </span>
 
-        <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300">
-          <Image
-            key={profile?.profile_picture || "default"} // 🔥 PAKSA REMOUNT
-            src={profile?.profile_picture || "/profil.png"}
-            alt="Terapis"
-            width={40}
-            height={40}
-            className="object-cover"
-            unoptimized // 🔥 MATIKAN CACHE NEXT IMAGE
-          />
+        {/* FOTO / ICON DEFAULT */}
+        <div className="w-10 h-10 rounded-full overflow-hidden border border-gray-300 flex items-center justify-center bg-gray-100">
+          {profileImage ? (
+            <Image
+              key={profileImage} // paksa remount saat foto berubah
+              src={profileImage} // ✅ DIJAMIN STRING
+              alt="Foto Terapis"
+              width={40}
+              height={40}
+              className="object-cover"
+              unoptimized
+            />
+          ) : (
+            <User className="w-6 h-6 text-gray-500" />
+          )}
         </div>
 
         <button className="relative flex items-center justify-center w-10 h-10 border border-[#36315B] rounded-lg hover:bg-[#81B7A9] hover:text-white transition">
