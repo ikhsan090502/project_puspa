@@ -14,13 +14,14 @@ import {
   getDetailPasien,
   updatePasien,
   deletePasien,
-  Pasien,
+  PasienListItem,
+  PasienDetail,
 } from "@/lib/api/data_pasien";
 
 export default function DataPasienPage() {
   const [search, setSearch] = useState("");
-  const [pasienList, setPasienList] = useState<Pasien[]>([]);
-  const [selectedPasien, setSelectedPasien] = useState<Pasien | null>(null);
+  const [pasienList, setPasienList] = useState<PasienListItem[]>([]);
+  const [selectedPasien, setSelectedPasien] = useState<PasienDetail | null>(null);
 
   const [showUbah, setShowUbah] = useState(false);
   const [showDetail, setShowDetail] = useState(false);
@@ -50,6 +51,7 @@ export default function DataPasienPage() {
     (p.child_name || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  // ================= DETAIL =================
   const handleDetail = async (childId: string) => {
     try {
       setLoading(true);
@@ -63,12 +65,14 @@ export default function DataPasienPage() {
     }
   };
 
-  const handleUbah = async (data: Partial<Pasien>) => {
+  // ================= UPDATE =================
+  const handleUbah = async (data: Partial<PasienDetail>) => {
     if (!selectedPasien) return;
 
     try {
       await updatePasien(selectedPasien.child_id, data);
 
+      // Refresh table
       const refreshed = await getAllPasien();
       setPasienList(refreshed);
 
@@ -79,18 +83,15 @@ export default function DataPasienPage() {
     }
   };
 
-  // ================================
-  // ✅ HANDLE DELETE TERBARU (PASTI CONNECT)
-  // ================================
+  // ================= DELETE =================
   const handleDelete = async (id: string) => {
     try {
-      await deletePasien(id); // delete langsung ke BE
+      await deletePasien(id);
       alert("Data anak berhasil dihapus");
 
       setShowHapus(false);
       setDeleteId(null);
 
-      // Refresh data
       await fetchPasien();
     } catch (error) {
       console.error("Gagal hapus anak:", error);
@@ -123,6 +124,7 @@ export default function DataPasienPage() {
             </div>
           </div>
 
+          {/* Table */}
           <div className="bg-white rounded-lg shadow-md shadow-[#ADADAD] p-4">
             {loading ? (
               <p className="text-center text-gray-500">Memuat data...</p>
@@ -150,17 +152,10 @@ export default function DataPasienPage() {
                     >
                       <td className="p-3">{i + 1}</td>
                       <td className="p-3">{pasien.child_name}</td>
-                      <td className="p-3 text-[#757575]">
-                        {pasien.child_birth_date}
-                      </td>
+                      <td className="p-3 text-[#757575]">{pasien.child_birth_date}</td>
                       <td className="p-3 text-[#757575]">{pasien.child_age}</td>
-                      <td className="p-3 text-[#757575]">
-                        {pasien.child_gender}
-                      </td>
-                      <td className="p-3 text-[#757575]">
-                        {pasien.child_school ?? "-"}
-                      </td>
-
+                      <td className="p-3 text-[#757575]">{pasien.child_gender ?? "-"}</td>
+                      <td className="p-3 text-[#757575]">{pasien.child_school ?? "-"}</td>
                       <td className="p-3 flex justify-center gap-3">
                         <button
                           onClick={() => handleDetail(pasien.child_id)}
@@ -170,9 +165,12 @@ export default function DataPasienPage() {
                         </button>
 
                         <button
-                          onClick={() => {
-                            setSelectedPasien(pasien);
+                          onClick={async () => {
+                            setLoading(true);
+                            const data = await getDetailPasien(pasien.child_id);
+                            setSelectedPasien(data);
                             setShowUbah(true);
+                            setLoading(false);
                           }}
                           className="hover:scale-110 transition text-[#4AB58E]"
                         >
@@ -198,11 +196,12 @@ export default function DataPasienPage() {
         </main>
       </div>
 
+      {/* FORM MODALS */}
       <FormUbahPasien
         open={showUbah}
         onClose={() => setShowUbah(false)}
         onUpdate={handleUbah}
-        initialData={selectedPasien || undefined}
+        initialData={selectedPasien ?? undefined}
       />
 
       <FormHapusPasien
@@ -214,7 +213,7 @@ export default function DataPasienPage() {
       <FormDetailPasien
         open={showDetail}
         onClose={() => setShowDetail(false)}
-        pasien={selectedPasien}
+        pasien={selectedPasien ?? undefined}
       />
     </div>
   );

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { Menu, X } from "lucide-react";
 
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
@@ -24,15 +25,13 @@ import { FaEye, FaPen, FaTrash } from "react-icons/fa";
 
 export default function ChildList() {
   const router = useRouter();
-  const params = useParams(); // ← Ditambahkan
+  const params = useParams();
 
-  // Jika halaman ini memakai dynamic segment /children/[child_id]
-  const child_id_from_params = params?.child_id || null;
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [children, setChildren] = useState<ChildItem[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Modals
   const [openDetail, setOpenDetail] = useState(false);
   const [openEdit, setOpenEdit] = useState(false);
   const [openDelete, setOpenDelete] = useState(false);
@@ -41,7 +40,6 @@ export default function ChildList() {
   const [selectedChild, setSelectedChild] = useState<ChildDetail | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  // Form tambah anak
   const [formAdd, setFormAdd] = useState({
     child_name: "",
     child_gender: "",
@@ -57,7 +55,7 @@ export default function ChildList() {
     setFormAdd({ ...formAdd, [e.target.name]: e.target.value });
   };
 
-  // LOAD CHILD LIST
+  /* ================= LOAD DATA ================= */
   useEffect(() => {
     async function fetchData() {
       try {
@@ -71,100 +69,77 @@ export default function ChildList() {
     fetchData();
   }, []);
 
-  // DETAIL
   async function handleOpenDetail(id: string) {
     const data = await getChildDetail(id);
     setSelectedChild(data);
     setOpenDetail(true);
   }
 
-  // EDIT
   async function handleOpenEdit(id: string) {
-  const data = await getChildDetail(id);
+    const data = await getChildDetail(id);
+    setSelectedChild({ ...data, child_id: id });
+    setOpenEdit(true);
+  }
 
-  // pastikan child_id masuk ke state
-  setSelectedChild({
-    ...data,
-    child_id: id,
-  });
-
-  setOpenEdit(true);
-}
-  // DELETE modal open
   const handleOpenDelete = (id: string) => {
     setDeleteId(id);
     setOpenDelete(true);
   };
 
-  // DELETE confirm
   const handleHapus = async (id: string) => {
-  try {
     await deleteChild(id);
-
     const refreshed = await getChildren();
     setChildren(refreshed.data || []);
-
     setOpenDelete(false);
-    setDeleteId(null);
-  } catch (err) {
-    console.error("Gagal hapus anak:", err);
-  }
-};
+  };
 
-  // ==================================================
-  //  UPDATE CHILD (REVISI – ID dipastikan aman)
-  // ==================================================
   const handleUbah = async (payload: Partial<ChildDetail>) => {
-  if (!selectedChild?.child_id) {
-    console.error("❌ child_id tidak ditemukan saat update!");
-    return;
-  }
-
-  try {
-    const childId = selectedChild.child_id; // ⬅ FIX PENTING
-
-    await updateChild(childId, payload);
-
+    if (!selectedChild?.child_id) return;
+    await updateChild(selectedChild.child_id, payload);
     const refreshed = await getChildren();
     setChildren(refreshed.data || []);
-
     setOpenEdit(false);
-    setSelectedChild(null);
-  } catch (err) {
-    console.error("❌ Gagal update data anak:", err);
-  }
-};
+  };
 
-  // CREATE CHILD
   async function handleTambah() {
-    try {
-      await createChild(formAdd);
-
-      const refreshed = await getChildren();
-      setChildren(refreshed.data || []);
-
-      setOpenAdd(false);
-
-      setFormAdd({
-        child_name: "",
-        child_gender: "",
-        child_birth_place: "",
-        child_birth_date: "",
-        child_school: "",
-        child_address: "",
-        child_complaint: "",
-        child_service_choice: "",
-      });
-    } catch (err) {
-      console.error("Gagal tambah anak:", err);
-    }
+    await createChild(formAdd);
+    const refreshed = await getChildren();
+    setChildren(refreshed.data || []);
+    setOpenAdd(false);
   }
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <SidebarOrangtua />
+      {/* ================= SIDEBAR ================= */}
+      <aside
+        className={`
+          fixed md:static inset-y-0 left-0 z-20
+          w-64 bg-white shadow-md
+          transform transition-transform duration-300
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        `}
+      >
+        <SidebarOrangtua />
+      </aside>
 
-      <div className="flex-1 flex flex-col ml-64">
+      {/* overlay mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-10 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* hamburger (mobile only) */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-30 md:hidden bg-white p-2 rounded-md shadow"
+      >
+        {sidebarOpen ? <X /> : <Menu />}
+      </button>
+
+      {/* ================= CONTENT ================= */}
+<div className="flex-1 flex flex-col">
         <HeaderOrangtua />
 
         <div className="p-6">
@@ -200,34 +175,22 @@ export default function ChildList() {
                   </div>
 
                   <div className="flex justify-end gap-2 mt-2">
-                    <button
-                      className="text-gray-500 hover:text-gray-800"
-                      onClick={() => handleOpenDetail(child.child_id)}
-                    >
+                    <button onClick={() => handleOpenDetail(child.child_id)}>
                       <FaEye />
                     </button>
-
-                    <button
-                      className="text-blue-500 hover:text-blue-700"
-                      onClick={() => handleOpenEdit(child.child_id)}
-                    >
+                    <button onClick={() => handleOpenEdit(child.child_id)}>
                       <FaPen />
                     </button>
-
-                    <button
-                      className="text-red-500 hover:text-red-700"
-                      onClick={() => handleOpenDelete(child.child_id)}
-                    >
+                    <button onClick={() => handleOpenDelete(child.child_id)}>
                       <FaTrash />
                     </button>
                   </div>
                 </div>
               ))}
 
-              {/* Tambah Anak */}
               <button
                 onClick={() => setOpenAdd(true)}
-                className="border-dashed border-2 border-gray-300 rounded-lg w-60 h-32 flex items-center justify-center text-gray-500 hover:border-gray-400 hover:text-gray-700 bg-white"
+                className="border-dashed border-2 border-gray-300 rounded-lg w-60 h-32 flex items-center justify-center text-gray-500 bg-white"
               >
                 + Tambah Anak
               </button>
@@ -236,14 +199,13 @@ export default function ChildList() {
         </div>
       </div>
 
-      {/* DETAIL */}
+      {/* ================= MODALS (UNCHANGED) ================= */}
       <FormDetailPasien
         open={openDetail}
         onClose={() => setOpenDetail(false)}
         pasien={selectedChild}
       />
 
-      {/* EDIT */}
       <FormUbahPasien
         open={openEdit}
         onClose={() => setOpenEdit(false)}
@@ -251,18 +213,17 @@ export default function ChildList() {
         onUpdate={handleUbah}
       />
 
-     <FormHapusAnak
-  open={openDelete}
-  onClose={() => setOpenDelete(false)}
-  childId={deleteId ?? undefined}
-  onConfirm={(id) => handleHapus(id)}
-/>
+      <FormHapusAnak
+        open={openDelete}
+        onClose={() => setOpenDelete(false)}
+        childId={deleteId ?? undefined}
+        onConfirm={(id) => handleHapus(id)}
+      />
 
-
-      {/* TAMBAH ANAK */}
+      {/* ================= TAMBAH ANAK ================= */}
       {openAdd && (
-        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white w-[500px] p-6 rounded-lg shadow-lg max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
+          <div className="bg-white w-full max-w-lg mx-4 p-6 rounded-lg max-h-[90vh] overflow-y-auto">
             <h2 className="text-lg font-semibold mb-4">Tambah Anak</h2>
 
             <div className="space-y-3">
@@ -275,7 +236,7 @@ export default function ChildList() {
                 { name: "child_service_choice", label: "Pilihan Layanan" },
               ].map((item) => (
                 <div key={item.name}>
-                  <label className="font-medium">{item.label}</label>
+                  <label className="text-sm font-medium">{item.label}</label>
                   <input
                     name={item.name}
                     value={(formAdd as any)[item.name]}
@@ -285,30 +246,24 @@ export default function ChildList() {
                 </div>
               ))}
 
-              <div>
-                <label className="font-medium">Jenis Kelamin</label>
-                <select
-                  name="child_gender"
-                  value={formAdd.child_gender}
-                  onChange={handleAddChange}
-                  className="w-full border rounded-lg px-3 py-2 mt-1"
-                >
-                  <option value="">Pilih jenis kelamin</option>
-                  <option value="laki-laki">Laki-laki</option>
-                  <option value="perempuan">Perempuan</option>
-                </select>
-              </div>
+              <select
+                name="child_gender"
+                value={formAdd.child_gender}
+                onChange={handleAddChange}
+                className="w-full border rounded-lg px-3 py-2"
+              >
+                <option value="">Pilih jenis kelamin</option>
+                <option value="laki-laki">Laki-laki</option>
+                <option value="perempuan">Perempuan</option>
+              </select>
 
-              <div>
-                <label className="font-medium">Tanggal Lahir</label>
-                <input
-                  type="date"
-                  name="child_birth_date"
-                  value={formAdd.child_birth_date}
-                  onChange={handleAddChange}
-                  className="w-full border rounded-lg px-3 py-2 mt-1"
-                />
-              </div>
+              <input
+                type="date"
+                name="child_birth_date"
+                value={formAdd.child_birth_date}
+                onChange={handleAddChange}
+                className="w-full border rounded-lg px-3 py-2"
+              />
             </div>
 
             <div className="flex justify-end gap-3 mt-6">

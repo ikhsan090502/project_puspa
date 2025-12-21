@@ -2,21 +2,21 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { Menu, X, CalendarDays, User } from "lucide-react";
+
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
-import { CalendarDays, User } from "lucide-react";
 
-import { 
-  getMyAssessments, 
-  AssessmentItem 
+import {
+  getMyAssessments,
+  AssessmentItem,
+  getMyAssessmentDetail,
 } from "@/lib/api/childrenAsesment";
-
-import { 
-  getMyAssessmentDetail 
-} from "@/lib/api/childrenAsesment"; // ← API DETAIL BARU
 
 export default function DataUmumPage() {
   const router = useRouter();
+
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [assessments, setAssessments] = useState<AssessmentItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,29 +33,18 @@ export default function DataUmumPage() {
         setLoading(false);
       }
     }
-
     fetchData();
   }, []);
 
-  // ================================
-  // HANDLE KETIKA USER PILIH ASSESSMENT
-  // ================================
   const handleSelectAssessment = async (assessment_id: string) => {
-    if (!assessment_id) {
-      console.error("Assessment ID missing!");
-      return;
-    }
+    if (!assessment_id) return;
 
     setLoadingDetail(true);
-
     try {
-      // 🔥 PANGGIL API DETAIL ASSESSMENT
-      const res = await getMyAssessmentDetail(assessment_id);
-
-      console.log("Detail Assessment:", res);
-
-      // 🔥 LANJUT KE HALAMAN KATEGORI
-      router.push(`/orangtua/assessment/kategori?assessment_id=${assessment_id}`);
+      await getMyAssessmentDetail(assessment_id);
+      router.push(
+        `/orangtua/assessment/kategori?assessment_id=${assessment_id}`
+      );
     } catch (error) {
       console.error("Failed to load assessment detail:", error);
       alert("Gagal memuat detail assessment. Silakan coba lagi.");
@@ -64,7 +53,6 @@ export default function DataUmumPage() {
     }
   };
 
-  // LOADING SPINNER UTAMA
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-50">
@@ -75,26 +63,53 @@ export default function DataUmumPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <SidebarOrangtua />
+      {/* ================= SIDEBAR ================= */}
+      <aside
+        className={`
+          fixed md:static inset-y-0 left-0 z-20
+          w-64 bg-white shadow-md
+          transform transition-transform duration-300
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        `}
+      >
+        <SidebarOrangtua />
+      </aside>
 
-      <div className="flex-1 flex flex-col ml-64">
+      {/* overlay mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-10 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* hamburger */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-30 md:hidden bg-white p-2 rounded-md shadow"
+      >
+        {sidebarOpen ? <X /> : <Menu />}
+      </button>
+
+      {/* ================= CONTENT ================= */}
+<div className="flex-1 flex flex-col">
         <HeaderOrangtua />
 
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-8 relative">
           <h2 className="text-lg text-center font-medium mb-6 text-gray-700">
             Pilih Assessment Anak
           </h2>
 
-          {/* Jika loading detail tampilkan overlay busy */}
+          {/* loading detail overlay (unchanged) */}
           {loadingDetail && (
             <div className="absolute inset-0 bg-white/70 flex items-center justify-center z-50">
               <div className="h-10 w-10 border-4 border-teal-600 border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 relative">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {assessments.length === 0 && (
-              <p className="text-center text-gray-600 w-full">
+              <p className="text-center text-gray-600 col-span-full">
                 Tidak ada assessment ditemukan.
               </p>
             )}
@@ -116,7 +131,7 @@ export default function DataUmumPage() {
 
                 <div className="flex items-center text-sm text-gray-600">
                   <CalendarDays className="w-4 h-4 mr-2 text-[#277373]" />
-                  Jadwal:{" "}
+                  Jadwal:
                   <span className="ml-1 font-medium">
                     {item.scheduled_date}
                   </span>

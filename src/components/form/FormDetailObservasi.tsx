@@ -30,7 +30,7 @@ export default function FormDetailObservasi({
         <p className="text-sm font-medium text-[#36315B]">Informasi Anak</p>
         <ul className="text-sm text-[#36315B] space-y-1 mt-2">
           <li>• Nama Lengkap : {pasien.child_name}</li>
-          <li>• Tanggal Lahir : {pasien.child_birth_info || "-"}</li>
+          <li>• Tanggal Lahir : {pasien.child_birth_date || "-"}</li>
           <li>• Usia : {pasien.child_age || "-"}</li>
           <li>• Jenis Kelamin : {pasien.child_gender || "-"}</li>
           <li>• Sekolah : {pasien.child_school || "-"}</li>
@@ -46,9 +46,9 @@ export default function FormDetailObservasi({
           </p>
 
           <ul className="text-sm text-[#36315B] space-y-1 mt-2 ml-3">
-            <li>• Nama Orangtua : {pasien.guardian_name || "-"}</li>
-            <li>• Hubungan : {pasien.guardian_relationship || "-"}</li>
-            <li>• Nomor WhatsApp : {pasien.guardian_phone || "-"}</li>
+            <li>• Nama Orangtua : {pasien.parent_name || "-"}</li>
+            <li>• Hubungan : {pasien.parent_type || "-"}</li>
+            <li>• Nomor WhatsApp : {pasien.parent_phone || "-"}</li>
           </ul>
         </div>
 
@@ -58,7 +58,7 @@ export default function FormDetailObservasi({
             Informasi Admin
           </p>
           <ul className="text-sm text-[#36315B] mt-2 ml-3">
-            <li>• Nama Administrator : {pasien.administrator || "-"}</li>
+            <li>• Nama Administrator : {pasien.admin_name || "-"}</li>
           </ul>
         </div>
 

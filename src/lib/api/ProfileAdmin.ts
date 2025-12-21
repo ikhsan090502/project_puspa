@@ -1,0 +1,118 @@
+import axiosInstance from "@/lib/axios";
+
+// ===================== IMAGE URL NORMALIZER =====================
+function normalizeProfilePictureUrl(path?: string | null): string | null {
+  if (!path) return null;
+  const filename = path.split("/").pop();
+  if (!filename) return null;
+  return `https://puspa.sinus.ac.id/storage/admins/${filename}`;
+}
+
+// ===================== INTERFACE (TYPE) =====================
+export interface AdminProfile {
+  user_id: string;
+  admin_id: string;
+  admin_name: string;
+  admin_phone: string;
+  email: string;
+  role: string;
+  profile_picture: string | null;
+  admin_birth_date: string;
+}
+
+export interface ProfileResponse {
+  success: boolean;
+  message: string;
+  data: AdminProfile;
+}
+
+// ===================== FETCH PROFILE =====================
+export const showProfile = async (token?: string): Promise<ProfileResponse | null> => {
+  try {
+    const headers = token ? { Authorization: `Bearer ${token}` } : undefined;
+    const res = await axiosInstance.get<ProfileResponse>("/admins/profile", { headers });
+
+    if (res.data?.data?.profile_picture) {
+      res.data.data.profile_picture = normalizeProfilePictureUrl(res.data.data.profile_picture);
+    }
+
+    return res.data;
+  } catch (error: any) {
+    if (error.response) {
+      console.error("Error fetching profile:", error.response.data);
+    } else if (error.request) {
+      console.error("No response received:", error.request);
+    } else {
+      console.error("Error setting up request:", error.message);
+    }
+    return null;
+  }
+};
+export async function updateProfileWithPhoto(
+  adminId: string,
+  formData: FormData
+): Promise<ProfileResponse | null> {
+  try {
+    const res = await axiosInstance.post<ProfileResponse>(
+    `/admins/${adminId}/profile`,
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
+    );
+
+    // Normalisasi URL foto setelah update
+    if (res.data?.data?.profile_picture) {
+      res.data.data.profile_picture = normalizeProfilePictureUrl(
+        res.data.data.profile_picture
+      );
+    }
+
+    return res.data;
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    return null;
+  }
+}
+
+
+// ===================== UPDATE PASSWORD =====================
+export interface UpdatePasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+export interface UpdatePasswordPayload {
+  current_password: string;
+  password: string;
+  password_confirmation: string;
+}
+
+export async function updatePassword(
+  data: UpdatePasswordPayload
+): Promise<UpdatePasswordResponse | null> {
+  try {
+    const payload = {
+      ...data,
+      _method: "PUT",
+    };
+
+    const res = await axiosInstance.post<UpdatePasswordResponse>(
+      "/profile/update-password",
+      payload
+    );
+
+    return res.data;
+  } catch (error: any) {
+    console.error("🔥 FULL ERROR:", error.response?.data);
+    return {
+      success: false,
+      message:
+        error.response?.data?.message ||
+        error.response?.data?.errors ||
+        "Gagal mengubah password",
+    };
+  }
+}

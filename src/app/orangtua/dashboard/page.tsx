@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useEffect, useState, useMemo } from "react";
-
 import {
   AreaChart,
   Area,
@@ -11,6 +10,7 @@ import {
   Tooltip as ReTooltip,
   ResponsiveContainer,
 } from "recharts";
+import { Menu, X } from "lucide-react";
 
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
@@ -23,6 +23,7 @@ import {
 
 export default function DashboardOrtuPage() {
   const [loading, setLoading] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const [stats, setStats] = useState<any>({
     total_children: { count: 0, percentage: 0, direction: "up", label: "" },
@@ -32,18 +33,15 @@ export default function DashboardOrtuPage() {
 
   const [chartData, setChartData] = useState<any[]>([]);
   const [schedule, setSchedule] = useState<any[]>([]);
-
   const [activeTab, setActiveTab] =
     useState<"Semua" | "Observasi" | "Assessment">("Semua");
-
   const [q, setQ] = useState("");
 
+  /* ===================== LOAD DATA ===================== */
   useEffect(() => {
     async function load() {
       setLoading(true);
-
       try {
-        /* ===================== STATS ===================== */
         const ST = (await getOrtuDashboardStats())?.data ?? {};
         setStats({
           total_children: ST.total_children,
@@ -51,262 +49,140 @@ export default function DashboardOrtuPage() {
           total_assessments: ST.total_assessments,
         });
 
-        /* ===================== CHART ===================== */
         const CH = (await getOrtuDashboardChart())?.data ?? [];
-
-        const monthFormatter = (monthString: string) => {
-          try {
-            return new Date(monthString + "-01").toLocaleString("id-ID", {
-              month: "short",
-            });
-          } catch {
-            return monthString;
-          }
-        };
-
         setChartData(
           CH.map((x: any) => ({
-            name: monthFormatter(x.month),
+            name: new Date(x.month + "-01").toLocaleString("id-ID", {
+              month: "short",
+            }),
             total_children: x.total_children,
             total_observations: x.total_observations,
             total_assessments: x.total_assessments,
           }))
         );
 
-        /* ===================== SCHEDULE ===================== */
         const SC = (await getOrtuUpcomingSchedules("all"))?.data ?? [];
+        setSchedule(
+          SC.map((r: any) => {
+            const jenis = (r.service_type ?? "")
+              .toLowerCase()
+              .includes("assessment")
+              ? "assessment"
+              : "observation";
 
-        const fixed = SC.map((r: any) => {
-          const raw = (r.service_type ?? "").toLowerCase();
-
-          const jenis =
-            raw.includes("assessment") ? "assessment" : "observation";
-
-          return {
-            id: r.id ?? Math.random(),
-
-            /* 🔥 NORMALIZED VALUE (UNTUK FILTER) */
-            jenis,
-
-            /* 🔥 LABEL (UNTUK TAMPILAN) */
-            jenis_label: jenis === "assessment" ? "Assessment" : "Observasi",
-
-            /* SERVICE TYPE ASLI, untuk ditampilkan */
-            service_type: r.service_type ?? "-",
-
-            nama_pasien: r.child_name ?? "-",
-            observer: r.therapist ?? "-",
-            asesor: r.therapist ?? "-",
-
-            /* tipe_assessment di tab Assessment adalah service_type asli */
-            tipe_assessment: jenis === "assessment" ? r.service_type ?? "-" : "-",
-
-            status: r.status ?? "-",
-            tanggal: r.date ?? null,
-            waktu: r.time ?? "-",
-          };
-        });
-
-        setSchedule(fixed);
+            return {
+              id: r.id,
+              jenis,
+              jenis_label:
+                jenis === "assessment" ? "Assessment" : "Observasi",
+              service_type: r.service_type ?? "-",
+              nama_pasien: r.child_name ?? "-",
+              observer: r.therapist ?? "-",
+              asesor: r.therapist ?? "-",
+              tipe_assessment:
+                jenis === "assessment" ? r.service_type ?? "-" : "-",
+              status: r.status ?? "-",
+              tanggal: r.date ?? "-",
+              waktu: r.time ?? "-",
+            };
+          })
+        );
       } catch (err) {
-        console.error("❌ Error load dashboard:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     }
-
     load();
   }, []);
 
   /* ===================== FILTER ===================== */
   const filteredSchedule = useMemo(() => {
-    const qLower = q.toLowerCase();
-
     return schedule
       .filter((s) => {
         if (activeTab === "Observasi") return s.jenis === "observation";
         if (activeTab === "Assessment") return s.jenis === "assessment";
         return true;
       })
-      .filter((s) => s.nama_pasien.toLowerCase().includes(qLower));
+      .filter((s) =>
+        s.nama_pasien.toLowerCase().includes(q.toLowerCase())
+      );
   }, [schedule, q, activeTab]);
-
-  function formatDate(d: string | null) {
-    if (!d) return "-";
-    return d;
-  }
 
   if (loading)
     return (
-      <div className="w-full h-screen flex items-center justify-center text-lg">
+      <div className="h-screen flex items-center justify-center">
         Loading dashboard...
       </div>
     );
 
-  /* ===================== TABLE ===================== */
-
-  const renderTableHeader = () => {
-    if (activeTab === "Observasi")
-      return (
-        <tr>
-          <th className="py-3 px-4">Nama Pasien</th>
-          <th className="py-3 px-4">Observer</th>
-          <th className="py-3 px-4">Status</th>
-          <th className="py-3 px-4">Tanggal Observasi</th>
-          <th className="py-3 px-4">Waktu</th>
-        </tr>
-      );
-
-    if (activeTab === "Assessment")
-      return (
-        <tr>
-          <th className="py-3 px-4">Nama Pasien</th>
-          <th className="py-3 px-4">Tipe Assessment</th>
-          <th className="py-3 px-4">Asesor</th>
-          <th className="py-3 px-4">Status</th>
-          <th className="py-3 px-4">Tanggal Assessment</th>
-          <th className="py-3 px-4">Waktu</th>
-        </tr>
-      );
-
-    return (
-      <tr>
-        <th className="py-3 px-4">Nama Pasien</th>
-        <th className="py-3 px-4">Jenis Layanan</th>
-        <th className="py-3 px-4">Status</th>
-        <th className="py-3 px-4">Tanggal</th>
-        <th className="py-3 px-4">Waktu</th>
-      </tr>
-    );
-  };
-
-  const renderTableRow = (r: any) => {
-    if (activeTab === "Observasi")
-      return (
-        <tr key={r.id} className="text-sm border-b">
-          <td className="py-3 px-4">{r.nama_pasien}</td>
-          <td className="py-3 px-4">{r.observer}</td>
-          <td className="py-3 px-4">{r.status}</td>
-          <td className="py-3 px-4">{formatDate(r.tanggal)}</td>
-          <td className="py-3 px-4">{r.waktu}</td>
-        </tr>
-      );
-
-    if (activeTab === "Assessment")
-      return (
-        <tr key={r.id} className="text-sm border-b">
-          <td className="py-3 px-4">{r.nama_pasien}</td>
-          <td className="py-3 px-4">{r.tipe_assessment}</td>
-          <td className="py-3 px-4">{r.asesor}</td>
-          <td className="py-3 px-4">{r.status}</td>
-          <td className="py-3 px-4">{formatDate(r.tanggal)}</td>
-          <td className="py-3 px-4">{r.waktu}</td>
-        </tr>
-      );
-
-    // Tab Semua
-    return (
-      <tr key={r.id} className="text-sm border-b">
-        <td className="py-3 px-4">{r.nama_pasien}</td>
-        <td className="py-3 px-4">{r.service_type}</td>
-        <td className="py-3 px-4">{r.status}</td>
-        <td className="py-3 px-4">{formatDate(r.tanggal)}</td>
-        <td className="py-3 px-4">{r.waktu}</td>
-      </tr>
-    );
-  };
   return (
     <div className="flex min-h-screen bg-[#F8FAFC] text-[#36315B]">
-      <div className="fixed left-0 top-0 h-full w-[250px] bg-white shadow-md z-20">
+      {/* ================= SIDEBAR ================= */}
+      <aside
+        className={`
+          fixed md:static z-20 inset-y-0 left-0 w-64 bg-white shadow-md
+          transform transition-transform duration-300
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        `}
+      >
         <SidebarOrangtua />
-      </div>
+      </aside>
 
-      <div className="flex-1 flex flex-col ml-[250px]">
+      {/* overlay mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 z-10 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* toggle */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-30 md:hidden p-2 rounded-md bg-white shadow"
+      >
+        {sidebarOpen ? <X /> : <Menu />}
+      </button>
+
+      {/* ================= MAIN ================= */}
+      <main className="flex-1 flex flex-col overflow-x-hidden">
         <HeaderOrangtua />
 
-        <main className="p-8 space-y-10">
-          <h1 className="text-3xl font-semibold mb-6">Dashboard</h1>
+        <div className="p-4 md:p-8 space-y-8">
+          <h1 className="text-2xl md:text-3xl font-semibold">Dashboard</h1>
 
           {/* METRICS */}
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <MetricCard title="Total Anak/Pasien" data={stats.total_children} icon="👶" />
             <MetricCard title="Total Observasi" data={stats.total_observations} icon="👁️" />
             <MetricCard title="Total Assessment" data={stats.total_assessments} icon="🧠" />
           </div>
 
-          {/* AREA CHART */}
+          {/* CHART */}
           <div className="bg-white rounded-xl p-6 shadow-sm">
-            <h3 className="text-xl font-semibold mb-3">Grafik Aktivitas</h3>
-
-            <div className="h-[300px]">
+            <h3 className="text-xl font-semibold mb-4">Grafik Aktivitas</h3>
+            <div className="h-[280px]">
               <ResponsiveContainer>
                 <AreaChart data={chartData}>
-                  <defs>
-                    <linearGradient id="colorChild" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#7c73f6" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#7c73f6" stopOpacity={0.1} />
-                    </linearGradient>
-
-                    <linearGradient id="colorObs" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#34d399" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#34d399" stopOpacity={0.1} />
-                    </linearGradient>
-
-                    <linearGradient id="colorAssess" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#fb923c" stopOpacity={0.8} />
-                      <stop offset="95%" stopColor="#fb923c" stopOpacity={0.1} />
-                    </linearGradient>
-                  </defs>
-
                   <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-
                   <XAxis dataKey="name" />
-                  <YAxis ticks={[0, 20, 40, 60, 80, 100]} />
+                  <YAxis />
                   <ReTooltip />
-
-                  <Area
-                    type="monotone"
-                    dataKey="total_children"
-                    name="Total Anak"
-                    stroke="#7c73f6"
-                    strokeWidth={3}
-                    fill="url(#colorChild)"
-                  />
-
-                  <Area
-                    type="monotone"
-                    dataKey="total_observations"
-                    name="Total Observasi"
-                    stroke="#34d399"
-                    strokeWidth={3}
-                    fill="url(#colorObs)"
-                  />
-
-                  <Area
-                    type="monotone"
-                    dataKey="total_assessments"
-                    name="Total Assessment"
-                    stroke="#fb923c"
-                    strokeWidth={3}
-                    fill="url(#colorAssess)"
-                  />
+                  <Area type="monotone" dataKey="total_children" stroke="#7c73f6" />
+                  <Area type="monotone" dataKey="total_observations" stroke="#34d399" />
+                  <Area type="monotone" dataKey="total_assessments" stroke="#fb923c" />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
-
-            <div className="mt-4 grid grid-cols-3 text-center text-xs text-gray-700 font-medium">
-              <div>Total Anak</div>
-              <div>Total Observasi</div>
-              <div>Total Assessment</div>
-            </div>
           </div>
 
-          {/* JADWAL */}
+          {/* TABLE */}
           <div className="bg-white rounded-xl p-6 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex flex-col md:flex-row gap-4 md:items-center md:justify-between mb-4">
               <h3 className="text-xl font-semibold">Jadwal Mendatang</h3>
 
-              <div className="flex items-center gap-6">
+              <div className="flex flex-col sm:flex-row gap-4">
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
@@ -314,7 +190,7 @@ export default function DashboardOrtuPage() {
                   className="border px-4 py-2 rounded-full text-sm"
                 />
 
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex gap-3 text-sm">
                   {(["Semua", "Observasi", "Assessment"] as const).map((t) => (
                     <button
                       key={t}
@@ -333,51 +209,52 @@ export default function DashboardOrtuPage() {
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead className="text-xs border-b text-gray-500">
-                  {renderTableHeader()}
+              <table className="w-full text-left text-sm">
+                <thead className="border-b text-gray-500">
+                  <tr>
+                    <th className="py-2 px-3">Nama Pasien</th>
+                    <th className="py-2 px-3">Jenis</th>
+                    <th className="py-2 px-3">Status</th>
+                    <th className="py-2 px-3">Tanggal</th>
+                    <th className="py-2 px-3">Waktu</th>
+                  </tr>
                 </thead>
-
                 <tbody>
                   {filteredSchedule.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="text-center py-6 text-gray-400">
+                      <td colSpan={5} className="text-center py-6 text-gray-400">
                         Tidak ada jadwal
                       </td>
                     </tr>
                   ) : (
-                    filteredSchedule.map((r) => renderTableRow(r))
+                    filteredSchedule.map((r) => (
+                      <tr key={r.id} className="border-b">
+                        <td className="py-2 px-3">{r.nama_pasien}</td>
+                        <td className="py-2 px-3">{r.jenis_label}</td>
+                        <td className="py-2 px-3">{r.status}</td>
+                        <td className="py-2 px-3">{r.tanggal}</td>
+                        <td className="py-2 px-3">{r.waktu}</td>
+                      </tr>
+                    ))
                   )}
                 </tbody>
               </table>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
 
-/* ===========================================================
-   METRIC CARD
-=========================================================== */
+/* ================= METRIC CARD ================= */
 function MetricCard({ title, data, icon }: any) {
-  const directionIcon = data.direction === "up" ? "▲" : "▼";
-  const directionColor =
-    data.direction === "up" ? "text-emerald-600" : "text-red-500";
-
   return (
-    <div className="bg-white rounded-xl p-5 shadow-sm flex items-center justify-between border">
+    <div className="bg-white rounded-xl p-5 shadow-sm flex justify-between items-center border">
       <div>
         <div className="text-xs text-gray-600">{title}</div>
-        <div className="text-2xl font-bold mt-1">{data.count}</div>
-
-        <div className={`flex items-center gap-1 ${directionColor} text-xs mt-1`}>
-          <span>{directionIcon}</span>
-          <span>{data.label}</span>
-        </div>
+        <div className="text-2xl font-bold">{data.count}</div>
       </div>
-
       <div className="w-12 h-12 rounded-full bg-emerald-50 flex items-center justify-center text-xl">
         {icon}
       </div>

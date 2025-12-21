@@ -7,9 +7,10 @@ export interface Terapis {
   username: string;
   email: string;
   telepon: string;
+  role: string;
   ditambahkan: string;
   diubah: string;
-  is_active?: string; 
+  status: string; 
 }
 
 const bidangMap: Record<string, string> = {
@@ -43,7 +44,8 @@ export async function getTerapis(): Promise<Terapis[]> {
       telepon: t.therapist_phone,
       ditambahkan: t.created_at,
       diubah: t.updated_at,
-      is_active: t.is_active,
+      status: t.status,
+      role: t.role,
     }));
   }
 
@@ -121,7 +123,8 @@ export async function getDetailTerapis(id: string): Promise<Terapis | null> {
       telepon: t.therapist_phone,
       ditambahkan: t.created_at,
       diubah: t.updated_at,
-      is_active: t.is_active,
+      status: t.status,
+      role: t.role,
     };
   }
 

@@ -2,16 +2,14 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Menu, X, ChevronDown, FileDown } from "lucide-react";
+
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
-import { ChevronDown, FileDown } from "lucide-react";
 
 import { downloadAssessmentReport } from "@/lib/api/childrenAsesment";
 import { getMyAssessmentDetail } from "@/lib/api/checkStatusAsesment";
 
-// =======================
-// TYPES
-// =======================
 interface AssessmentDetail {
   assessment_detail_id: number;
   type: string;
@@ -25,19 +23,17 @@ export default function AssessmentPage() {
 
   const assessmentId = searchParams.get("assessment_id") ?? "";
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const [loading, setLoading] = useState(true);
   const [types, setTypes] = useState<string[]>([]);
   const [hasNewFile, setHasNewFile] = useState(false);
   const [downloading, setDownloading] = useState(false);
 
-  /** 🔥 status per type */
   const [completionStatus, setCompletionStatus] = useState<
     Record<string, string>
   >({});
 
-  // =======================
-  // FETCH DETAIL
-  // =======================
   useEffect(() => {
     async function fetchDetail() {
       if (!assessmentId) return;
@@ -45,28 +41,21 @@ export default function AssessmentPage() {
       try {
         const res = await getMyAssessmentDetail(assessmentId);
 
-        /** kategori */
-        const extractedTypes = res.details.map(
-          (item: AssessmentDetail) => item.type
-        );
-        setTypes(extractedTypes);
+        setTypes(res.details.map((d: AssessmentDetail) => d.type));
 
-        /** 🔥 mapping completed status per type */
-        const statusMap: Record<string, string> = {};
-        res.details.forEach((item: AssessmentDetail) => {
-          statusMap[item.type] = item.parent_completed_status;
+        const map: Record<string, string> = {};
+        res.details.forEach((d: AssessmentDetail) => {
+          map[d.type] = d.parent_completed_status;
         });
-        setCompletionStatus(statusMap);
+        setCompletionStatus(map);
 
-        /** laporan */
         setHasNewFile(Boolean(res.report?.available));
       } catch (err) {
-        console.error("Gagal load detail:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     }
-
     fetchDetail();
   }, [assessmentId]);
 
@@ -86,9 +75,6 @@ export default function AssessmentPage() {
     );
   }
 
-  // =======================
-  // KATEGORI
-  // =======================
   const kategoriList = [
     {
       code: "umum",
@@ -145,17 +131,11 @@ export default function AssessmentPage() {
     if (action === "riwayat") router.push(item.riwayat);
   };
 
-  // =======================
-  // DOWNLOAD LAPORAN
-  // =======================
   const handleDownload = async () => {
     if (!hasNewFile) return;
-
     try {
       setDownloading(true);
       await downloadAssessmentReport(assessmentId);
-    } catch (err) {
-      alert("Gagal mendownload laporan.");
     } finally {
       setDownloading(false);
     }
@@ -163,13 +143,36 @@ export default function AssessmentPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <SidebarOrangtua />
+      <aside
+        className={`
+          fixed md:static inset-y-0 left-0 z-20
+          w-64 bg-white shadow-md
+          transform transition-transform duration-300
+          ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+        `}
+      >
+        <SidebarOrangtua />
+      </aside>
 
-      <div className="flex-1 flex flex-col ml-64">
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-10 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-30 md:hidden bg-white p-2 rounded-md shadow"
+      >
+        {sidebarOpen ? <X /> : <Menu />}
+      </button>
+
+<div className="flex-1 flex flex-col">
         <HeaderOrangtua />
 
         <main className="flex-1 overflow-y-auto p-8 space-y-6">
-          <div className="flex justify-end mb-4">
+          <div className="flex justify-end">
             <button
               onClick={() => router.push("/orangtua/assessment")}
               className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
@@ -178,11 +181,10 @@ export default function AssessmentPage() {
             </button>
           </div>
 
-          {/* KATEGORI CARD */}
-          <div className="bg-white shadow rounded-xl border border-gray-200 p-6">
+          <div className="bg-white shadow rounded-xl border p-6">
             <div className="flex justify-between border-b pb-3 mb-4">
-              <h2 className="font-semibold text-[#36315B]">Kategori</h2>
-              <h2 className="font-semibold text-[#36315B]">Status</h2>
+              <h2 className="font-semibold">Kategori</h2>
+              <h2 className="font-semibold">Status</h2>
             </div>
 
             <div className="space-y-6">
@@ -193,10 +195,10 @@ export default function AssessmentPage() {
                 return (
                   <div
                     key={index}
-                    className="flex justify-between items-start border-b pb-4 last:border-none"
+                    className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-3 border-b pb-4 last:border-none"
                   >
                     <div>
-                      <h3 className="font-semibold text-[#36315B] mb-1">
+                      <h3 className="font-semibold mb-1">
                         {item.kategori}
                       </h3>
 
@@ -209,7 +211,7 @@ export default function AssessmentPage() {
 
                     <div className="relative">
                       <select
-                        className="appearance-none border border-gray-300 rounded-lg bg-[#C0DCD6] text-[#36315B] text-sm px-4 py-2 pr-8 cursor-pointer"
+                        className="appearance-none border border-gray-300 rounded-lg bg-[#C0DCD6] text-sm px-4 py-2 pr-8 cursor-pointer min-h-[44px]"
                         onChange={(e) =>
                           handleAction(e.target.value, item)
                         }
@@ -218,16 +220,13 @@ export default function AssessmentPage() {
                         <option value="" disabled hidden>
                           Aksi
                         </option>
-
-                        {/* 🔥 LOGIC DISABLE MULAI */}
                         <option value="mulai" disabled={isCompleted}>
                           Mulai
                         </option>
-
                         <option value="riwayat">Riwayat Jawaban</option>
                       </select>
 
-                      <ChevronDown className="absolute right-2 top-2.5 w-4 h-4 text-[#36315B]" />
+                      <ChevronDown className="absolute right-2 top-2.5 w-4 h-4" />
                     </div>
                   </div>
                 );
@@ -235,13 +234,10 @@ export default function AssessmentPage() {
             </div>
           </div>
 
-          {/* 🔥 BANNER LAPORAN */}
-          <div className="bg-[#EEF7F4] border border-[#C0DCD6] p-5 rounded-xl flex items-center justify-between shadow">
+          <div className="bg-[#EEF7F4] border p-5 rounded-xl flex items-center justify-between shadow">
             <div>
-              <p className="font-semibold text-[#36315B] text-lg">
-                File laporan asesmen
-              </p>
-              <p className="text-gray-700 text-sm mt-1">
+              <p className="font-semibold text-lg">File laporan asesmen</p>
+              <p className="text-sm mt-1">
                 {hasNewFile
                   ? "Asesor telah mengunggah laporan perkembangan terbaru anak Anda."
                   : "Laporan belum tersedia, silakan menunggu unggahan dari asesor."}
@@ -251,7 +247,7 @@ export default function AssessmentPage() {
             <button
               onClick={handleDownload}
               disabled={!hasNewFile || downloading}
-              className="flex items-center gap-2 bg-[#36315B] text-white px-5 py-2 rounded-lg hover:bg-opacity-90 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 bg-[#36315B] text-white px-5 py-2 rounded-lg disabled:opacity-60"
             >
               <FileDown className="w-5 h-5" />
               {downloading ? "Mengunduh..." : "Unduh Laporan"}

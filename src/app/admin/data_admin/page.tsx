@@ -50,7 +50,7 @@ function DetailAdmin({
           <li>• Telepon : {admin.admin_phone}</li>
           <li>• Tanggal Ditambahkan : {admin.created_at}</li>
           <li>• Tanggal Diubah : {admin.updated_at}</li>
-          <li>• Status : {admin.is_active === "1" ? "Terverifikasi" : "Belum Terferivikasi"}</li>
+          <li>• Status : {admin.status}</li>
         </ul>
       </div>
     </div>
@@ -193,8 +193,9 @@ export default function AdminPage() {
                     <td className="p-3 font-medium text-[#757575]">{admin.email}</td>
                     <td className="p-3 font-medium text-[#757575]">{admin.admin_phone}</td>
                     <td className="p-3 font-medium text-[#757575]">
-                      {admin.is_active === "1" ? "Terverifikasi" : "Belum Terverifikasi"}
+                      {admin.status}
                     </td>
+
                     <td className="p-3 flex justify-center gap-3">
                       <button
                         onClick={() => handleDetail(admin.admin_id)}

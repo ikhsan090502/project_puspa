@@ -2,8 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
-import HeaderOrangtua from "@/components/layout/header-orangtua";
+import ResponsiveOrangtuaLayout from "@/components/layout/ResponsiveOrangtuaLayout";
 import { ChevronDown } from "lucide-react";
 
 import {
@@ -15,22 +14,6 @@ import {
   getChildDetail,
 } from "@/lib/api/childrenAsesment";
 
-/* =========================
-   HELPER
-=========================== */
-const safeJsonParse = (val: any, fallback: any = null) => {
-  if (val === null || val === undefined) return fallback;
-  if (typeof val !== "string") return val;
-  try {
-    return JSON.parse(val);
-  } catch {
-    return fallback;
-  }
-};
-
-/* =========================
-   RANGE PERTANYAAN PER GROUP
-=========================== */
 const parentGeneralRanges = [
   { group_key: "riwayat_psikososial", title: "Riwayat Psikososial", range: [430, 434] },
   { group_key: "riwayat_kehamilan", title: "Riwayat Kehamilan", range: [435, 442] },
@@ -40,131 +23,9 @@ const parentGeneralRanges = [
   { group_key: "riwayat_pendidikan", title: "Riwayat Pendidikan", range: [477, 485] },
 ];
 
-/* =========================
-   Fungsi render jawaban fleksibel
-=========================== */
-function renderCellValue(value: any): React.ReactNode {
-  if (typeof value === "object" && value !== null) {
-    const allNull =
-      Object.values(value).every(
-        (v) => v === null || v === "" || v === undefined
-      );
-
-    return allNull ? "-" : JSON.stringify(value);
-  }
-  return value ?? "-";
-}
-
-function renderAnswer(answer: any) {
-  if (answer === null || answer === undefined) {
-    return <span>-</span>;
-  }
-
-  // string / number
-  if (typeof answer === "string" || typeof answer === "number") {
-    return <span>{answer}</span>;
-  }
-
-  // =====================
-  // ARRAY
-  // =====================
-  if (Array.isArray(answer)) {
-    if (answer.length === 0) return <span>-</span>;
-
-    // ✅ ARRAY OF OBJECT → TABEL HORIZONTAL
-    if (typeof answer[0] === "object" && answer[0] !== null) {
-      const hasData = answer.some(
-        (row) =>
-          Object.values(row).some(
-            (v) => v !== null && v !== "" && v !== undefined
-          )
-      );
-
-      if (!hasData) return <span>-</span>;
-
-      const headers = Object.keys(answer[0]);
-
-      return (
-        <table className="border-collapse border border-gray-300 w-full text-sm">
-          <thead>
-            <tr>
-              {headers.map((h) => (
-                <th
-                  key={h}
-                  className="border border-gray-300 px-2 py-1 font-semibold bg-gray-100 text-left"
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {answer.map((row: any, idx: number) => (
-              <tr key={idx}>
-                {headers.map((h) => (
-                  <td key={h} className="border border-gray-300 px-2 py-1">
-                    {renderCellValue(row[h])}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      );
-    }
-
-    // array biasa (string/number)
-    return (
-      <ul className="list-disc pl-5 space-y-1">
-        {answer.map((v, i) => (
-          <li key={i}>{v ?? "-"}</li>
-        ))}
-      </ul>
-    );
-  }
-
-  // =====================
-  // OBJECT → TABEL VERTIKAL
-  // =====================
-  if (typeof answer === "object") {
-    const allNull =
-      Object.values(answer).every(
-        (v) => v === null || v === "" || v === undefined
-      );
-
-    if (allNull) {
-      return <span>-</span>;
-    }
-
-    return (
-      <table className="border-collapse border border-gray-300 w-full text-sm">
-        <tbody>
-          {Object.entries(answer).map(([k, v]) => (
-            <tr key={k}>
-              <td className="border border-gray-300 px-2 py-1 font-semibold min-w-[180px]">
-                {k}
-              </td>
-              <td className="border border-gray-300 px-2 py-1">
-                {renderCellValue(v)}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    );
-  }
-
-  return <span>{String(answer)}</span>;
-}
-
-
-/* =========================
-   PAGE RIWAYAT JAWABAN
-=========================== */
 export default function RiwayatJawabanOrangtua() {
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const assessmentId = searchParams.get("assessment_id");
   const type = (searchParams.get("type") || "umum_parent") as ParentSubmitType;
 
@@ -174,27 +35,21 @@ export default function RiwayatJawabanOrangtua() {
   const [familyInfo, setFamilyInfo] = useState<any>({});
   const [loading, setLoading] = useState(true);
 
-  /* =========================
-     LOAD DATA
-  ============================ */
   useEffect(() => {
     if (!assessmentId) return;
 
     const loadData = async () => {
       try {
         setLoading(true);
-
         const [aRes, myAssessments] = await Promise.all([
           getParentAssessmentAnswers(assessmentId, type),
           getMyAssessments(),
         ]);
 
-        const dataArr = aRes?.data || [];
-
         const answerMap: Record<string, any> = {};
-        dataArr.forEach((item: any) => {
+        (aRes?.data || []).forEach((item: any) => {
           answerMap[item.question_id] = {
-            value: item.answer?.value ?? item.answer ?? null, // agar fleksibel, cek item.answer.value dulu
+            value: item.answer?.value ?? item.answer ?? null,
             note: item.note ?? null,
             question_text: item.question_text,
             question_number: item.question_number,
@@ -221,128 +76,170 @@ export default function RiwayatJawabanOrangtua() {
     loadData();
   }, [assessmentId, type]);
 
-  /* =========================
-     FILTER QUESTIONS SESUAI GROUP/RANGE
-  ============================ */
   const currentQuestions = Object.entries(answers)
     .filter(([id]) => {
       const numId = parseInt(id);
       const rangeObj = parentGeneralRanges.find((g) => g.group_key === activeCategory);
       return rangeObj ? numId >= rangeObj.range[0] && numId <= rangeObj.range[1] : true;
     })
-    .map(([id, val]) => ({
-      question_id: id,
-      ...val,
-    }));
+    .map(([id, val]) => ({ question_id: id, ...val }));
 
-  /* =========================
-     RENDER
-  ============================ */
-  return (
-    <div className="flex min-h-screen bg-gray-50">
-      <SidebarOrangtua />
-      <div className="flex-1 flex flex-col ml-64">
-        <HeaderOrangtua />
+  // helper render
+  const renderCellValue = (value: any) => {
+    if (typeof value === "object" && value !== null) {
+      const allNull = Object.values(value).every((v) => !v);
+      return allNull ? "-" : JSON.stringify(value);
+    }
+    return value ?? "-";
+  };
 
-        <main className="flex-1 p-8 overflow-y-auto text-[#36315B]">
-          {/* HEADER */}
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold text-[#36315B]">
-              Riwayat Jawaban Assessment Orangtua
-            </h2>
-            <button
-              onClick={() => router.push("/orangtua/assessment")}
-              className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
-            >
-              ✕
-            </button>
-          </div>
+  const renderAnswer = (answer: any) => {
+    if (!answer) return <span>-</span>;
+    if (typeof answer === "string" || typeof answer === "number") return <span>{answer}</span>;
 
-          {/* IDENTITAS ANAK & ORANGTUA */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border mb-8">
-            <h3 className="font-semibold text-[#36315B] mb-4">Identitas Anak & Orangtua</h3>
-            <div className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm">
-              <div><p className="font-semibold">Nama Anak</p><p>{familyInfo.child_name || "-"}</p></div>
-              <div><p className="font-semibold">Tempat, Tanggal Lahir</p><p>{familyInfo.child_birth_info || "-"}</p></div>
-              <div><p className="font-semibold">Usia</p><p>{familyInfo.child_age || "-"}</p></div>
-              <div><p className="font-semibold">Jenis Kelamin</p><p>{familyInfo.child_gender || "-"}</p></div>
-              <div><p className="font-semibold">Agama</p><p>{familyInfo.child_religion || "-"}</p></div>
-              <div><p className="font-semibold">Sekolah</p><p>{familyInfo.child_school || "-"}</p></div>
-              <div className="col-span-2"><p className="font-semibold">Alamat</p><p>{familyInfo.child_address || "-"}</p></div>
-              {/* AYAH */}
-              <div className="col-span-2 mt-4 font-semibold border-t pt-2">Data Ayah</div>
-              <div><p className="font-semibold">Nama Ayah</p><p>{familyInfo.father_name || "-"}</p></div>
-              <div><p className="font-semibold">Tanggal Lahir / Usia</p><p>{familyInfo.father_age || "-"}</p></div>
-              <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.father_phone || "-"}</p></div>
-              <div><p className="font-semibold">NIK</p><p>{familyInfo.father_identity_number || "-"}</p></div>
-              <div><p className="font-semibold">Pekerjaan</p><p>{familyInfo.father_occupation || "-"}</p></div>
-              <div><p className="font-semibold">Hubungan dengan Anak</p><p>{familyInfo.father_relationship || "-"}</p></div>
-              {/* IBU */}
-              <div className="col-span-2 mt-4 font-semibold border-t pt-2">Data Ibu</div>
-              <div><p className="font-semibold">Nama Ibu</p><p>{familyInfo.mother_name || "-"}</p></div>
-              <div><p className="font-semibold">Tanggal Lahir / Usia</p><p>{familyInfo.mother_age || "-"}</p></div>
-              <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.mother_phone || "-"}</p></div>
-              <div><p className="font-semibold">NIK</p><p>{familyInfo.mother_identity_number || "-"}</p></div>
-              <div><p className="font-semibold">Pekerjaan</p><p>{familyInfo.mother_occupation || "-"}</p></div>
-              <div><p className="font-semibold">Hubungan dengan Anak</p><p>{familyInfo.mother_relationship || "-"}</p></div>
-              {/* WALI */}
-              <div className="col-span-2 mt-4 font-semibold border-t pt-2">Data Wali</div>
-              <div><p className="font-semibold">Nama Wali</p><p>{familyInfo.guardian_name || "-"}</p></div>
-              <div><p className="font-semibold">Tanggal Lahir / Usia</p><p>{familyInfo.guardian_age || "-"}</p></div>
-              <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.guardian_phone || "-"}</p></div>
-              <div><p className="font-semibold">NIK</p><p>{familyInfo.guardian_identity_number || "-"}</p></div>
-              <div><p className="font-semibold">Pekerjaan</p><p>{familyInfo.guardian_occupation || "-"}</p></div>
-              <div><p className="font-semibold">Hubungan dengan Anak</p><p>{familyInfo.guardian_relationship || "-"}</p></div>
-            </div>
-          </div>
-
-          {/* PILIH KATEGORI */}
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-semibold">Kategori Pertanyaan</h3>
-            <div className="relative inline-block">
-              <select
-                value={activeCategory}
-                onChange={(e) => setActiveCategory(e.target.value)}
-                className="appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm"
-              >
-                {parentGeneralRanges.map((g) => (
-                  <option key={g.group_key} value={g.group_key}>
-                    {g.title}
-                  </option>
+    if (Array.isArray(answer)) {
+      if (!answer.length) return <span>-</span>;
+      if (typeof answer[0] === "object") {
+        const headers = Object.keys(answer[0]);
+        return (
+          <div className="overflow-x-auto">
+            <table className="border-collapse border border-gray-300 w-full text-sm min-w-[500px]">
+              <thead>
+                <tr>
+                  {headers.map((h) => (
+                    <th key={h} className="border border-gray-300 px-2 py-1 font-semibold bg-gray-100 text-left">
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {answer.map((row, idx) => (
+                  <tr key={idx}>
+                    {headers.map((h) => (
+                      <td key={h} className="border border-gray-300 px-2 py-1">{renderCellValue(row[h])}</td>
+                    ))}
+                  </tr>
                 ))}
-              </select>
-              <ChevronDown className="absolute right-2.5 top-2.5 w-4 h-4" />
-            </div>
+              </tbody>
+            </table>
           </div>
+        );
+      }
+      return (
+        <ul className="list-disc pl-5 space-y-1">
+          {answer.map((v, i) => <li key={i}>{v ?? "-"}</li>)}
+        </ul>
+      );
+    }
 
-          {/* DAFTAR PERTANYAAN */}
-          <section className="bg-white rounded-2xl shadow-sm border p-8 text-[#36315B]">
-            {loading ? (
-              <p>Memuat data...</p>
-            ) : currentQuestions.length === 0 ? (
-              <p>Tidak ada pertanyaan.</p>
-            ) : (
-              currentQuestions.map((q: any) => (
-                <div key={q.question_id} className="mb-5">
-                  <label className="block font-medium mb-1">
-                    {q.question_number ? `${q.question_number}. ` : ""}
-                    {q.question_text}
-                  </label>
+    if (typeof answer === "object") {
+      const allNull = Object.values(answer).every((v) => !v);
+      if (allNull) return <span>-</span>;
+      return (
+        <div className="overflow-x-auto">
+          <table className="border-collapse border border-gray-300 w-full text-sm min-w-[300px]">
+            <tbody>
+              {Object.entries(answer).map(([k, v]) => (
+                <tr key={k}>
+                  <td className="border border-gray-300 px-2 py-1 font-semibold min-w-[150px]">{k}</td>
+                  <td className="border border-gray-300 px-2 py-1">{renderCellValue(v)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
+    }
 
-                 <div className="text-sm bg-gray-50 border rounded-md px-3 py-2 font-medium">
-  {renderAnswer(q.value)}
-</div>
+    return <span>{String(answer)}</span>;
+  };
 
-
-                  {q.note && (
-                    <p className="text-sm mt-1 italic">Keterangan: {q.note}</p>
-                  )}
-                </div>
-              ))
-            )}
-          </section>
-        </main>
+  return (
+    <ResponsiveOrangtuaLayout>
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-semibold text-[#36315B]">
+          Riwayat Jawaban Assessment Orangtua
+        </h2>
+        <button
+          onClick={() => router.push("/orangtua/assessment")}
+          className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+        >
+          ✕
+        </button>
       </div>
-    </div>
+
+      {/* IDENTITAS ANAK & ORANGTUA */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border mb-8">
+        <h3 className="font-semibold text-[#36315B] mb-4">Identitas Anak & Orangtua</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm">
+          <div><p className="font-semibold">Nama Anak</p><p>{familyInfo.child_name || "-"}</p></div>
+          <div><p className="font-semibold">Tempat, Tanggal Lahir</p><p>{familyInfo.child_birth_info || "-"}</p></div>
+          <div><p className="font-semibold">Usia</p><p>{familyInfo.child_age || "-"}</p></div>
+          <div><p className="font-semibold">Jenis Kelamin</p><p>{familyInfo.child_gender || "-"}</p></div>
+          <div><p className="font-semibold">Agama</p><p>{familyInfo.child_religion || "-"}</p></div>
+          <div><p className="font-semibold">Sekolah</p><p>{familyInfo.child_school || "-"}</p></div>
+          <div className="col-span-1 md:col-span-2"><p className="font-semibold">Alamat</p><p>{familyInfo.child_address || "-"}</p></div>
+          {/* AYAH */}
+          <div className="col-span-1 md:col-span-2 mt-4 font-semibold border-t pt-2">Data Ayah</div>
+          <div><p className="font-semibold">Nama Ayah</p><p>{familyInfo.father_name || "-"}</p></div>
+          <div><p className="font-semibold">Tanggal Lahir / Usia</p><p>{familyInfo.father_age || "-"}</p></div>
+          <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.father_phone || "-"}</p></div>
+          <div><p className="font-semibold">NIK</p><p>{familyInfo.father_identity_number || "-"}</p></div>
+          <div><p className="font-semibold">Pekerjaan</p><p>{familyInfo.father_occupation || "-"}</p></div>
+          <div><p className="font-semibold">Hubungan dengan Anak</p><p>{familyInfo.father_relationship || "-"}</p></div>
+          {/* IBU */}
+          <div className="col-span-1 md:col-span-2 mt-4 font-semibold border-t pt-2">Data Ibu</div>
+          <div><p className="font-semibold">Nama Ibu</p><p>{familyInfo.mother_name || "-"}</p></div>
+          <div><p className="font-semibold">Tanggal Lahir / Usia</p><p>{familyInfo.mother_age || "-"}</p></div>
+          <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.mother_phone || "-"}</p></div>
+          <div><p className="font-semibold">NIK</p><p>{familyInfo.mother_identity_number || "-"}</p></div>
+          <div><p className="font-semibold">Pekerjaan</p><p>{familyInfo.mother_occupation || "-"}</p></div>
+          <div><p className="font-semibold">Hubungan dengan Anak</p><p>{familyInfo.mother_relationship || "-"}</p></div>
+          {/* WALI */}
+          <div className="col-span-1 md:col-span-2 mt-4 font-semibold border-t pt-2">Data Wali</div>
+          <div><p className="font-semibold">Nama Wali</p><p>{familyInfo.guardian_name || "-"}</p></div>
+          <div><p className="font-semibold">Tanggal Lahir / Usia</p><p>{familyInfo.guardian_age || "-"}</p></div>
+          <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.guardian_phone || "-"}</p></div>
+          <div><p className="font-semibold">NIK</p><p>{familyInfo.guardian_identity_number || "-"}</p></div>
+          <div><p className="font-semibold">Pekerjaan</p><p>{familyInfo.guardian_occupation || "-"}</p></div>
+          <div><p className="font-semibold">Hubungan dengan Anak</p><p>{familyInfo.guardian_relationship || "-"}</p></div>
+        </div>
+      </div>
+
+      {/* PILIH KATEGORI */}
+      <div className="flex justify-between items-center mb-6">
+        <h3 className="font-semibold">Kategori Pertanyaan</h3>
+        <div className="relative inline-block">
+          <select
+            value={activeCategory}
+            onChange={(e) => setActiveCategory(e.target.value)}
+            className="appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm"
+          >
+            {parentGeneralRanges.map((g) => (
+              <option key={g.group_key} value={g.group_key}>{g.title}</option>
+            ))}
+          </select>
+          <ChevronDown className="absolute right-2.5 top-2.5 w-4 h-4" />
+        </div>
+      </div>
+
+      {/* DAFTAR PERTANYAAN */}
+      <section className="bg-white rounded-2xl shadow-sm border p-4 md:p-8 text-[#36315B]">
+        {loading ? <p>Memuat data...</p> : currentQuestions.length === 0 ? <p>Tidak ada pertanyaan.</p> :
+          currentQuestions.map((q) => (
+            <div key={q.question_id} className="mb-5">
+              <label className="block font-medium mb-1">
+                {q.question_number ? `${q.question_number}. ` : ""}{q.question_text}
+              </label>
+              <div className="text-sm bg-gray-50 border rounded-md px-3 py-2 font-medium">
+                {renderAnswer(q.value)}
+              </div>
+              {q.note && <p className="text-sm mt-1 italic">Keterangan: {q.note}</p>}
+            </div>
+          ))
+        }
+      </section>
+    </ResponsiveOrangtuaLayout>
   );
 }

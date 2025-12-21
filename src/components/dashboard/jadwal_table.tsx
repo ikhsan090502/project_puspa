@@ -1,62 +1,65 @@
 "use client";
 
-import { useState } from "react";
+import { Clock } from "lucide-react";
 
-const data = [
-  { pasien: "Annisa", terapi: "Fisioterapi", terapis: "Orang" },
-  { pasien: "Zamzam", terapi: "Fisioterapi", terapis: "Nama Terapis" },
-  { pasien: "Nama", terapi: "Terapi Wicara", terapis: "Nama Terapis" },
-  { pasien: "Nama", terapi: "Paedagog", terapis: "Nama Terapis" },
-];
+interface Jadwal {
+  id?: string | number;
+  nama_pasien?: string;
+  jenis_terapi?: string;
+  waktu?: string;
+  nama_terapis?: string;
+}
 
-export default function JadwalTable() {
-  const [search, setSearch] = useState("");
+interface JadwalTableProps {
+  jadwal: Jadwal[];
+  loading: boolean;
+  emptyMessage?: string;
+}
 
-  const filteredData = data.filter(
-    (row) =>
-      row.pasien.toLowerCase().includes(search.toLowerCase()) ||
-      row.terapi.toLowerCase().includes(search.toLowerCase()) ||
-      row.terapis.toLowerCase().includes(search.toLowerCase())
-  );
-
+export default function JadwalTable({
+  jadwal,
+  loading,
+  emptyMessage = "Tidak ada jadwal hari ini",
+}: JadwalTableProps) {
   return (
     <div className="bg-white rounded-lg shadow-md shadow-[#ADADAD] p-4 text-[#36315B]">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="font-bold text-lg">Jadwal Terapi Hari Ini</h3>
-        <input
-          type="text"
-          placeholder="Cari..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="border border-[#ADADAD] rounded-lg px-3 py-1 text-sm outline-none focus:ring-2 focus:ring-[#81B7A9]"
-        />
-      </div>
+      <h3 className="font-bold text-lg mb-4">Jadwal Terapi Hari Ini</h3>
 
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-[#81B7A9]">
-            <th className="text-left">Nama Pasien</th>
-            <th className="text-left">Jenis Terapi</th>
-            <th className="text-left">Nama Terapis</th>
-          </tr>
-        </thead>
-        <tbody>
-          {filteredData.map((row, i) => (
-            <tr key={i} className="border-b border-[#81B7A9]">
-              <td className="py-2">{row.pasien}</td>
-              <td>{row.terapi}</td>
-              <td>{row.terapis}</td>
-            </tr>
-          ))}
-          {filteredData.length === 0 && (
-            <tr>
-              <td colSpan={4} className="text-center py-4 text-sm text-gray-500">
-                Tidak ada data yang cocok
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
+      {loading ? (
+        <div className="h-64 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#81B7A9]"></div>
+        </div>
+      ) : jadwal.length === 0 ? (
+        <div className="h-64 flex flex-col items-center justify-center text-gray-400">
+          <Clock className="w-16 h-16 mb-4 opacity-30" />
+          <p className="text-lg font-medium">{emptyMessage}</p>
+          <p className="text-sm mt-1">Cek kembali besok</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
+            {jadwal.map((item, index) => (
+              <div
+                key={item.id ?? index}
+                className="p-3 bg-gray-50 rounded-lg border-l-4 border-[#81B7A9]"
+              >
+                <div className="flex justify-between items-start mb-1">
+                  <h4 className="font-semibold text-[#36315B]">
+                    {item.nama_pasien ?? "-"}
+                  </h4>
+                  <span className="text-sm bg-[#81B7A9]/10 px-2 py-1 rounded-full text-[#81B7A9]">
+                    {item.waktu ?? "-"}
+                  </span>
+                </div>
+
+                <p className="text-sm text-gray-600 mb-1">
+                  Jenis Terapi: {item.jenis_terapi ?? "-"}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

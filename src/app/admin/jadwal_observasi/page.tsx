@@ -8,17 +8,34 @@ import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
-import { getObservations, Jadwal } from "@/lib/api/jadwal_observasi";
 import { useRouter } from "next/navigation";
 import FormAturAsesmen from "@/components/form/FormAturAsesmen";
-import { updateObservationSchedule } from "@/lib/api/jadwal_observasi";
 import FormDetailObservasi from "@/components/form/FormDetailObservasi";
+import { 
+  getObservations, 
+  Jadwal, 
+  updateObservationSchedule, 
+  createObservationAgreement  // ← TAMBAH INI
+} from "@/lib/api/jadwal_observasi";
+import { useSearchParams } from "next/navigation";
+
+
 
 export default function JadwalPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+
 
   const [search, setSearch] = useState("");
-  const [tab, setTab] = useState<"menunggu" | "terjadwal" | "selesai">("menunggu");
+const initialTab =
+  searchParams.get("tab") === "selesai"
+    ? "selesai"
+    : searchParams.get("tab") === "terjadwal"
+    ? "terjadwal"
+    : "menunggu";
+
+const [tab, setTab] =
+  useState<"menunggu" | "terjadwal" | "selesai">(initialTab);
 
   const [jadwalList, setJadwalList] = useState<Jadwal[]>([]);
   const [originalList, setOriginalList] = useState<Jadwal[]>([]);
@@ -34,6 +51,10 @@ const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [openDetail, setOpenDetail] = useState(false);
 const [selectedObservation, setSelectedObservation] = useState<any | null>(null);
+const [filterDate, setFilterDate] = useState("");
+const [searchName, setSearchName] = useState("");
+const [debouncedSearch, setDebouncedSearch] = useState(search);
+
 
 
 
@@ -50,7 +71,7 @@ const [selectedObservation, setSelectedObservation] = useState<any | null>(null)
       else if (tab === "terjadwal") status = "scheduled";
       else if (tab === "selesai") status = "completed";
 
-      const data = await getObservations(status, search);
+const data = await getObservations(status, debouncedSearch);
       setJadwalList(data);
       setOriginalList(data);
 
@@ -63,26 +84,46 @@ const [selectedObservation, setSelectedObservation] = useState<any | null>(null)
   };
 
   useEffect(() => {
-    fetchJadwal();
-  }, [search]);
+  fetchJadwal();
+}, [debouncedSearch]);
+
 
   useEffect(() => {
   fetchJadwal();
   setSelectedDate(null);
 }, [tab]);
 
+useEffect(() => {
+  const handler = setTimeout(() => {
+    setDebouncedSearch(search);
+  }, 500); // jeda 0.5 detik
+
+  return () => clearTimeout(handler);
+}, [search]);
 
   // =====================
   // Filter by search
   // =====================
-const filtered = (selectedDate && tab === "terjadwal" ? jadwalList : originalList).filter((j) => {
-    const q = search.toLowerCase();
-    return (
-      (j.nama || "").toLowerCase().includes(q) ||
-      (j.sekolah || "").toLowerCase().includes(q) ||
-      (j.orangtua || "").toLowerCase().includes(q)
-    );
-  });
+const filtered = originalList.filter((j) => {
+  const q = search.toLowerCase();
+  const matchSearch =
+    (j.nama || "").toLowerCase().includes(q) ||
+    (j.sekolah || "").toLowerCase().includes(q) ||
+    (j.orangtua || "").toLowerCase().includes(q);
+
+  const matchDateFromCalendar =
+    tab === "terjadwal" && selectedDate
+      ? j.tanggalObservasi === selectedDate
+      : true;
+
+  const matchDateFromInput =
+    tab === "selesai" && filterDate
+      ? j.tanggalObservasi === format(new Date(filterDate), "dd/MM/yyyy")
+      : true;
+
+  return matchSearch && matchDateFromCalendar && matchDateFromInput;
+});
+
 
   // =====================
   // Handle Calendar Select
@@ -103,8 +144,8 @@ const filtered = (selectedDate && tab === "terjadwal" ? jadwalList : originalLis
   // =====================
   // Navigation actions
   // =====================
-  const handleRiwayatJawaban = (id: string) => router.push(`/terapis/riwayat-hasil?id=${id}`);
-  const handleLihatHasil = (id: string) => router.push(`/terapis/hasil-observasi?id=${id}`);
+  const handleRiwayatJawaban = (id: string) => router.push(`/admin/riwayat-hasil?id=${id}`);
+  const handleLihatHasil = (id: string) => router.push(`/admin/hasil-observasi?id=${id}`);
   const handleAturAsesmen = (pasien: Jadwal) => {
     setSelectedPasien(pasien);
     setOpenAsesmen(true);
@@ -185,16 +226,37 @@ const DualCalendar = () => {
             </div>
 
             {/* SEARCH BAR */}
-            <div className="relative w-64">
-              <input
-                type="text"
-                placeholder="Cari Pasien"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full border border-[#ADADAD] rounded-full pl-3 pr-9 py-2 text-sm outline-none focus:ring-2 focus:ring-[#81B7A9]"
-              />
-              <SearchIcon size={16} className="absolute right-3 top-2.5 text-gray-400" />
-            </div>
+            {tab === "selesai" ? (
+  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4">
+    <input
+      type="date"
+      value={filterDate}
+      onChange={(e) => setFilterDate(e.target.value)}
+      className="w-full border border-[#ADADAD] rounded-full pl-3 pr-9 py-2 text-sm outline-none focus:ring-2 focus:ring-[#81B7A9]"
+    />
+    <input
+      type="text"
+      placeholder="Cari Pasien"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      className="w-full border border-[#ADADAD] rounded-full pl-3 pr-9 py-2 text-sm outline-none focus:ring-2 focus:ring-[#81B7A9]"
+    />
+    <SearchIcon size={16} className="absolute right-3 top-2.5 text-gray-400" />
+
+  </div>
+) : (
+  <div className="relative w-64">
+    <input
+      type="text"
+      placeholder="Cari Pasien"
+      value={search}
+      onChange={(e) => setSearch(e.target.value)}
+      className="w-full border border-[#ADADAD] rounded-full pl-3 pr-9 py-2 text-sm outline-none focus:ring-2 focus:ring-[#81B7A9]"
+    />
+    <SearchIcon size={16} className="absolute right-3 top-2.5 text-gray-400" />
+  </div>
+)}
+
           </div>
 
           {/* TABEL */}
@@ -224,7 +286,6 @@ const DualCalendar = () => {
                     <th className="p-3 text-left">Nama Pasien</th>
                     <th className="p-3 text-left">Nama Orangtua</th>
                     <th className="p-3 text-left">Observer</th>
-                    <th className="p-3 text-left">Status</th>
                     <th className="p-3 text-left">Tanggal Observasi</th>
                     <th className="p-3 text-left">Waktu</th>
                     <th className="p-3 text-center">Aksi</th>
@@ -236,7 +297,6 @@ const DualCalendar = () => {
                       <td className="p-3">{j.nama}</td>
                       <td className="p-3">{j.orangtua}</td>
                       <td className="p-3">{j.observer || "-"}</td>
-                      <td className="p-3 capitalize">{j.status || "completed"}</td>
                       <td className="p-3">{j.tanggalObservasi || "-"}</td>
                       <td className="p-3">{j.waktu || "-"}</td>
                       <td className="p-3 text-center">
@@ -343,51 +403,86 @@ const DualCalendar = () => {
           </div>
 
           {/* DROPDOWN AKSI */}
-          {openDropdown && selectedPasien && (
-            <div
-              className="fixed top-[100px] left-1/2 -translate-x-1/2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64 text-[#5F52BF]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="divide-y divide-gray-200">
-                <button
-                  onClick={() => handleAturAsesmen(selectedPasien)}
-                  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-                >
-                  <Settings size={16} className="mr-2" />
-                  Atur Jadwal
-                </button>
+         {/* DROPDOWN AKSI */}
+{openDropdown && selectedPasien && (
+  <div
+    className="fixed top-[100px] left-1/2 -translate-x-1/2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64 text-[#5F52BF]"
+    onClick={(e) => e.stopPropagation()}
+  >
+    <div className="divide-y divide-gray-200">
 
-                <button
-  onClick={async () => {
-    if (!selectedPasien) return;
+      {/* 👇 Kondisi dropdown berdasarkan tab */}
+      {tab === "selesai" ? (
+        <>
+          <button
+            onClick={() => handleAturAsesmen(selectedPasien)}
+            className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+          >
+            <Settings size={16} className="mr-2" />
+            Atur Asesmen
+          </button>
 
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(
-        `/api/observations/${selectedPasien.id}/detail?type=scheduled`, // ✅ pastikan hanya satu ?
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const data = await res.json();
-      setSelectedObservation(data.data); // pastikan struktur data sesuai respons API
-      setOpenDetail(true);
-      setOpenDropdown(false);
-    } catch (err) {
-      console.error(err);
-      alert("Gagal memuat detail observasi!");
-    }
-  }}
-  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
->
-  <Eye size={16} className="mr-2" />
-  Detail
-</button>
+          <button
+            onClick={() => handleRiwayatJawaban(selectedPasien.id)}
+            className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+          >
+            <Clock3 size={16} className="mr-2" />
+            Riwayat Jawaban
+          </button>
 
+          <button
+            onClick={() => handleLihatHasil(selectedPasien.id)}
+            className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+          >
+            <Eye size={16} className="mr-2" />
+            Lihat Hasil
+          </button>
+        </>
+      ) : (
+        <>
+          {/* MENU KHUSUS TAB TERJADWAL */}
 
-              </div>
-            </div>
-          )}
+          <button
+            onClick={() => handleAturAsesmen(selectedPasien)}
+            className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+          >
+            <Settings size={16} className="mr-2" />
+            Atur Jadwal
+          </button>
+
+          <button
+            onClick={async () => {
+              if (!selectedPasien) return;
+
+              try {
+                const token = localStorage.getItem("token");
+                const res = await fetch(
+                  `/api/observations/${selectedPasien.id}/detail?type=scheduled`,
+                  {
+                    headers: { Authorization: `Bearer ${token}` },
+                  }
+                );
+
+                const data = await res.json();
+                setSelectedObservation(data.data);
+                setOpenDetail(true);
+                setOpenDropdown(false);
+              } catch (err) {
+                console.error(err);
+                alert("Gagal memuat detail observasi!");
+              }
+            }}
+            className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+          >
+            <Eye size={16} className="mr-2" />
+            Detail
+          </button>
+        </>
+      )}
+    </div>
+  </div>
+)}
+
         </main>
       </div>
 
@@ -403,43 +498,46 @@ const DualCalendar = () => {
 )}
 
 
-      {/* MODAL ATUR ASESMEN */}
-      {openAsesmen && selectedPasien && (
-        <FormAturAsesmen
-          title={
-            tab === "menunggu"
-              ? "Atur Jadwal"
-              : tab === "terjadwal"
-              ? "Edit Observasi"
-              : "Atur Asesmen"
-          }
-          pasienName={selectedPasien.nama}
-          initialDate={selectedPasien.tanggalObservasi || ""}
-          initialTime={selectedPasien.waktu || ""}
-          onClose={() => {
-            setOpenAsesmen(false);
-            setSelectedPasien(null);
-          }}
-          onSave={async (date, time) => {
-            if (!selectedPasien) return;
-
-            try {
-              setLoading(true);
-              await updateObservationSchedule(selectedPasien.id, date, time);
-
-              alert("Jadwal berhasil disimpan!");
-              setOpenAsesmen(false);
-              setSelectedPasien(null);
-              fetchJadwal();
-            } catch (err) {
-              console.error(err);
-              alert("Gagal menyimpan jadwal!");
-            } finally {
-              setLoading(false);
-            }
-          }}
-        />
-      )}
+      {/* MODAL ATUR ASESMEN - FIXED ENDPOINT */}
+{openAsesmen && selectedPasien && (
+  <FormAturAsesmen
+    title={
+      tab === "menunggu" ? "Atur Jadwal" :
+      tab === "terjadwal" ? "Edit Observasi" : 
+      "Atur Asesmen"
+    }
+    pasienName={selectedPasien.nama}
+    initialDate={selectedPasien.tanggalObservasi || ""}
+    initialTime={selectedPasien.waktu || ""}
+    onClose={() => {
+      setOpenAsesmen(false);
+      setSelectedPasien(null);
+    }}
+    onSave={async (date, time) => {
+      if (!selectedPasien) return;
+      try {
+        setLoading(true);
+        if (tab === "selesai") {
+          // TAB SELSAI → JADWAL ASESMEN
+          await createObservationAgreement(selectedPasien.id, date, time);
+          alert("✅ Asesmen berhasil dijadwalkan!");
+        } else {
+          // TAB LAIN → OBSERVASI
+          await updateObservationSchedule(selectedPasien.id, date, time);
+          alert("✅ Jadwal observasi berhasil disimpan!");
+        }
+        setOpenAsesmen(false);
+        setSelectedPasien(null);
+        fetchJadwal();
+      } catch (err) {
+        console.error(err);
+        alert("❌ Gagal menyimpan jadwal!");
+      } finally {
+        setLoading(false);
+      }
+    }}
+  />
+)}
     </div>
   );
 }

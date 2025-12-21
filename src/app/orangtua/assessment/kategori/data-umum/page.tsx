@@ -5,6 +5,7 @@ import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
 import HeaderOrangtua from "@/components/layout/header-orangtua";
 import { ChevronDown, Plus, Trash } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 import {
   getParentAssessmentQuestions,
@@ -60,7 +61,7 @@ export default function FormAssessmentOrangtua() {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [childName, setChildName] = useState<string>("");
   const [childBirthInfo, setChildBirthInfo] = useState<string>("");
 
@@ -132,9 +133,9 @@ export default function FormAssessmentOrangtua() {
 
         const list =
           Array.isArray(resp?.data?.groups) ? resp.data.groups :
-          Array.isArray(resp?.groups) ? resp.groups :
-          Array.isArray(resp?.data) ? resp.data :
-          [];
+            Array.isArray(resp?.groups) ? resp.groups :
+              Array.isArray(resp?.data) ? resp.data :
+                [];
 
         const hasIdentitas = list.some((g: any) => g.group_key === "identitas");
         if (!hasIdentitas) {
@@ -279,58 +280,58 @@ export default function FormAssessmentOrangtua() {
   /* =======================
    SUBMIT ASSESSMENT (revisi sesuai BE)
 ========================== */
-const handleSubmitAssessment = async () => {
-  if (!assessmentIdFromQuery) {
-    alert("assessment_id tidak ditemukan di URL.");
-    return;
-  }
+  const handleSubmitAssessment = async () => {
+    if (!assessmentIdFromQuery) {
+      alert("assessment_id tidak ditemukan di URL.");
+      return;
+    }
 
-  setSubmitting(true);
-  try {
-    // convert answers {} -> answers[] untuk BE
-    const answerArray = Object.entries(answers).map(([qid, value]) => {
-      let ansPayload: any = {};
+    setSubmitting(true);
+    try {
+      // convert answers {} -> answers[] untuk BE
+      const answerArray = Object.entries(answers).map(([qid, value]) => {
+        let ansPayload: any = {};
 
-      if (value === null || value === undefined || value === "") {
-        ansPayload = { value: null };
-      } else if (typeof value === "object") {
-        // Jika sudah object (radio_with_text, table, multi)
-        ansPayload = value;
-      } else if (Array.isArray(value)) {
-        // checkbox/multi diubah jadi object dengan array value
-        ansPayload = { value };
-      } else {
-        // text/number/select => bungkus jadi object
-        ansPayload = { value };
-      }
+        if (value === null || value === undefined || value === "") {
+          ansPayload = { value: null };
+        } else if (typeof value === "object") {
+          // Jika sudah object (radio_with_text, table, multi)
+          ansPayload = value;
+        } else if (Array.isArray(value)) {
+          // checkbox/multi diubah jadi object dengan array value
+          ansPayload = { value };
+        } else {
+          // text/number/select => bungkus jadi object
+          ansPayload = { value };
+        }
 
-      return {
-        question_id: Number(qid),
-        answer: ansPayload,
+        return {
+          question_id: Number(qid),
+          answer: ansPayload,
+        };
+      });
+
+      const payload = {
+        answers: answerArray,
+        child_name: childName || null,
+        child_birth_info: childBirthInfo || null,
       };
-    });
 
-    const payload = {
-      answers: answerArray,
-      child_name: childName || null,
-      child_birth_info: childBirthInfo || null,
-    };
+      await submitParentAssessment(
+        assessmentIdFromQuery,
+        "umum_parent",
+        payload
+      );
 
-    await submitParentAssessment(
-      assessmentIdFromQuery,
-      "umum_parent",
-      payload
-    );
-
-    alert("Jawaban assessment berhasil dikirim.");
-    router.push("/orangtua/assessment");
-  } catch (err: any) {
-    console.error("Gagal submit assessment:", err);
-    alert(err?.message || "Gagal mengirim jawaban assessment");
-  } finally {
-    setSubmitting(false);
-  }
-};
+      alert("Jawaban assessment berhasil dikirim.");
+      router.push("/orangtua/assessment");
+    } catch (err: any) {
+      console.error("Gagal submit assessment:", err);
+      alert(err?.message || "Gagal mengirim jawaban assessment");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
 
   /* =======================
@@ -338,9 +339,36 @@ const handleSubmitAssessment = async () => {
   ========================== */
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <SidebarOrangtua />
+      {/* ================= SIDEBAR ================= */}
+      <aside
+        className={`
+        fixed md:static inset-y-0 left-0 z-20
+        w-64 bg-white shadow-md
+        transform transition-transform duration-300
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+      `}
+      >
+        <SidebarOrangtua />
+      </aside>
 
-      <div className="flex-1 flex flex-col ml-64">
+      {/* overlay mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-10 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* hamburger (mobile only) */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-30 md:hidden bg-white p-2 rounded-md shadow"
+      >
+        {sidebarOpen ? <X /> : <Menu />}
+      </button>
+
+      {/* ================= CONTENT ================= */}
+<div className="flex-1 flex flex-col">
         <HeaderOrangtua />
 
         <main className="flex-1 p-8 overflow-y-auto">
@@ -365,11 +393,10 @@ const handleSubmitAssessment = async () => {
                 >
                   <div className="flex flex-col items-center text-center space-y-2">
                     <div
-                      className={`w-9 h-9 rounded-full border-2 flex items-center justify-center ${
-                        i === activeStep
+                      className={`w-9 h-9 rounded-full border-2 flex items-center justify-center ${i === activeStep
                           ? "bg-[#6BB1A0] border-[#6BB1A0] text-white"
                           : "bg-gray-100 border-gray-300 text-gray-500"
-                      }`}
+                        }`}
                     >
                       {i + 1}
                     </div>
@@ -415,7 +442,7 @@ const handleSubmitAssessment = async () => {
                 <div>
                   <h3 className="font-semibold text-[#36315B] text-base mb-4">1. Anak</h3>
 
-                  <div className="grid grid-cols-2 gap-6 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm">
                     <div className="flex flex-col">
                       <label className="font-medium mb-1">Nama</label>
                       <input
@@ -452,7 +479,7 @@ const handleSubmitAssessment = async () => {
 
                   {/* AYAH */}
                   <h4 className="font-semibold text-[#36315B] text-sm mb-3">Ayah</h4>
-                  <div className="grid grid-cols-2 gap-6 text-sm mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm mb-8">
                     <InputField label="Nama Ayah" value={parentIdentity.father_name || ""} onChange={(v) => setParentField("father_name", v)} />
                     <InputField label="Tanggal Lahir" value={parentIdentity.father_birth_date || ""} onChange={(v) => setParentField("father_birth_date", v)} />
                     <InputField label="Pekerjaan" value={parentIdentity.father_occupation || ""} onChange={(v) => setParentField("father_occupation", v)} />
@@ -463,7 +490,7 @@ const handleSubmitAssessment = async () => {
 
                   {/* IBU */}
                   <h4 className="font-semibold text-[#36315B] text-sm mb-3">Ibu</h4>
-                  <div className="grid grid-cols-2 gap-6 text-sm mb-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm mb-8">
                     <InputField label="Nama Ibu" value={parentIdentity.mother_name || ""} onChange={(v) => setParentField("mother_name", v)} />
                     <InputField label="Tanggal Lahir" value={parentIdentity.mother_birth_date || ""} onChange={(v) => setParentField("mother_birth_date", v)} />
                     <InputField label="Pekerjaan" value={parentIdentity.mother_occupation || ""} onChange={(v) => setParentField("mother_occupation", v)} />
@@ -474,7 +501,7 @@ const handleSubmitAssessment = async () => {
 
                   {/* WALI */}
                   <h4 className="font-semibold text-[#36315B] text-sm mb-3">Wali</h4>
-                  <div className="grid grid-cols-2 gap-6 text-sm">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm mb-8">
                     <InputField label="Nama Wali" value={parentIdentity.guardian_name || ""} onChange={(v) => setParentField("guardian_name", v)} />
                     <InputField label="Tanggal Lahir" value={parentIdentity.guardian_birth_date || ""} onChange={(v) => setParentField("guardian_birth_date", v)} />
                     <InputField label="Pekerjaan" value={parentIdentity.guardian_occupation || ""} onChange={(v) => setParentField("guardian_occupation", v)} />
@@ -489,7 +516,7 @@ const handleSubmitAssessment = async () => {
                 </div>
 
                 {/* BUTTON */}
-                <div className="flex justify-between items-center pt-6">
+                <div className="flex flex-col-reverse md:flex-row justify-between items-stretch md:items-center gap-3 pt-6">
                   <div />
                   <div className="flex gap-3">
                     <button
@@ -549,7 +576,7 @@ const handleSubmitAssessment = async () => {
                         {q.answer_type === "number" && (
                           <input
                             type="number"
-                            className="border rounded-md p-2 w-32"
+                            className="border rounded-md p-2 w-full sm:w-32"
                             value={answers[q.id] ?? ""}
                             onChange={(e) => setAnswer(q.id, e.target.value)}
                           />
@@ -632,15 +659,15 @@ const handleSubmitAssessment = async () => {
                             {(answers[q.id]?.value === "Tidak" ||
                               answers[q.id]?.value === "Belum Imunisasi" ||
                               answers[q.id]?.value === "Tidak Lengkap") && (
-                              <input
-                                className="border rounded-md p-2 w-full text-sm"
-                                value={answers[q.id]?.note ?? ""}
-                                onChange={(e) =>
-                                  setAnswer(q.id, { ...(answers[q.id] || {}), note: e.target.value })
-                                }
-                                placeholder="Keterangan"
-                              />
-                            )}
+                                <input
+                                  className="border rounded-md p-2 w-full text-sm"
+                                  value={answers[q.id]?.note ?? ""}
+                                  onChange={(e) =>
+                                    setAnswer(q.id, { ...(answers[q.id] || {}), note: e.target.value })
+                                  }
+                                  placeholder="Keterangan"
+                                />
+                              )}
                           </div>
                         )}
 

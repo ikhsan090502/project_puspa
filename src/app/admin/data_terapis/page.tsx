@@ -50,10 +50,10 @@ function DetailTerapis({
           <li>• Nama Pengguna : {terapis.username}</li>
           <li>• Email : {terapis.email}</li>
           <li>• Telepon : {terapis.telepon}</li>
+          <li>• Role : {terapis.role}</li>
           <li>• Ditambahkan : {terapis.ditambahkan}</li>
           <li>• Diubah : {terapis.diubah}</li>
-                    <li>• Status : {terapis.is_active === "1" ? "Terverifikasi" : "Belum Terferivikasi"}</li>
-
+          <li>• Status : {terapis.status}</li>
         </ul>
       </div>
     </div>
@@ -206,6 +206,7 @@ export default function DataTerapisPage() {
                   <th className="p-3 text-left">Bidang</th>
                   <th className="p-3 text-left">Nama Pengguna</th>
                   <th className="p-3 text-left">Email</th>
+                  <th className="p-3 text-left">Role</th>
                   <th className="p-3 text-left">Telepon</th>
                   <th className="p-3 text-left">Status</th>
                   <th className="p-3 text-center">Aksi</th>
@@ -222,9 +223,10 @@ export default function DataTerapisPage() {
                     <td className="p-3 text-[#757575]">{terapis.bidang}</td>
                     <td className="p-3 text-[#757575]">{terapis.username}</td>
                     <td className="p-3 text-[#757575]">{terapis.email}</td>
+                    <td className="p-3 text-[#757575]">{terapis.role}</td>
                     <td className="p-3 text-[#757575]">{terapis.telepon}</td>
                     <td className="p-3 font-medium text-[#757575]">
-                      {terapis.is_active === "1" ? "Terverifikasi" : "Belum Terverifikasi"}
+                      {terapis.status}
                     </td>
                     <td className="p-3 flex justify-center gap-3">
                       <button

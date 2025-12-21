@@ -31,6 +31,8 @@ export async function getObservations(
     if (status === "scheduled") endpoint = "/observations/scheduled";
     if (status === "completed") endpoint = "/observations/completed";
 
+    console.log("Fetching observations from:", endpoint);
+
     const params: any = { search };
 
     if (date) params.date = date;   // ⬅ hanya kirim kalau ada
@@ -42,25 +44,30 @@ export async function getObservations(
 
     const list = res.data?.data || [];
 
-    return list.map((item: any) => ({
-      id: item.observation_id,
-      nama: item.child_name,
-      usia: item.child_age,
-      jenisKelamin: item.child_gender,
-      sekolah: item.child_school,
-      orangtua: item.guardian_name,
-      telepon: item.guardian_phone,
-      tanggalObservasi:
-        status === "pending" ? null :
-        status === "scheduled" ? item.scheduled_date :
-        item.completed_date,
-      waktu:
-        status === "pending" ? null :
-        status === "scheduled" ? item.scheduled_time :
-        item.completed_time,
-      observer: item.administrator,
-      status: item.status,
-    }));
+    return list.map((item: any) => {
+      const isPending = status === "pending";
+      const isScheduled = status === "scheduled";
+      const isCompleted = status === "completed";
+
+      return {
+        id: item.observation_id,
+        nama: item.child_name,
+        usia: isPending ? item.child_age : "-",
+        jenisKelamin: isPending ? item.child_gender : "-",
+        sekolah: isPending ? item.child_school : "-",
+        orangtua: item.guardian_name,
+        telepon: item.guardian_phone,
+
+        tanggalObservasi: item.scheduled_date || null,
+        waktu: isScheduled ? item.scheduled_time : item.time || "-",
+
+        // Observer untuk completed, administrator untuk scheduled
+        observer: isCompleted ? item.observer : item.administrator || "-",
+
+        status: item.status,
+      };
+    });
+
   } catch (error) {
     console.error("ERROR getObservations:", error);
     return [];
@@ -100,6 +107,31 @@ export async function updateObservationSchedule(
     throw error;
   }
 }
+
+// ========================================================
+// CREATE OBSERVATION AGREEMENT → JADWAL ASESMEN
+// POST /observations/{id}/agreement
+// ========================================================
+export async function createObservationAgreement(
+  observationId: number,
+  scheduled_date: string,
+  scheduled_time: string
+) {
+  try {
+    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    const res = await api.put(
+      `/observations/${observationId}/agreement`,
+      { scheduled_date, scheduled_time },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    console.log("AGREEMENT RESPONSE:", res.data);
+    return res.data;
+  } catch (error) {
+    console.error("ERROR createObservationAgreement:", error);
+    throw error;
+  }
+}
+
 
 export async function getObservationDetail(id: number, type: "pending" | "scheduled" | "completed") {
   try {

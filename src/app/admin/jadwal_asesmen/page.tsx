@@ -15,8 +15,10 @@ import "react-calendar/dist/Calendar.css";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { useRouter } from "next/navigation";
-import FormAturAsesmen from "@/components/form/FormAturAsesmen";
-import api from "@/lib/axios";
+import FormEditAsesment from "@/components/form/FormEditAsesment";
+import { getAssessmentsAdmin } from "@/lib/api/jadwal_asessment";
+import FormDetailAsesment from "@/components/form/FormDetailAsesment";
+
 
 // =======================
 // Interface Jadwal
@@ -29,68 +31,36 @@ export interface Jadwal {
   sekolah?: string;
   orangtua: string;
   telepon: string;
+  asessor?: string;
+  administrator?: string;
+  tipe?: string;
   tanggalObservasi?: string | null;
   waktu?: string | null;
   observer?: string | null;
   status?: string | null;
 }
 
-// =======================
-// Refactored getObservations
-// =======================
-export async function getObservations(
-  status: "pending" | "scheduled" | "completed",
-  search: string = "",
-  date?: string
-): Promise<Jadwal[]> {
-  try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    if (!token) return [];
+const ORTU_ACTIONS = [
+  { key: "umum", label: "Data Umum" },
+  { key: "fisio", label: "Data Fisioterapi" },
+  { key: "okupasi", label: "Data Terapi Okupasi" },
+  { key: "wicara", label: "Data Terapi Wicara" },
+  { key: "paedagog", label: "Data Paedagog" },
+  { key: "upload", label: "Upload File" },
+];
 
-    let endpoint = "/observations";
-    if (status === "pending") endpoint = "/observations/pending";
-    if (status === "scheduled") endpoint = "/observations/scheduled";
-    if (status === "completed") endpoint = "/observations/completed";
+const ASESSOR_ACTIONS = [
+  { key: "fisio", label: "Data Fisioterapi" },
+  { key: "okupasi", label: "Data Terapi Okupasi" },
+  { key: "wicara", label: "Data Terapi Wicara" },
+  { key: "paedagog", label: "Data Paedagog" },
+];
 
-    const params: Record<string, any> = {};
-    if (search) params.search = search;
-    if (date && date.trim() !== "") params.date = date;
 
-    console.log("GET OBSERVATIONS:", endpoint, params);
 
-    const res = await api.get(endpoint, {
-      params,
-      headers: { Authorization: `Bearer ${token}` },
-    });
-
-    const list = res.data?.data || [];
-
-    return list.map((item: any) => ({
-      id: item.observation_id,
-      nama: item.child_name,
-      usia: item.age_category || "-",
-      jenisKelamin: "-", // tidak ada gender di JSON
-      sekolah: "-",      // tidak ada sekolah di JSON
-      orangtua: item.guardian_name,
-      telepon: item.guardian_phone,
-      tanggalObservasi: status === "completed" ? item.scheduled_date : item.scheduled_date || null,
-      waktu: status === "completed" ? item.time : item.scheduled_time || null,
-      observer: item.observer || "-",
-      status: item.status,
-    }));
-  } catch (error: any) {
-    if (error.response) {
-      console.error("AXIOS ERROR STATUS:", error.response.status);
-      console.error("AXIOS ERROR DATA:", error.response.data);
-    } else {
-      console.error("ERROR getObservations:", error);
-    }
-    return [];
-  }
-}
 
 // =======================
-// Page Component
+// Page Component (tidak berubah)
 // =======================
 export default function JadwalAsesmenPage() {
   const router = useRouter();
@@ -102,17 +72,19 @@ export default function JadwalAsesmenPage() {
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [openDropdown, setOpenDropdown] = useState<boolean>(false);
+  const [openDetail, setOpenDetail] = useState(false);
+  const [openDropdown, setOpenDropdown] = useState<{
+    id: number;
+    role: "ortu" | "asessor";
+  } | null>(null);
   const [openAsesmen, setOpenAsesmen] = useState(false);
-
-  // Fetch data jadwal
   const fetchJadwal = async () => {
     setLoading(true);
     setError(null);
+
     try {
       const status = tab === "terjadwal" ? "scheduled" : "completed";
-      const data = await getObservations(status, "", selectedDate || undefined);
+      const data = await getAssessmentsAdmin(status);
       setJadwalList(data);
       setOriginalList(data);
     } catch (err) {
@@ -123,32 +95,63 @@ export default function JadwalAsesmenPage() {
     }
   };
 
+
   useEffect(() => {
     fetchJadwal();
     setSelectedDate(null);
   }, [tab]);
-
-  const filtered = jadwalList.filter((j) => {
-    const nama = j.nama?.toLowerCase() || "";
-    const sekolah = j.sekolah?.toLowerCase() || "";
-    const orangtua = j.orangtua?.toLowerCase() || "";
+  const filtered = originalList.filter((j) => {
     const q = search.toLowerCase();
-    return nama.includes(q) || sekolah.includes(q) || orangtua.includes(q);
+
+    const matchSearch =
+      (j.nama || "").toLowerCase().includes(q) ||
+      (j.sekolah || "").toLowerCase().includes(q) ||
+      (j.orangtua || "").toLowerCase().includes(q);
+
+    const matchDate =
+      tab === "terjadwal" && selectedDate
+        ? j.tanggalObservasi === selectedDate
+        : true;
+
+    return matchSearch && matchDate;
   });
 
+
   const handleDateSelect = (date: Date) => {
-    const formatted = format(date, "yyyy-MM-dd", { locale: id });
+    const formatted = format(date, "dd/MM/yyyy");
     setSelectedDate(formatted);
-    fetchJadwal(); // refetch berdasarkan tanggal terpilih
   };
 
-  const handleRiwayatJawaban = (id: number) => {
-    router.push(`/terapis/riwayat-hasil?id=${id}`);
+
+
+  const handleOrtuRoute = (action: string, jadwalId: number) => {
+    const base = "/admin/ortu";
+
+    const routes: Record<string, string> = {
+      umum: `${base}/data_umum`,
+      fisio: `${base}/fisioterapi`,
+      okupasi: `${base}/okupasi`,
+      wicara: `${base}/wicara`,
+      paedagog: `${base}/paedagog`,
+      upload: `${base}/upload_file`,
+    };
+
+router.push(`${routes[action]}?assessment_id=${jadwalId}`);
   };
 
-  const handleLihatHasil = (id: number) => {
-    router.push(`/terapis/hasil-observasi?id=${id}`);
+  const handleAsessorRoute = (action: string, jadwalId: number) => {
+    const base = "/admin/asesor";
+
+    const routes: Record<string, string> = {
+      fisio: `${base}/fisioterapi`,
+      okupasi: `${base}/okupasi`,
+      wicara: `${base}/wicara`,
+      paedagog: `${base}/paedagog`,
+    };
+
+    router.push(`${routes[action]}?id=${jadwalId}`);
   };
+
 
   useEffect(() => {
     const handleClickOutside = () => setOpenDropdown(false);
@@ -156,35 +159,50 @@ export default function JadwalAsesmenPage() {
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-  const DualCalendar = () => {
-    const today = selectedDate ? new Date(selectedDate) : new Date();
-    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
+const DualCalendar = () => {
+  const parseSelectedDate = () => {
+    if (!selectedDate) return new Date();
 
-    return (
-      <div className="flex justify-center gap-6 bg-[#F9FAFB] p-4 rounded-lg">
-        <Calendar
-          onChange={handleDateSelect}
-          locale="id-ID"
-          showNeighboringMonth={false}
-          next2Label={null}
-          prev2Label={null}
-          value={today}
-        />
-        <Calendar
-          onChange={handleDateSelect}
-          locale="id-ID"
-          showNeighboringMonth={false}
-          next2Label={null}
-          prev2Label={null}
-          value={nextMonth}
-        />
-      </div>
-    );
+    const parts = selectedDate.split("/");
+    if (parts.length !== 3) return new Date();
+
+    const [d, m, y] = parts;
+    const parsed = new Date(`${y}-${m}-${d}`);
+
+    return isNaN(parsed.getTime()) ? new Date() : parsed;
   };
 
-  // =======================
-  // Render
-  // =======================
+  const currentDate = parseSelectedDate();
+  const nextMonth = new Date(
+    currentDate.getFullYear(),
+    currentDate.getMonth() + 1,
+    1
+  );
+
+  return (
+    <div className="flex justify-center gap-6 bg-[#F9FAFB] p-4 rounded-lg">
+      <Calendar
+        onChange={handleDateSelect}
+        locale="id-ID"
+        showNeighboringMonth={false}
+        next2Label={null}
+        prev2Label={null}
+        value={currentDate}
+      />
+
+      <Calendar
+        onChange={handleDateSelect}
+        locale="id-ID"
+        showNeighboringMonth={false}
+        next2Label={null}
+        prev2Label={null}
+        value={nextMonth}
+      />
+    </div>
+  );
+};
+
+
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
@@ -204,11 +222,10 @@ export default function JadwalAsesmenPage() {
                 <button
                   key={t}
                   onClick={() => setTab(t as any)}
-                  className={`relative pb-2 text-sm font-medium ${
-                    tab === t
-                      ? "text-[#36315B] border-b-2 border-[#81B7A9] font-semibold"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`relative pb-2 text-sm font-medium ${tab === t
+                    ? "text-[#36315B] border-b-2 border-[#81B7A9] font-semibold"
+                    : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
                   {t === "terjadwal" ? "Terjadwal" : "Selesai"}
                 </button>
@@ -239,7 +256,10 @@ export default function JadwalAsesmenPage() {
               selectedDate && tab === "terjadwal" ? (
                 <p className="text-center text-gray-500 py-10">
                   Tidak ada jadwal untuk tanggal{" "}
-                  {format(new Date(selectedDate), "dd MMMM yyyy", { locale: id })}
+                  {(() => {
+                    const [d, m, y] = selectedDate.split("/");
+                    return format(new Date(`${y}-${m}-${d}`), "dd MMMM yyyy", { locale: id });
+                  })()}
                 </p>
               ) : (
                 <p className="text-center text-gray-500 py-10">Tidak ada data.</p>
@@ -247,43 +267,105 @@ export default function JadwalAsesmenPage() {
             ) : tab === "selesai" ? (
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-gray-200 text-[#36315B] bg-gray-50">
+                  <tr className="border-b border-gray-200 text-[#36315B]">
                     <th className="p-3 text-left">Nama Pasien</th>
                     <th className="p-3 text-left">Nama Orangtua</th>
-                    <th className="p-3 text-left">Observer</th>
-                    <th className="p-3 text-left">Status</th>
-                    <th className="p-3 text-left">Tanggal Observasi</th>
+                    <th className="p-3 text-left">Telepon</th>
+                    <th className="p-3 text-left">Tipe Assesment</th>
+                    <th className="p-3 text-left">Asessor</th>
+                    <th className="p-3 text-left">Tanggal Assesment</th>
                     <th className="p-3 text-left">Waktu</th>
                     <th className="p-3 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((j) => (
-                    <tr
-                      key={j.id}
-                      className="border-b border-gray-100 hover:bg-gray-50"
-                    >
+                    <tr key={j.id} className="border-b border-gray-100">
                       <td className="p-3">{j.nama}</td>
                       <td className="p-3">{j.orangtua}</td>
-                      <td className="p-3">{j.observer || "-"}</td>
-                      <td className="p-3 capitalize">{j.status || "completed"}</td>
-                      <td className="p-3">{j.tanggalObservasi || "-"}</td>
-                      <td className="p-3">{j.waktu || "-"}</td>
-                      <td className="p-3 text-center">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedPasien(j);
-                            setOpenDropdown(true);
-                          }}
-                          className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
-                        >
-                          <Settings size={14} className="mr-1" />
-                          Aksi
-                          <ChevronDown size={12} className="ml-1" />
-                        </button>
+                      <td className="p-3">{j.telepon}</td>
+                      <td className="p-3">{j.tipe}</td>
+                      <td className="p-3">{j.asessor}</td>
+                      <td className="p-3">{j.tanggalObservasi}</td>
+                      <td className="p-3">{j.waktu}</td>
+                      <td className="p-3 text-center relative">
+                        <div className="flex justify-center gap-2">
+                          {/* BUTTON ORTU */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdown(
+                                openDropdown?.id === j.id && openDropdown?.role === "ortu"
+                                  ? null
+                                  : { id: j.id, role: "ortu" }
+                              );
+                            }}
+                            className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+                          >
+                            Ortu
+                            <ChevronDown size={12} className="ml-1" />
+                          </button>
+
+                          {/* BUTTON ASESSOR */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdown(
+                                openDropdown?.id === j.id && openDropdown?.role === "asessor"
+                                  ? null
+                                  : { id: j.id, role: "asessor" }
+                              );
+                            }}
+                            className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+                          >
+                            Asessor
+                            <ChevronDown size={12} className="ml-1" />
+                          </button>
+                        </div>
+
+                        {/* DROPDOWN ORTU */}
+                        {openDropdown?.id === j.id && openDropdown?.role === "ortu" && (
+                          <div
+                            className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {ORTU_ACTIONS.map((item) => (
+                              <button
+                                key={item.key}
+                                onClick={() => {
+                                  handleOrtuRoute(item.key, j.id);
+                                  setOpenDropdown(null);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* DROPDOWN ASESSOR */}
+                        {openDropdown?.id === j.id && openDropdown?.role === "asessor" && (
+                          <div
+                            className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {ASESSOR_ACTIONS.map((item) => (
+                              <button
+                                key={item.key}
+                                onClick={() => {
+                                  handleAsessorRoute(item.key, j.id);
+                                  setOpenDropdown(null);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
                       </td>
+
                     </tr>
                   ))}
                 </tbody>
@@ -291,38 +373,77 @@ export default function JadwalAsesmenPage() {
             ) : (
               <table className="w-full text-sm border-collapse">
                 <thead>
-                  <tr className="border-b border-gray-200 text-[#36315B]">
+                  <tr className="border-b border-gray-200 text-[#36315B] bg-gray-50">
                     <th className="p-3 text-left">Nama Pasien</th>
-                    <th className="p-3 text-left">Usia</th>
-                    <th className="p-3 text-left">Jenis Kelamin</th>
-                    <th className="p-3 text-left">Sekolah</th>
                     <th className="p-3 text-left">Nama Orangtua</th>
                     <th className="p-3 text-left">Telepon</th>
-                    <th className="p-3 text-left">Tanggal Observasi</th>
+                    <th className="p-3 text-left">Tipe Assesment</th>
+                    <th className="p-3 text-left">Administrator</th>
+                    <th className="p-3 text-left">Tanggal Assesment</th>
+                    <th className="p-3 text-left">Waktu</th>
                     <th className="p-3 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((j) => (
-                    <tr key={j.id} className="border-b border-gray-100">
-                      <td className="p-3">{j.nama || "-"}</td>
-                      <td className="p-3">{j.usia || "-"}</td>
-                      <td className="p-3">{j.jenisKelamin || "-"}</td>
-                      <td className="p-3">{j.sekolah || "-"}</td>
-                      <td className="p-3">{j.orangtua || "-"}</td>
-                      <td className="p-3">{j.telepon || "-"}</td>
-                      <td className="p-3">{j.tanggalObservasi || "-"}</td>
-                      <td className="p-3 text-center">
+                    <tr key={j.id} className="border-b border-gray-100 hover:bg-gray-50">
+                      <td className="p-3">{j.nama}</td>
+                      <td className="p-3">{j.orangtua}</td>
+                      <td className="p-3">{j.telepon}</td>
+                      <td className="p-3">{j.tipe}</td>
+                      <td className="p-3">{j.administrator}</td>
+                      <td className="p-3">{j.tanggalObservasi}</td>
+                      <td className="p-3">{j.waktu}</td>
+                      <td className="p-3 text-center relative">
                         <button
-                          onClick={() => {
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
                             setSelectedPasien(j);
-                            setOpenAsesmen(true);
+                            setOpenDropdown(openDropdown === j.id ? null : j.id);
                           }}
-                          className="px-4 py-1 text-sm rounded bg-[#81B7A9] hover:bg-[#36315B] text-white transition"
+                          className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                         >
-                          Edit Observasi
+                          <Settings size={14} className="mr-1" />
+                          Aksi
+                          <ChevronDown size={12} className="ml-1" />
                         </button>
+
+                        {/* DROPDOWN AKSI — SAMA DENGAN OBSERVASI */}
+                        {openDropdown === j.id && tab === "terjadwal" && (
+                          <div
+                            className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-56 text-[#5F52BF]"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <div className="divide-y divide-gray-200">
+                              {/* ATUR ASESMEN */}
+                              <button
+                                onClick={() => {
+                                  setOpenAsesmen(true);
+                                  setOpenDropdown(null);
+                                }}
+                                className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+                              >
+                                <Settings size={16} className="mr-2" />
+                                Atur Asesmen
+                              </button>
+
+                              {/* DETAIL */}
+                              <button
+                                onClick={() => {
+                                  setOpenDropdown(null);
+                                  setOpenDetail(true);
+                                }}
+                                className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+                              >
+                                <Eye size={16} className="mr-2" />
+                                Detail
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </td>
+
                     </tr>
                   ))}
                 </tbody>
@@ -330,51 +451,14 @@ export default function JadwalAsesmenPage() {
             )}
           </div>
 
-          {openDropdown && selectedPasien && (
-            <div
-              className="fixed top-[100px] left-1/2 -translate-x-1/2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64 text-[#5F52BF]"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div className="divide-y divide-gray-200">
-                <button
-                  onClick={() => {
-                    setOpenAsesmen(true);
-                    setOpenDropdown(false);
-                  }}
-                  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-                >
-                  <Settings size={16} className="mr-2" />
-                  Atur Asesmen
-                </button>
-                <button
-                  onClick={() => {
-                    setOpenDropdown(false);
-                    handleRiwayatJawaban(selectedPasien.id);
-                  }}
-                  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-                >
-                  <Clock3 size={16} className="mr-2" />
-                  Riwayat Jawaban
-                </button>
-                <button
-                  onClick={() => {
-                    setOpenDropdown(false);
-                    handleLihatHasil(selectedPasien.id);
-                  }}
-                  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-                >
-                  <Eye size={16} className="mr-2" />
-                  Lihat Hasil
-                </button>
-              </div>
-            </div>
-          )}
+
+
         </main>
       </div>
 
       {openAsesmen && selectedPasien && (
-        <FormAturAsesmen
-          title={tab === "terjadwal" ? "Edit Observasi" : "Atur Asesmen"}
+        <FormEditAsesment
+          title={tab === "terjadwal" ? "Edit Asesment" : "Atur Asesment"}
           pasienName={selectedPasien.nama}
           initialDate={selectedPasien.tanggalObservasi || ""}
           initialTime={selectedPasien.waktu || ""}
@@ -397,6 +481,14 @@ export default function JadwalAsesmenPage() {
           }}
         />
       )}
+      <FormDetailAsesment
+        open={openDetail}
+        pasien={selectedPasien}
+        onClose={() => {
+          setOpenDetail(false);
+          setSelectedPasien(null);
+        }}
+      />
     </div>
   );
 }

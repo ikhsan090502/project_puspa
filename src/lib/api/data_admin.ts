@@ -6,7 +6,7 @@ export interface Admin {
   username: string;
   email: string;
   admin_phone: string;
-  is_active: string;
+  status: string;
   created_at: string;
   updated_at: string;
 }
@@ -20,7 +20,7 @@ export async function getAdmins(): Promise<Admin[]> {
     username: item.username,
     email: item.email,
     admin_phone: item.admin_phone,
-    is_active: item.is_active,
+    status: item.status,
     created_at: item.created_at,
     updated_at: item.updated_at,
   }));
@@ -35,7 +35,7 @@ export async function getAdminById(id: string): Promise<Admin> {
     username: item.username,
     email: item.email,
     admin_phone: item.admin_phone,
-    is_active: item.is_active,
+    status: item.status,
     created_at: item.created_at,
     updated_at: item.updated_at,
   };
@@ -55,7 +55,6 @@ export async function addAdmin(data: {
     email: data.email,
     admin_phone: data.admin_phone,
     password: data.password || "12345678",
-    is_active: "1",
   });
 }
 
