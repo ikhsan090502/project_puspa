@@ -1,7 +1,7 @@
 import api from "@/lib/axios";
 
 export interface Jadwal {
-  id: number;
+  observation_id: number;
   nama: string;
   usia: string;
   jenisKelamin: string;
@@ -11,7 +11,7 @@ export interface Jadwal {
   tanggalObservasi?: string | null;
   waktu?: string | null;
   observer?: string | null;
-  status?: string | null;
+  assessment_status: string;
 }
 
 // ========================================================
@@ -50,7 +50,7 @@ export async function getObservations(
       const isCompleted = status === "completed";
 
       return {
-        id: item.observation_id,
+        observation_id: item.observation_id,
         nama: item.child_name,
         usia: isPending ? item.child_age : "-",
         jenisKelamin: isPending ? item.child_gender : "-",
@@ -64,7 +64,8 @@ export async function getObservations(
         // Observer untuk completed, administrator untuk scheduled
         observer: isCompleted ? item.observer : item.administrator || "-",
 
-        status: item.status,
+            assessment_status: item.assessment_status || "-", // ⬅ tambahkan ini
+
       };
     });
 
@@ -79,7 +80,7 @@ export async function getObservations(
 // UPDATE OBSERVATION SCHEDULE (PUT)
 // ========================================================
 export async function updateObservationSchedule(
-  id: number,
+  observation_id: number,
   scheduled_date: string,
   scheduled_time: string
 ) {
@@ -87,7 +88,7 @@ export async function updateObservationSchedule(
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     const res = await api.post(
-      `/observations/${id}`,
+      `/observations/${observation_id}`,
       {
         scheduled_date,
         scheduled_time,
@@ -113,14 +114,14 @@ export async function updateObservationSchedule(
 // POST /observations/{id}/agreement
 // ========================================================
 export async function createObservationAgreement(
-  observationId: number,
+  observation_id: number,
   scheduled_date: string,
   scheduled_time: string
 ) {
   try {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
     const res = await api.put(
-      `/observations/${observationId}/agreement`,
+      `/observations/${observation_id}/agreement`,
       { scheduled_date, scheduled_time },
       { headers: { Authorization: `Bearer ${token}` } }
     );
@@ -133,10 +134,10 @@ export async function createObservationAgreement(
 }
 
 
-export async function getObservationDetail(id: number, type: "pending" | "scheduled" | "completed") {
+export async function getObservationDetail(observation_id: number, type: "pending" | "scheduled" | "completed") {
   try {
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
-    const res = await api.get(`/observations/${id}/detail`, {
+    const res = await api.get(`/observations/${observation_id}/detail`, {
       params: { type },
       headers: { Authorization: `Bearer ${token}` },
     });

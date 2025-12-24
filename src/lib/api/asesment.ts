@@ -153,6 +153,7 @@ export const getAssessmentAnswers = async (
     const res = await axiosInstance.get(
       `/assessments/${assessmentId}/answer/${type}_assessor`
     );
+      console.log("CALLING:", `/assessments/${assessmentId}/answer/${type}_assessor`)
 
     // ✅ BE RETURN ARRAY DI data
     return res.data?.data ?? [];

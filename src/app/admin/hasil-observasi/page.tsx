@@ -16,7 +16,7 @@ export default function HasilObservasiFrame() {
       const router = useRouter(); // ✅ TARUH DI SINI
 
   const searchParams = useSearchParams();
-  const observationId = searchParams.get("id");
+  const observationId = searchParams.get("observation_id") || searchParams.get("id") || "";
 
   const [data, setData] = useState<CompletedObservationDetail | null>(null);
   const [loading, setLoading] = useState(true);

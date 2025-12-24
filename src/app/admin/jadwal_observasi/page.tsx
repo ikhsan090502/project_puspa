@@ -46,7 +46,7 @@ const [selectedDate, setSelectedDate] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [openDropdown, setOpenDropdown] = useState(false);
+const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [openAsesmen, setOpenAsesmen] = useState(false);
   const [filteredData, setFilteredData] = useState<any[]>([]);
   const [openDetail, setOpenDetail] = useState(false);
@@ -66,10 +66,12 @@ const [debouncedSearch, setDebouncedSearch] = useState(search);
     setError(null);
 
     try {
-      let status = "";
-      if (tab === "menunggu") status = "pending";
-      else if (tab === "terjadwal") status = "scheduled";
-      else if (tab === "selesai") status = "completed";
+      let status: "pending" | "scheduled" | "completed";
+
+if (tab === "menunggu") status = "pending";
+else if (tab === "terjadwal") status = "scheduled";
+else status = "completed";
+
 
 const data = await getObservations(status, debouncedSearch);
       setJadwalList(data);
@@ -144,19 +146,19 @@ const filtered = originalList.filter((j) => {
   // =====================
   // Navigation actions
   // =====================
-  const handleRiwayatJawaban = (id: string) => router.push(`/admin/riwayat-hasil?id=${id}`);
-  const handleLihatHasil = (id: string) => router.push(`/admin/hasil-observasi?id=${id}`);
+  const handleRiwayatJawaban = (observation_id: number) => router.push(`/admin/riwayat-hasil?observation_id=${observation_id}`);
+  const handleLihatHasil = (id: number) => router.push(`/admin/hasil-observasi?observation_id=${id}`);
   const handleAturAsesmen = (pasien: Jadwal) => {
     setSelectedPasien(pasien);
     setOpenAsesmen(true);
-    setOpenDropdown(false);
+    setOpenDropdown(null);
   };
 
   // =====================
   // Click outside dropdown
   // =====================
   useEffect(() => {
-    const close = () => setOpenDropdown(false);
+    const close = () => setOpenDropdown(null);
     window.addEventListener("click", close);
     return () => window.removeEventListener("click", close);
   }, []);
@@ -288,23 +290,25 @@ const DualCalendar = () => {
                     <th className="p-3 text-left">Observer</th>
                     <th className="p-3 text-left">Tanggal Observasi</th>
                     <th className="p-3 text-left">Waktu</th>
+                    <th className="p-3 text-left">Status Asesmen</th>
                     <th className="p-3 text-center">Aksi</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.map((j) => (
-                    <tr key={j.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={j.observation_id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="p-3">{j.nama}</td>
                       <td className="p-3">{j.orangtua}</td>
                       <td className="p-3">{j.observer || "-"}</td>
                       <td className="p-3">{j.tanggalObservasi || "-"}</td>
                       <td className="p-3">{j.waktu || "-"}</td>
+                      <td className="p-3">{j.assessment_status || "-"}</td>
                       <td className="p-3 text-center">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedPasien(j);
-                            setOpenDropdown(true);
+setOpenDropdown(j.observation_id);
                           }}
                           className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                         >
@@ -348,7 +352,7 @@ const DualCalendar = () => {
 
                 <tbody>
                   {filtered.map((j) => (
-                    <tr key={j.id} className="border-b border-gray-100">
+                    <tr key={j.observation_id} className="border-b border-gray-100">
                       <td className="p-3">{j.nama || "-"}</td>
                       <td className="p-3">{j.orangtua || "-"}</td>
                       <td className="p-3">{j.telepon || "-"}</td>
@@ -375,7 +379,7 @@ const DualCalendar = () => {
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedPasien(j);
-                              setOpenDropdown(openDropdown === j.id ? null : j.id);
+                              setOpenDropdown(openDropdown === j.observation_id ? null : j.observation_id);
                             }}
                             className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                           >
@@ -423,20 +427,21 @@ const DualCalendar = () => {
           </button>
 
           <button
-            onClick={() => handleRiwayatJawaban(selectedPasien.id)}
-            className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-          >
-            <Clock3 size={16} className="mr-2" />
-            Riwayat Jawaban
-          </button>
+  onClick={() => handleRiwayatJawaban(selectedPasien.observation_id)}
+  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+>
+  <Clock3 size={16} className="mr-2" />
+  Riwayat Jawaban
+</button>
 
-          <button
-            onClick={() => handleLihatHasil(selectedPasien.id)}
-            className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-          >
-            <Eye size={16} className="mr-2" />
-            Lihat Hasil
-          </button>
+<button
+  onClick={() => handleLihatHasil(selectedPasien.observation_id)}
+  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+>
+  <Eye size={16} className="mr-2" />
+  Lihat Hasil
+</button>
+
         </>
       ) : (
         <>
@@ -457,7 +462,7 @@ const DualCalendar = () => {
               try {
                 const token = localStorage.getItem("token");
                 const res = await fetch(
-                  `/api/observations/${selectedPasien.id}/detail?type=scheduled`,
+                  `/api/observations/${selectedPasien.observation_id}/detail?type=scheduled`,
                   {
                     headers: { Authorization: `Bearer ${token}` },
                   }
@@ -466,7 +471,7 @@ const DualCalendar = () => {
                 const data = await res.json();
                 setSelectedObservation(data.data);
                 setOpenDetail(true);
-                setOpenDropdown(false);
+                setOpenDropdown(null);
               } catch (err) {
                 console.error(err);
                 alert("Gagal memuat detail observasi!");
@@ -519,11 +524,11 @@ const DualCalendar = () => {
         setLoading(true);
         if (tab === "selesai") {
           // TAB SELSAI → JADWAL ASESMEN
-          await createObservationAgreement(selectedPasien.id, date, time);
+          await createObservationAgreement(selectedPasien.observation_id, date, time);
           alert("✅ Asesmen berhasil dijadwalkan!");
         } else {
           // TAB LAIN → OBSERVASI
-          await updateObservationSchedule(selectedPasien.id, date, time);
+          await updateObservationSchedule(selectedPasien.observation_id, date, time);
           alert("✅ Jadwal observasi berhasil disimpan!");
         }
         setOpenAsesmen(false);

@@ -24,7 +24,7 @@ import FormDetailAsesment from "@/components/form/FormDetailAsesment";
 // Interface Jadwal
 // =======================
 export interface Jadwal {
-  id: number;
+  assessment_id: number;
   nama: string;
   usia?: string;
   jenisKelamin?: string;
@@ -50,6 +50,7 @@ const ORTU_ACTIONS = [
 ];
 
 const ASESSOR_ACTIONS = [
+  { key: "umum", label: "Data Umum" },
   { key: "fisio", label: "Data Fisioterapi" },
   { key: "okupasi", label: "Data Terapi Okupasi" },
   { key: "wicara", label: "Data Terapi Wicara" },
@@ -73,18 +74,17 @@ export default function JadwalAsesmenPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<{
-    id: number;
-    role: "ortu" | "asessor";
-  } | null>(null);
+const [openDropdown, setOpenDropdown] = useState<{
+  assessment_id: number;
+  role: "ortu" | "asessor";
+} | null>(null);
   const [openAsesmen, setOpenAsesmen] = useState(false);
   const fetchJadwal = async () => {
     setLoading(true);
     setError(null);
-
     try {
       const status = tab === "terjadwal" ? "scheduled" : "completed";
-      const data = await getAssessmentsAdmin(status);
+      const data = await getAssessmentsAdmin(status, "", selectedDate || undefined);
       setJadwalList(data);
       setOriginalList(data);
     } catch (err) {
@@ -95,63 +95,61 @@ export default function JadwalAsesmenPage() {
     }
   };
 
-
   useEffect(() => {
     fetchJadwal();
     setSelectedDate(null);
   }, [tab]);
-  const filtered = originalList.filter((j) => {
+
+  const filtered = jadwalList.filter((j) => {
+    const nama = j.nama?.toLowerCase() || "";
+    const sekolah = j.sekolah?.toLowerCase() || "";
+    const orangtua = j.orangtua?.toLowerCase() || "";
     const q = search.toLowerCase();
-
-    const matchSearch =
-      (j.nama || "").toLowerCase().includes(q) ||
-      (j.sekolah || "").toLowerCase().includes(q) ||
-      (j.orangtua || "").toLowerCase().includes(q);
-
-    const matchDate =
-      tab === "terjadwal" && selectedDate
-        ? j.tanggalObservasi === selectedDate
-        : true;
-
-    return matchSearch && matchDate;
+    return nama.includes(q) || sekolah.includes(q) || orangtua.includes(q);
   });
 
-
   const handleDateSelect = (date: Date) => {
-    const formatted = format(date, "dd/MM/yyyy");
+    const formatted = format(date, "yyyy-MM-dd", { locale: id });
     setSelectedDate(formatted);
+    fetchJadwal();
   };
 
+  const handleOrtuRoute = (action: , jadwalId: number) => {
+  const base = "/admin/ortu";
 
-
-  const handleOrtuRoute = (action: string, jadwalId: number) => {
-    const base = "/admin/ortu";
-
-    const routes: Record<string, string> = {
-      umum: `${base}/data_umum`,
-      fisio: `${base}/fisioterapi`,
-      okupasi: `${base}/okupasi`,
-      wicara: `${base}/wicara`,
-      paedagog: `${base}/paedagog`,
-      upload: `${base}/upload_file`,
-    };
-
-router.push(`${routes[action]}?assessment_id=${jadwalId}`);
+  const routes: Record<string, string> = {
+    umum: `${base}/data_umum`,
+    fisio: `${base}/fisioterapi`,
+    okupasi: `${base}/okupasi`,
+    wicara: `${base}/wicara`,
+    paedagog: `${base}/paedagog`,
+    upload: `${base}/upload_file`,
   };
 
-  const handleAsessorRoute = (action: string, jadwalId: number) => {
-    const base = "/admin/asesor";
+  router.push(`${routes[action]}?id=${jadwalId}`);
+};
 
-    const routes: Record<string, string> = {
-      fisio: `${base}/fisioterapi`,
-      okupasi: `${base}/okupasi`,
-      wicara: `${base}/wicara`,
-      paedagog: `${base}/paedagog`,
-    };
+const handleAsessorRoute = (action: string, jadwalId: number) => {
+  const base = "/admin/asessor";
 
-    router.push(`${routes[action]}?id=${jadwalId}`);
+  const routes: Record<string, string> = {
+    umum: `${base}/data_umum`,
+    fisio: `${base}/fisioterapi`,
+    okupasi: `${base}/okupasi`,
+    wicara: `${base}/wicara`,
+    paedagog: `${base}/paedagog`,
   };
 
+  router.push(`${routes[action]}?id=${jadwalId}`);
+};
+
+  const handleRiwayatJawaban = (id: number) => {
+    router.push(`/terapis/riwayat-hasil?id=${id}`);
+  };
+
+  const handleLihatHasil = (id: number) => {
+    router.push(`/terapis/hasil-observasi?id=${id}`);
+  };
 
   useEffect(() => {
     const handleClickOutside = () => setOpenDropdown(false);
@@ -159,49 +157,31 @@ router.push(`${routes[action]}?assessment_id=${jadwalId}`);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-const DualCalendar = () => {
-  const parseSelectedDate = () => {
-    if (!selectedDate) return new Date();
+  const DualCalendar = () => {
+    const today = selectedDate ? new Date(selectedDate) : new Date();
+    const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
-    const parts = selectedDate.split("/");
-    if (parts.length !== 3) return new Date();
-
-    const [d, m, y] = parts;
-    const parsed = new Date(`${y}-${m}-${d}`);
-
-    return isNaN(parsed.getTime()) ? new Date() : parsed;
+    return (
+      <div className="flex justify-center gap-6 bg-[#F9FAFB] p-4 rounded-lg">
+        <Calendar
+          onChange={handleDateSelect}
+          locale="id-ID"
+          showNeighboringMonth={false}
+          next2Label={null}
+          prev2Label={null}
+          value={today}
+        />
+        <Calendar
+          onChange={handleDateSelect}
+          locale="id-ID"
+          showNeighboringMonth={false}
+          next2Label={null}
+          prev2Label={null}
+          value={nextMonth}
+        />
+      </div>
+    );
   };
-
-  const currentDate = parseSelectedDate();
-  const nextMonth = new Date(
-    currentDate.getFullYear(),
-    currentDate.getMonth() + 1,
-    1
-  );
-
-  return (
-    <div className="flex justify-center gap-6 bg-[#F9FAFB] p-4 rounded-lg">
-      <Calendar
-        onChange={handleDateSelect}
-        locale="id-ID"
-        showNeighboringMonth={false}
-        next2Label={null}
-        prev2Label={null}
-        value={currentDate}
-      />
-
-      <Calendar
-        onChange={handleDateSelect}
-        locale="id-ID"
-        showNeighboringMonth={false}
-        next2Label={null}
-        prev2Label={null}
-        value={nextMonth}
-      />
-    </div>
-  );
-};
-
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -256,10 +236,7 @@ const DualCalendar = () => {
               selectedDate && tab === "terjadwal" ? (
                 <p className="text-center text-gray-500 py-10">
                   Tidak ada jadwal untuk tanggal{" "}
-                  {(() => {
-                    const [d, m, y] = selectedDate.split("/");
-                    return format(new Date(`${y}-${m}-${d}`), "dd MMMM yyyy", { locale: id });
-                  })()}
+                  {format(new Date(selectedDate), "dd MMMM yyyy", { locale: id })}
                 </p>
               ) : (
                 <p className="text-center text-gray-500 py-10">Tidak ada data.</p>
@@ -289,82 +266,82 @@ const DualCalendar = () => {
                       <td className="p-3">{j.tanggalObservasi}</td>
                       <td className="p-3">{j.waktu}</td>
                       <td className="p-3 text-center relative">
-                        <div className="flex justify-center gap-2">
-                          {/* BUTTON ORTU */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenDropdown(
-                                openDropdown?.id === j.id && openDropdown?.role === "ortu"
-                                  ? null
-                                  : { id: j.id, role: "ortu" }
-                              );
-                            }}
-                            className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
-                          >
-                            Ortu
-                            <ChevronDown size={12} className="ml-1" />
-                          </button>
+  <div className="flex justify-center gap-2">
+    {/* BUTTON ORTU */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setOpenDropdown(
+          openDropdown?.id === j.id && openDropdown?.role === "ortu"
+            ? null
+            : { id: j.id, role: "ortu" }
+        );
+      }}
+      className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+    >
+      Ortu
+      <ChevronDown size={12} className="ml-1" />
+    </button>
 
-                          {/* BUTTON ASESSOR */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenDropdown(
-                                openDropdown?.id === j.id && openDropdown?.role === "asessor"
-                                  ? null
-                                  : { id: j.id, role: "asessor" }
-                              );
-                            }}
-                            className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
-                          >
-                            Asessor
-                            <ChevronDown size={12} className="ml-1" />
-                          </button>
-                        </div>
+    {/* BUTTON ASESSOR */}
+    <button
+      onClick={(e) => {
+        e.stopPropagation();
+        setOpenDropdown(
+          openDropdown?.id === j.id && openDropdown?.role === "asessor"
+            ? null
+            : { id: j.id, role: "asessor" }
+        );
+      }}
+      className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+    >
+      Asessor
+      <ChevronDown size={12} className="ml-1" />
+    </button>
+  </div>
 
-                        {/* DROPDOWN ORTU */}
-                        {openDropdown?.id === j.id && openDropdown?.role === "ortu" && (
-                          <div
-                            className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {ORTU_ACTIONS.map((item) => (
-                              <button
-                                key={item.key}
-                                onClick={() => {
-                                  handleOrtuRoute(item.key, j.id);
-                                  setOpenDropdown(null);
-                                }}
-                                className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-                              >
-                                {item.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+  {/* DROPDOWN ORTU */}
+  {openDropdown?.id === j.id && openDropdown?.role === "ortu" && (
+    <div
+      className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {ORTU_ACTIONS.map((item) => (
+        <button
+          key={item.key}
+          onClick={() => {
+  handleOrtuRoute(item.key, j.id);
+            setOpenDropdown(null);
+          }}
+          className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  )}
 
-                        {/* DROPDOWN ASESSOR */}
-                        {openDropdown?.id === j.id && openDropdown?.role === "asessor" && (
-                          <div
-                            className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {ASESSOR_ACTIONS.map((item) => (
-                              <button
-                                key={item.key}
-                                onClick={() => {
-                                  handleAsessorRoute(item.key, j.id);
-                                  setOpenDropdown(null);
-                                }}
-                                className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-                              >
-                                {item.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </td>
+  {/* DROPDOWN ASESSOR */}
+  {openDropdown?.id === j.id && openDropdown?.role === "asessor" && (
+    <div
+      className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
+      onClick={(e) => e.stopPropagation()}
+    >
+      {ASESSOR_ACTIONS.map((item) => (
+        <button
+          key={item.key}
+          onClick={() => {
+handleAsessorRoute(item.key, j.id);
+            setOpenDropdown(null);
+          }}
+          className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+        >
+          {item.label}
+        </button>
+      ))}
+    </div>
+  )}
+</td>
 
                     </tr>
                   ))}
