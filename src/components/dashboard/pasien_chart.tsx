@@ -8,13 +8,42 @@ type CategoryItem = {
 };
 
 export default function PasienChart({ apiData }: { apiData: CategoryItem[] }) {
-  const COLORS = ["#f59e0b", "#10b981", "#3b82f6", "#facc15"];
+  const COLORS = ["#8FA7A1", "#5B4DA3", "#F59E0B", "#10B981", "#3B82F6"];
 
   const hasData = apiData && apiData.length > 0;
 
   const dataToUse = hasData
     ? apiData
-    : [{ name: "Tidak ada data", value: 1 }]; // fallback biar PieChart tetap render
+    : [{ name: "Tidak ada data", value: 1 }];
+
+  // Fungsi untuk format label di luar: hanya persentase
+  const renderCustomizedLabel = ({
+    cx,
+    cy,
+    midAngle,
+    innerRadius,
+    outerRadius,
+    percent,
+  }: any) => {
+    const RADIAN = Math.PI / 180;
+    const radius = outerRadius + 20; // jarak label dari pie
+    const x = cx + radius * Math.cos(-midAngle * RADIAN);
+    const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+    return (
+      <text
+        x={x}
+        y={y}
+        fill="#36315B"
+        textAnchor={x > cx ? "start" : "end"}
+        dominantBaseline="central"
+        fontSize={12}
+        fontWeight={500}
+      >
+        {`${(percent * 100).toFixed(1)}%`}
+      </text>
+    );
+  };
 
   return (
     <div className="bg-white rounded-lg shadow-md shadow-[#ADADAD] p-4 text-[#36315B]">
@@ -33,8 +62,10 @@ export default function PasienChart({ apiData }: { apiData: CategoryItem[] }) {
               data={dataToUse}
               dataKey="value"
               nameKey="name"
-              outerRadius={100}
-              label
+              outerRadius={70}
+              innerRadius={20} // agar menjadi donut
+              label={renderCustomizedLabel}
+              labelLine={true}
             >
               {dataToUse.map((entry, index) => (
                 <Cell

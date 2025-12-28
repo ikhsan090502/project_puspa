@@ -12,20 +12,23 @@ interface BackendDetailAnak {
   child_school?: string;
   child_address?: string;
 
+  father_identity_number?: string;
   father_name?: string;
-  father_age?: string;
+  father_birth_date?: string;
   father_occupation?: string;
   father_phone?: string;
   father_relationship?: string;
 
+  mother_identity_number?: string;
   mother_name?: string;
-  mother_age?: string;
+  mother_birth_date?: string;
   mother_occupation?: string;
   mother_phone?: string;
   mother_relationship?: string;
 
+  guardian_identity_number?: string | null;
   guardian_name?: string;
-  guardian_age?: string;
+  guardian_birth_date?: string;
   guardian_occupation?: string;
   guardian_phone?: string;
   guardian_relationship?: string;
@@ -33,6 +36,30 @@ interface BackendDetailAnak {
   child_complaint?: string;
   child_service_choice?: string;
 }
+
+const toISODate = (value?: string) => {
+  if (!value || value === "-") return "";
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+};
+
+const normalizeDate = (v: string) => (v ? v : null);
+
+const parseBirthInfo = (str: string) => {
+  if (!str) return { place: "", date: "" };
+  const [place, date] = str.split(", ");
+  return { place: place || "", date: date || "" };
+};
+
+const formatTanggalIndo = (date: string) => {
+  if (!date) return "";
+  const d = new Date(date);
+  const bulan = [
+    "Januari","Februari","Maret","April","Mei","Juni",
+    "Juli","Agustus","September","Oktober","November","Desember",
+  ];
+  return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
+};
 
 interface FormProps {
   open: boolean;
@@ -60,54 +87,28 @@ export default function FormUbahPasien({
     child_service_choice: "",
 
     father_name: "",
-    father_age: "",
+    father_birth_date: "",
     father_occupation: "",
     father_phone: "",
     father_relationship: "",
-    father_nik: "",
+    father_identity_number: "",
 
     mother_name: "",
-    mother_age: "",
+    mother_birth_date: "",
     mother_occupation: "",
     mother_phone: "",
     mother_relationship: "",
-    mother_nik: "",
+    mother_identity_number: "",
 
     guardian_name: "",
-    guardian_age: "",
+    guardian_birth_date: "",
     guardian_occupation: "",
     guardian_phone: "",
     guardian_relationship: "",
-    guardian_nik: "",
+    guardian_identity_number: "",
   });
 
-  function parseBirthInfo(str: string) {
-    if (!str) return { place: "", date: "" };
-    const parts = str.split(", ");
-    return {
-      place: parts[0] || "",
-      date: parts[1] || "",
-    };
-  }
-
-  function convertToInputDate(tanggal: string) {
-    try {
-      const tanggalObj = new Date(tanggal);
-      return tanggalObj.toISOString().slice(0, 10);
-    } catch {
-      return "";
-    }
-  }
-
-  function formatTanggalIndo(date: string) {
-    const d = new Date(date);
-    const bulan = [
-      "Januari","Februari","Maret","April","Mei","Juni",
-      "Juli","Agustus","September","Oktober","November","Desember"
-    ];
-    return `${d.getDate()} ${bulan[d.getMonth()]} ${d.getFullYear()}`;
-  }
-
+  
   useEffect(() => {
     if (initialData) {
       const parsed = parseBirthInfo(initialData.child_birth_info || "");
@@ -116,7 +117,7 @@ export default function FormUbahPasien({
         ...formData,
         child_name: initialData.child_name || "",
         birth_place: parsed.place,
-        birth_date: convertToInputDate(parsed.date),
+        birth_date: toISODate(parsed.date),
         child_age: initialData.child_age || "",
         child_religion: initialData.child_religion || "",
         child_gender: initialData.child_gender || "",
@@ -126,22 +127,26 @@ export default function FormUbahPasien({
         child_service_choice: initialData.child_service_choice || "",
 
         father_name: initialData.father_name || "",
-        father_age: initialData.father_age || "",
+        father_birth_date: toISODate(initialData.father_birth_date),
         father_occupation: initialData.father_occupation || "",
         father_phone: initialData.father_phone || "",
         father_relationship: initialData.father_relationship || "",
+         father_identity_number: initialData.father_identity_number || "",
 
         mother_name: initialData.mother_name || "",
-        mother_age: initialData.mother_age || "",
+      mother_birth_date: toISODate(initialData.mother_birth_date),
         mother_occupation: initialData.mother_occupation || "",
         mother_phone: initialData.mother_phone || "",
         mother_relationship: initialData.mother_relationship || "",
+        mother_identity_number: initialData.mother_identity_number || "",
+
 
         guardian_name: initialData.guardian_name || "",
-        guardian_age: initialData.guardian_age || "",
+        guardian_birth_date: toISODate(initialData.guardian_birth_date),
         guardian_occupation: initialData.guardian_occupation || "",
         guardian_phone: initialData.guardian_phone || "",
         guardian_relationship: initialData.guardian_relationship || "",
+         guardian_identity_number: initialData.guardian_identity_number || "",
       });
     }
   }, [initialData]);
@@ -158,7 +163,7 @@ export default function FormUbahPasien({
   const handleSubmit = (e: any) => {
     e.preventDefault();
 
-    const payload = {
+      const payload = {
       child_name: formData.child_name,
       child_birth_info: `${formData.birth_place}, ${formatTanggalIndo(
         formData.birth_date
@@ -171,22 +176,25 @@ export default function FormUbahPasien({
       child_service_choice: formData.child_service_choice,
 
       father_name: formData.father_name,
-      father_age: formData.father_age,
+     father_birth_date: normalizeDate(formData.father_birth_date),
       father_occupation: formData.father_occupation,
       father_phone: formData.father_phone,
       father_relationship: formData.father_relationship,
+      father_identity_number: formData.father_identity_number,
 
       mother_name: formData.mother_name,
-      mother_age: formData.mother_age,
+      mother_birth_date: normalizeDate(formData.mother_birth_date),
       mother_occupation: formData.mother_occupation,
       mother_phone: formData.mother_phone,
       mother_relationship: formData.mother_relationship,
+      mother_identity_number: formData.mother_identity_number,
 
       guardian_name: formData.guardian_name,
-      guardian_age: formData.guardian_age,
+      guardian_birth_date: normalizeDate(formData.guardian_birth_date),
       guardian_occupation: formData.guardian_occupation,
       guardian_phone: formData.guardian_phone,
       guardian_relationship: formData.guardian_relationship,
+      guardian_identity_number: formData.guardian_identity_number,
     };
 
     onUpdate(payload);
@@ -305,18 +313,18 @@ export default function FormUbahPasien({
     className="w-full border rounded-lg p-2 bg-gray-100 mb-3"
   />
 
-  <div className="grid grid-cols-2 gap-4">
+<div className="grid grid-cols-2 gap-4">
     <div>
-      <label className="block text-sm mb-1">Usia</label>
+      <label className="block text-sm mb-1">Tanggal Lahir</label>
       <input
-        name="father_age"
-        value={formData.father_age}
+        name="father_birth_date"
+        value={formData.father_birth_date}
         onChange={handleChange}
         className="w-full border rounded-lg p-2"
       />
     </div>
 
-    <div>
+   <div>
       <label className="block text-sm mb-1">Pekerjaan</label>
       <input
         name="father_occupation"
@@ -341,8 +349,8 @@ export default function FormUbahPasien({
     <div>
       <label className="block text-sm mb-1">NIK</label>
       <input
-        name="father_nik"
-        value={formData.father_nik}
+        name="father_identity_number"
+        value={formData.father_identity_number}
         onChange={handleChange}
         className="w-full border rounded-lg p-2"
       />
@@ -371,10 +379,10 @@ export default function FormUbahPasien({
 
   <div className="grid grid-cols-2 gap-4">
     <div>
-      <label className="block text-sm mb-1">Usia</label>
+      <label className="block text-sm mb-1">Tanggal Lahir</label>
       <input
-        name="mother_age"
-        value={formData.mother_age}
+        name="mother_birth_date"
+        value={formData.mother_birth_date}
         onChange={handleChange}
         className="w-full border rounded-lg p-2"
       />
@@ -405,8 +413,8 @@ export default function FormUbahPasien({
     <div>
       <label className="block text-sm mb-1">NIK</label>
       <input
-        name="mother_nik"
-        value={formData.mother_nik}
+        name="mother_identity_number"
+        value={formData.mother_identity_number}
         onChange={handleChange}
         className="w-full border rounded-lg p-2"
       />
@@ -419,12 +427,14 @@ export default function FormUbahPasien({
   <h4 className="font-semibold mb-2">Wali (Opsional)</h4>
 
   <label className="block text-sm mb-1">Nama Wali</label>
-  <input
-    name="guardian_name"
-    value={formData.guardian_name}
-    onChange={handleChange}
-    className="w-full border rounded-lg p-2 mb-3"
-  />
+ <input
+  type="date"
+  name="guardian_birth_date"
+  value={formData.guardian_birth_date}
+  onChange={handleChange}
+  className="w-full border rounded-lg p-2"
+/>
+
 
   <div className="grid grid-cols-2 gap-4">
     <div>
@@ -438,10 +448,10 @@ export default function FormUbahPasien({
     </div>
 
     <div>
-      <label className="block text-sm mb-1">Usia</label>
+      <label className="block text-sm mb-1">Tanggal Lahir</label>
       <input
-        name="guardian_age"
-        value={formData.guardian_age}
+        name="guardian_birth_date"
+        value={formData.guardian_birth_date}
         onChange={handleChange}
         className="w-full border rounded-lg p-2"
       />
@@ -462,8 +472,8 @@ export default function FormUbahPasien({
     <div>
       <label className="block text-sm mb-1">NIK</label>
       <input
-        name="guardian_nik"
-        value={formData.guardian_nik}
+        name="guardian_identity_number"
+        value={formData.guardian_identity_number}
         onChange={handleChange}
         className="w-full border rounded-lg p-2"
       />
@@ -484,22 +494,13 @@ export default function FormUbahPasien({
             />
           </div>
 
-          <div>
-            <label className="block text-sm mb-1">Layanan Terpilih</label>
-            <select
-              name="layanan_terpilih"
-              value={formData.child_service_choice}
-              onChange={handleChange}
-              className="w-full p-2 border rounded-md"
-            >
-              <option value="">Pilih layanan</option>
-              <option value="Terapi Wicara">Terapi Wicara</option>
-              <option value="Terapi Okupasi">Terapi Okupasi</option>
-              <option value="Terapi Perilaku">Terapi Perilaku</option>
-              <option value="Terapi Sensori Integrasi">Terapi Sensori Integrasi</option>
-              <option value="Asesmen Awal">Asesmen Awal</option>
-            </select>
-          </div>
+  <div>
+  <label className="block text-sm mb-1">Layanan Terpilih</label>
+  <div className="w-full p-2 border rounded-md bg-gray-100 text-gray-700">
+    {formData.child_service_choice || "-"}
+  </div>
+</div>
+
 
           <div className="flex justify-end gap-3 pt-4">
             <button

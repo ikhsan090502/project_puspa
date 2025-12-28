@@ -159,7 +159,7 @@ export default function RiwayatJawabanOrangtua() {
     <ResponsiveOrangtuaLayout>
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-xl font-semibold text-[#36315B]">
-          Riwayat Jawaban Assessment Orangtua
+          
         </h2>
         <button
           onClick={() => router.push("/orangtua/assessment")}

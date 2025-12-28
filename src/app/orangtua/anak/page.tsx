@@ -40,20 +40,47 @@ export default function ChildList() {
   const [selectedChild, setSelectedChild] = useState<ChildDetail | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
-  const [formAdd, setFormAdd] = useState({
-    child_name: "",
-    child_gender: "",
-    child_birth_place: "",
-    child_birth_date: "",
-    child_school: "",
-    child_address: "",
-    child_complaint: "",
-    child_service_choice: "",
-  });
+  // Inisialisasi formAdd
+const [formAdd, setFormAdd] = useState({
+  child_name: "",
+  child_gender: "",
+  child_birth_place: "",
+  child_birth_date: "",
+  child_school: "",
+  child_address: "",
+  child_complaint: "",
+  child_service_choice: [] as string[], // array
+});
 
-  const handleAddChange = (e: any) => {
-    setFormAdd({ ...formAdd, [e.target.name]: e.target.value });
-  };
+const handleAddChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+) => {
+  const { name, value } = e.target;
+
+  // Jika checkbox layanan
+  if (
+    name === "child_service_choice" &&
+    e.target instanceof HTMLInputElement &&
+    e.target.type === "checkbox"
+  ) {
+    const checked = e.target.checked;
+    setFormAdd((prev) => {
+      let newArray = [...prev.child_service_choice];
+      if (checked) {
+        newArray.push(value);
+      } else {
+        newArray = newArray.filter((v) => v !== value);
+      }
+      return { ...prev, child_service_choice: newArray };
+    });
+  } else {
+    // input / textarea biasa
+    setFormAdd((prev) => ({ ...prev, [name]: value }));
+  }
+};
+
+// Saat submit, konversi array menjadi string agar sesuai tipe API
+
 
   /* ================= LOAD DATA ================= */
   useEffect(() => {
@@ -101,13 +128,16 @@ export default function ChildList() {
     setOpenEdit(false);
   };
 
-  async function handleTambah() {
-    await createChild(formAdd);
-    const refreshed = await getChildren();
-    setChildren(refreshed.data || []);
-    setOpenAdd(false);
-  }
-
+ async function handleTambah() {
+  const payload = {
+    ...formAdd,
+    child_service_choice: formAdd.child_service_choice.join(", "), // gabungkan array jadi string
+  };
+  await createChild(payload);
+  const refreshed = await getChildren();
+  setChildren(refreshed.data || []);
+  setOpenAdd(false);
+}
   return (
     <div className="flex min-h-screen bg-gray-50">
       {/* ================= SIDEBAR ================= */}
@@ -142,7 +172,8 @@ export default function ChildList() {
 <div className="flex-1 flex flex-col">
         <HeaderOrangtua />
 
-        <div className="p-6">
+       <div className="p-6 text-[#36315B]">
+
           <h1 className="text-xl font-semibold mb-4">Data Anak</h1>
 
           {loading ? (
@@ -174,17 +205,29 @@ export default function ChildList() {
                     </span>
                   </div>
 
-                  <div className="flex justify-end gap-2 mt-2">
-                    <button onClick={() => handleOpenDetail(child.child_id)}>
-                      <FaEye />
-                    </button>
-                    <button onClick={() => handleOpenEdit(child.child_id)}>
-                      <FaPen />
-                    </button>
-                    <button onClick={() => handleOpenDelete(child.child_id)}>
-                      <FaTrash />
-                    </button>
-                  </div>
+                 <div className="flex justify-end gap-3 mt-2">
+  <button
+    onClick={() => handleOpenDetail(child.child_id)}
+    className="text-[#36315B] hover:text-[#36315B]"
+  >
+    <FaEye size={16} />
+  </button>
+
+  <button
+    onClick={() => handleOpenEdit(child.child_id)}
+    className="text-[#36315B] hover:text-[#36315B]"
+  >
+    <FaPen size={16} />
+  </button>
+
+  <button
+    onClick={() => handleOpenDelete(child.child_id)}
+    className="text-red-500 hover:text-red-700"
+  >
+    <FaTrash size={16} />
+  </button>
+</div>
+
                 </div>
               ))}
 
@@ -222,49 +265,158 @@ export default function ChildList() {
 
       {/* ================= TAMBAH ANAK ================= */}
       {openAdd && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center">
-          <div className="bg-white w-full max-w-lg mx-4 p-6 rounded-lg max-h-[90vh] overflow-y-auto">
-            <h2 className="text-lg font-semibold mb-4">Tambah Anak</h2>
+  <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
+    <div className="bg-white w-full max-w-2xl mx-4 rounded-xl p-6 text-[#36315B] max-h-[90vh] overflow-y-auto">
+      <h2 className="text-xl font-semibold mb-6">Tambah Data Anak</h2>
 
-            <div className="space-y-3">
-              {[
-                { name: "child_name", label: "Nama Anak" },
-                { name: "child_birth_place", label: "Tempat Lahir" },
-                { name: "child_school", label: "Sekolah" },
-                { name: "child_address", label: "Alamat" },
-                { name: "child_complaint", label: "Keluhan" },
-                { name: "child_service_choice", label: "Pilihan Layanan" },
-              ].map((item) => (
-                <div key={item.name}>
-                  <label className="text-sm font-medium">{item.label}</label>
-                  <input
-                    name={item.name}
-                    value={(formAdd as any)[item.name]}
-                    onChange={handleAddChange}
-                    className="w-full border rounded-lg px-3 py-2 mt-1"
-                  />
-                </div>
-              ))}
+      <div className="space-y-4">
+        {/* Nama Lengkap */}
+        <div>
+          <label className="text-sm font-medium">
+            Nama Lengkap <span className="text-red-500">*</span>
+          </label>
+          <input
+            name="child_name"
+            value={formAdd.child_name}
+            onChange={handleAddChange}
+            className="w-full border rounded-lg px-3 py-2 mt-1"
+          />
+        </div>
 
-              <select
-                name="child_gender"
-                value={formAdd.child_gender}
-                onChange={handleAddChange}
-                className="w-full border rounded-lg px-3 py-2"
-              >
-                <option value="">Pilih jenis kelamin</option>
-                <option value="laki-laki">Laki-laki</option>
-                <option value="perempuan">Perempuan</option>
-              </select>
+        {/* Tempat & Tanggal Lahir */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium">
+              Tempat Lahir <span className="text-red-500">*</span>
+            </label>
+            <input
+              name="child_birth_place"
+              value={formAdd.child_birth_place}
+              onChange={handleAddChange}
+              className="w-full border rounded-lg px-3 py-2 mt-1"
+            />
+          </div>
 
+          <div>
+            <label className="text-sm font-medium">
+              Tanggal Lahir <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="date"
+              name="child_birth_date"
+              value={formAdd.child_birth_date}
+              onChange={handleAddChange}
+              className="w-full border rounded-lg px-3 py-2 mt-1"
+            />
+          </div>
+        </div>
+
+        {/* Jenis Kelamin */}
+        <div>
+          <label className="text-sm font-medium">
+            Jenis Kelamin <span className="text-red-500">*</span>
+          </label>
+          <div className="flex gap-6 mt-2">
+            <label className="flex items-center gap-2 text-sm">
               <input
-                type="date"
-                name="child_birth_date"
-                value={formAdd.child_birth_date}
+                type="radio"
+                name="child_gender"
+                value="laki-laki"
+                checked={formAdd.child_gender === "laki-laki"}
                 onChange={handleAddChange}
-                className="w-full border rounded-lg px-3 py-2"
               />
-            </div>
+              Laki - laki
+            </label>
+
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="radio"
+                name="child_gender"
+                value="perempuan"
+                checked={formAdd.child_gender === "perempuan"}
+                onChange={handleAddChange}
+              />
+              Perempuan
+            </label>
+          </div>
+        </div>
+
+        {/* Sekolah */}
+        <div>
+          <label className="text-sm font-medium">Sekolah</label>
+          <input
+            name="child_school"
+            value={formAdd.child_school}
+            onChange={handleAddChange}
+            className="w-full border rounded-lg px-3 py-2 mt-1"
+          />
+        </div>
+
+        {/* Alamat */}
+        <div>
+          <label className="text-sm font-medium">
+            Alamat <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            name="child_address"
+            value={formAdd.child_address}
+            onChange={handleAddChange}
+            rows={3}
+            className="w-full border rounded-lg px-3 py-2 mt-1"
+          />
+        </div>
+
+        {/* Keluhan */}
+        <div>
+          <label className="text-sm font-medium">
+            Keluhan <span className="text-red-500">*</span>
+          </label>
+          <textarea
+            name="child_complaint"
+            value={formAdd.child_complaint}
+            onChange={handleAddChange}
+            rows={3}
+            placeholder="Isi Keluhan"
+            className="w-full border rounded-lg px-3 py-2 mt-1"
+          />
+        </div>
+
+        {/* Pilih Layanan */}
+        <div>
+          <label className="text-sm font-medium">
+            Pilih Layanan <span className="text-red-500">*</span>
+          </label>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-sm">
+  {[
+    "Asesmen Tumbuh Kembang",
+    "Asesmen Terpadu",
+    "Konsultasi Dokter",
+    "Konsultasi Psikolog",
+    "Konsultasi Keluarga",
+    "Test Psikolog",
+    "Layanan Minat Bakat",
+    "Daycare",
+    "Home Care",
+    "Hydrotherapy",
+    "Baby Spa",
+    "Lainnya",
+  ].map((item) => (
+    <label key={item} className="flex items-center gap-2">
+      <input
+        type="checkbox"
+        value={item}
+        onChange={handleAddChange}
+        name="child_service_choice"
+        checked={formAdd.child_service_choice.includes(item)}
+      />
+      {item}
+    </label>
+  ))}
+</div>
+
+        </div>
+      </div>
 
             <div className="flex justify-end gap-3 mt-6">
               <button

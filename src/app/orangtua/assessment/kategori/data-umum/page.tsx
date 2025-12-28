@@ -339,39 +339,43 @@ export default function FormAssessmentOrangtua() {
   ========================== */
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* ================= SIDEBAR ================= */}
-      <aside
-        className={`
-        fixed md:static inset-y-0 left-0 z-20
-        w-64 bg-white shadow-md
-        transform transition-transform duration-300
-        ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-      `}
-      >
-        <SidebarOrangtua />
-      </aside>
+  {/* ================= SIDEBAR ================= */}
+  <aside
+    className={`
+      fixed top-0 left-0 h-full z-20
+      w-64 bg-white shadow-md
+      transform transition-transform duration-300
+      ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
+    `}
+  >
+    <SidebarOrangtua />
+  </aside>
 
-      {/* overlay mobile */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 z-10 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
+  {/* overlay mobile */}
+  {sidebarOpen && (
+    <div
+      className="fixed inset-0 bg-black/30 z-10 md:hidden"
+      onClick={() => setSidebarOpen(false)}
+    />
+  )}
 
-      {/* hamburger (mobile only) */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-30 md:hidden bg-white p-2 rounded-md shadow"
-      >
-        {sidebarOpen ? <X /> : <Menu />}
-      </button>
+  {/* hamburger (mobile only) */}
+  <button
+    onClick={() => setSidebarOpen(!sidebarOpen)}
+    className="fixed top-4 left-4 z-30 md:hidden bg-white p-2 rounded-md shadow"
+  >
+    {sidebarOpen ? <X /> : <Menu />}
+  </button>
 
-      {/* ================= CONTENT ================= */}
-<div className="flex-1 flex flex-col">
-        <HeaderOrangtua />
+  {/* ================= CONTENT ================= */}
+  <div className="flex-1 flex flex-col ml-0 md:ml-64">
+    {/* FIXED HEADER */}
+    <header className="fixed top-0 left-0 md:left-64 right-0 z-10 bg-white shadow h-16 flex items-center px-6">
+      <HeaderOrangtua />
+    </header>
 
-        <main className="flex-1 p-8 overflow-y-auto">
+    {/* SCROLLABLE MAIN */}
+    <main className="flex-1 pt-16 p-8 overflow-y-auto">
           {/* CLOSE BUTTON */}
           <div className="flex justify-end mb-4">
             <button

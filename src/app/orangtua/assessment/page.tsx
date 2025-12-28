@@ -96,7 +96,7 @@ export default function DataUmumPage() {
         <HeaderOrangtua />
 
         <main className="flex-1 overflow-y-auto p-8 relative">
-          <h2 className="text-lg text-center font-medium mb-6 text-gray-700">
+          <h2 className="text-lg text-center font-semibold mb-6 text-gray-700">
             Pilih Assessment Anak
           </h2>
 

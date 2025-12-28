@@ -20,6 +20,31 @@ import {
   getUpcomingSchedules,
 } from "@/lib/api/dashboardTerapis";
 
+/* ================= CUSTOM X AXIS TICK ================= */
+const CustomXAxisTick = ({ x, y, payload }: any) => {
+  const words = payload.value.split(" ");
+
+  return (
+    <g transform={`translate(${x},${y + 8})`}>
+      <text
+        textAnchor="middle"
+        fill="#36315B"
+        fontSize={10}
+      >
+        {words.map((word: string, index: number) => (
+          <tspan
+            key={index}
+            x="0"
+            dy={index === 0 ? 0 : 12}   // 🔥 jarak antar baris DIPERKECIL
+          >
+            {word}
+          </tspan>
+        ))}
+      </text>
+    </g>
+  );
+};
+
 export default function DashboardPage() {
   const [metrics, setMetrics] = useState<any>(null);
   const [categories, setCategories] = useState<any[]>([]);
@@ -143,17 +168,40 @@ export default function DashboardPage() {
 
               <div className="h-72">
                 <ResponsiveContainer>
-                  <AreaChart data={trend}>
+                  <AreaChart
+  data={trend}
+  margin={{ top: 10, right: 35, left: 0, bottom: 20 }} // 🔥 TAMBAH bottom
+>
+
                     <CartesianGrid strokeDasharray="3 3" opacity={0.15} />
-                    <XAxis dataKey="name" />
-                    <YAxis domain={[0, 100]} ticks={[0, 20, 40, 60, 80, 100]} />
+
+                    {/* 🔥 XAXIS RAPAT & PADAT */}
+                    <XAxis
+                      dataKey="name"
+                      interval={0}
+                      height={44}
+                      tick={<CustomXAxisTick 
+                      />}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+
+                    <YAxis
+                      domain={[0, 100]}
+                      ticks={[0, 20, 40, 60, 80, 100]}
+                    />
+
+                    
+
                     <ReTooltip />
+
                     <Area
                       type="monotone"
                       dataKey="value"
                       stroke="#8B5CF6"
                       strokeWidth={3}
-                      fillOpacity={0.3}
+                      fill="#8B5CF6"
+                      fillOpacity={0.25}
                     />
                   </AreaChart>
                 </ResponsiveContainer>
