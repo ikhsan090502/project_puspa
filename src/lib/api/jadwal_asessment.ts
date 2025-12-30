@@ -28,7 +28,7 @@ export async function getAssessmentsAdmin(
     const list = res.data?.data || [];
 
     return list.map((item: any) => ({
-      id: item.id || item.assessment_id,
+      assessment_id: item.assessment_id,
       nama: item.child_name,
       orangtua: item.guardian_name,
       telepon: item.guardian_phone,
@@ -47,7 +47,7 @@ export async function getAssessmentsAdmin(
 }
 
 export async function updateAsessmentSchedule(
-  id: number,
+  assessment_id: number,
   scheduled_date: string,
   scheduled_time: string
 ) {
@@ -55,14 +55,14 @@ export async function updateAsessmentSchedule(
     const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
     const res = await api.post(
-      `/assessments/${id}`,
+      `/assessments/${assessment_id}`,
       {
         scheduled_date,
         scheduled_time,
         _method: "PATCH",
       },
       {
-       headers: {
+        headers: {
           Authorization: `Bearer ${token}`,
         },
       }

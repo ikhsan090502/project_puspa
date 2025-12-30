@@ -74,10 +74,11 @@ export default function JadwalAsesmenPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
-const [openDropdown, setOpenDropdown] = useState<{
-  assessment_id: number;
-  role: "ortu" | "asessor";
-} | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<{
+    assessment_id: number;
+    role: "ortu" | "asessor";
+  } | null>(null);
+
   const [openAsesmen, setOpenAsesmen] = useState(false);
   const fetchJadwal = async () => {
     setLoading(true);
@@ -114,34 +115,34 @@ const [openDropdown, setOpenDropdown] = useState<{
     fetchJadwal();
   };
 
-  const handleOrtuRoute = (action: , jadwalId: number) => {
-  const base = "/admin/ortu";
+  const handleOrtuRoute = (action: string, assessment_id: number) => {
+    const base = "/admin/ortu";
 
-  const routes: Record<string, string> = {
-    umum: `${base}/data_umum`,
-    fisio: `${base}/fisioterapi`,
-    okupasi: `${base}/okupasi`,
-    wicara: `${base}/wicara`,
-    paedagog: `${base}/paedagog`,
-    upload: `${base}/upload_file`,
+    const routes: Record<string, string> = {
+      umum: `${base}/data_umum`,
+      fisio: `${base}/fisioterapi`,
+      okupasi: `${base}/okupasi`,
+      wicara: `${base}/wicara`,
+      paedagog: `${base}/paedagog`,
+      upload: `${base}/upload_file`,
+    };
+
+    router.push(`${routes[action]}?id=${assessment_id}`);
   };
 
-  router.push(`${routes[action]}?id=${jadwalId}`);
-};
+  const handleAsessorRoute = (action: string, assessment_id: number) => {
+    const base = "/admin/asessor";
 
-const handleAsessorRoute = (action: string, jadwalId: number) => {
-  const base = "/admin/asessor";
+    const routes: Record<string, string> = {
+      umum: `${base}/data_umum`,
+      fisio: `${base}/fisioterapi`,
+      okupasi: `${base}/okupasi`,
+      wicara: `${base}/wicara`,
+      paedagog: `${base}/paedagog`,
+    };
 
-  const routes: Record<string, string> = {
-    umum: `${base}/data_umum`,
-    fisio: `${base}/fisioterapi`,
-    okupasi: `${base}/okupasi`,
-    wicara: `${base}/wicara`,
-    paedagog: `${base}/paedagog`,
+    router.push(`${routes[action]}?id=${assessment_id}`);
   };
-
-  router.push(`${routes[action]}?id=${jadwalId}`);
-};
 
   const handleRiwayatJawaban = (id: number) => {
     router.push(`/terapis/riwayat-hasil?id=${id}`);
@@ -152,7 +153,7 @@ const handleAsessorRoute = (action: string, jadwalId: number) => {
   };
 
   useEffect(() => {
-    const handleClickOutside = () => setOpenDropdown(false);
+    const handleClickOutside = () => setOpenDropdown(null);
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
@@ -257,7 +258,7 @@ const handleAsessorRoute = (action: string, jadwalId: number) => {
                 </thead>
                 <tbody>
                   {filtered.map((j) => (
-                    <tr key={j.id} className="border-b border-gray-100">
+                    <tr key={j.assessment_id} className="border-b border-gray-100">
                       <td className="p-3">{j.nama}</td>
                       <td className="p-3">{j.orangtua}</td>
                       <td className="p-3">{j.telepon}</td>
@@ -266,82 +267,82 @@ const handleAsessorRoute = (action: string, jadwalId: number) => {
                       <td className="p-3">{j.tanggalObservasi}</td>
                       <td className="p-3">{j.waktu}</td>
                       <td className="p-3 text-center relative">
-  <div className="flex justify-center gap-2">
-    {/* BUTTON ORTU */}
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setOpenDropdown(
-          openDropdown?.id === j.id && openDropdown?.role === "ortu"
-            ? null
-            : { id: j.id, role: "ortu" }
-        );
-      }}
-      className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
-    >
-      Ortu
-      <ChevronDown size={12} className="ml-1" />
-    </button>
+                        <div className="flex justify-center gap-2">
+                          {/* BUTTON ORTU */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdown(
+                                openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "ortu"
+                                  ? null
+                                  : { assessment_id: j.assessment_id, role: "ortu" }
+                              );
+                            }}
+                            className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+                          >
+                            Ortu
+                            <ChevronDown size={12} className="ml-1" />
+                          </button>
 
-    {/* BUTTON ASESSOR */}
-    <button
-      onClick={(e) => {
-        e.stopPropagation();
-        setOpenDropdown(
-          openDropdown?.id === j.id && openDropdown?.role === "asessor"
-            ? null
-            : { id: j.id, role: "asessor" }
-        );
-      }}
-      className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
-    >
-      Asessor
-      <ChevronDown size={12} className="ml-1" />
-    </button>
-  </div>
+                          {/* BUTTON ASESSOR */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenDropdown(
+                                openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "asessor"
+                                  ? null
+                                  : { assessment_id: j.assessment_id, role: "asessor" }
+                              );
+                            }}
+                            className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+                          >
+                            Asessor
+                            <ChevronDown size={12} className="ml-1" />
+                          </button>
+                        </div>
 
-  {/* DROPDOWN ORTU */}
-  {openDropdown?.id === j.id && openDropdown?.role === "ortu" && (
-    <div
-      className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {ORTU_ACTIONS.map((item) => (
-        <button
-          key={item.key}
-          onClick={() => {
-  handleOrtuRoute(item.key, j.id);
-            setOpenDropdown(null);
-          }}
-          className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-        >
-          {item.label}
-        </button>
-      ))}
-    </div>
-  )}
+                        {/* DROPDOWN ORTU */}
+                        {openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "ortu" && (
+                          <div
+                            className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {ORTU_ACTIONS.map((item) => (
+                              <button
+                                key={item.key}
+                                onClick={() => {
+                                  handleOrtuRoute(item.key, j.assessment_id);
+                                  setOpenDropdown(null);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
 
-  {/* DROPDOWN ASESSOR */}
-  {openDropdown?.id === j.id && openDropdown?.role === "asessor" && (
-    <div
-      className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
-      onClick={(e) => e.stopPropagation()}
-    >
-      {ASESSOR_ACTIONS.map((item) => (
-        <button
-          key={item.key}
-          onClick={() => {
-handleAsessorRoute(item.key, j.id);
-            setOpenDropdown(null);
-          }}
-          className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-        >
-          {item.label}
-        </button>
-      ))}
-    </div>
-  )}
-</td>
+                        {/* DROPDOWN ASESSOR */}
+                        {openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "asessor" && (
+                          <div
+                            className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {ASESSOR_ACTIONS.map((item) => (
+                              <button
+                                key={item.key}
+                                onClick={() => {
+                                  handleAsessorRoute(item.key, j.assessment_id);
+                                  setOpenDropdown(null);
+                                }}
+                                className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+                              >
+                                {item.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </td>
 
                     </tr>
                   ))}
@@ -363,7 +364,7 @@ handleAsessorRoute(item.key, j.id);
                 </thead>
                 <tbody>
                   {filtered.map((j) => (
-                    <tr key={j.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={j.assessment_id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="p-3">{j.nama}</td>
                       <td className="p-3">{j.orangtua}</td>
                       <td className="p-3">{j.telepon}</td>
@@ -377,7 +378,11 @@ handleAsessorRoute(item.key, j.id);
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedPasien(j);
-                            setOpenDropdown(openDropdown === j.id ? null : j.id);
+                            setOpenDropdown(
+                              openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "ortu"
+                                ? null
+                                : { assessment_id: j.assessment_id, role: "ortu" }
+                            );
                           }}
                           className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                         >
@@ -387,7 +392,7 @@ handleAsessorRoute(item.key, j.id);
                         </button>
 
                         {/* DROPDOWN AKSI — SAMA DENGAN OBSERVASI */}
-                        {openDropdown === j.id && tab === "terjadwal" && (
+                        {openDropdown?.assessment_id === j.assessment_id && tab === "terjadwal" && (
                           <div
                             className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-56 text-[#5F52BF]"
                             onClick={(e) => e.stopPropagation()}
