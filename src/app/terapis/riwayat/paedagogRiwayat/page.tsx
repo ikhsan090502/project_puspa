@@ -241,10 +241,13 @@ export default function PaedagogFormPageReadOnly() {
                       {["Ya", "Tidak"].map((opt) => (
                         <label key={opt} className="flex items-center gap-2">
                           <input
-                            type="radio"
-                            checked={item.answer_value === opt}
-                            disabled
-                          />
+  type="radio"
+  checked={item.answer_value === opt}
+  readOnly
+  className="w-4 h-4 accent-[#81B7A9] pointer-events-none"
+/>
+
+
                           {opt}
                         </label>
                       ))}

@@ -137,21 +137,43 @@ export default function DataTerapiOkupasiPageReadOnly() {
   );
 
   const SliderReadOnlyList = ({ questions }: { questions: Q[] }) => (
-    <div className="space-y-6">
-      {questions.map((q, i) => {
-        const value = answers[q.id] ?? 0;
-        return (
-          <div key={q.id} className="border-b pb-4">
-            <p className="text-base text-[#36315B] mb-2">{i + 1}. {q.text}</p>
-            <div className="flex items-center gap-4">
-              <input type="range" min={0} max={4} value={Number(value)} disabled className="w-full accent-[#6BB1A0]" />
-              <span className="text-sm text-gray-600 w-10 text-center">{value}</span>
-            </div>
+  <div className="space-y-6">
+    {questions.map((q, i) => {
+      const value =
+        typeof answers[q.id] === "number"
+          ? Number(answers[q.id])
+          : 1; // default 1
+
+      return (
+        <div key={q.id} className="border-b pb-4">
+          <p className="text-base text-[#36315B] mb-3">
+            {i + 1}. {q.text}
+          </p>
+
+          <input
+            type="range"
+            min={1}
+            max={5}
+            step={1}
+            value={value}
+            readOnly
+            className="w-full accent-[#6BB1A0]"
+          />
+
+          {/* Skala angka di bawah slider */}
+          <div className="flex justify-between text-xs text-gray-500 mt-1 px-1">
+            <span>1</span>
+            <span>2</span>
+            <span>3</span>
+            <span>4</span>
+            <span>5</span>
           </div>
-        );
-      })}
-    </div>
-  );
+        </div>
+      );
+    })}
+  </div>
+);
+
 
   const CheckboxReadOnlyList = ({ questions }: { questions: Q[] }) => (
     <div className="space-y-8">

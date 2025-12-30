@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
@@ -10,6 +10,7 @@ import { getAssessmentQuestions, submitAssessment } from "@/lib/api/asesment";
 
 export default function Page() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const assessmentId = searchParams.get("assessment_id");
 
   const [step, setStep] = useState(1);
@@ -149,21 +150,69 @@ export default function Page() {
   // SUBMIT
   // ==============================
   const handleSubmit = async () => {
-    try {
-      const payload = {
-        answers: Object.keys(responses).map((key) => ({
-          question_id: Number(key.replace("q_", "")),
-          answer: responses[key],
-        })),
-      };
+  if (!assessmentId) {
+    alert("❌ assessment_id tidak ditemukan");
+    return;
+  }
 
-      await submitAssessment(assessmentId!, "fisio", payload);
-      alert("Assessment berhasil disimpan!");
-    } catch (err: any) {
-      console.error("Submit error:", err.response?.data || err);
-      alert("Gagal submit assessment");
+  // ======================
+  // BUILD PAYLOAD
+  // ======================
+  const answers = Object.keys(responses).map((key) => ({
+    question_id: Number(key.replace("q_", "")),
+    answer: responses[key],
+  }));
+
+  const payload = { answers };
+
+  // ======================
+  // CONSOLE DEBUG
+  // ======================
+  console.log("📦 Submit Fisio Assessment");
+  console.log("🆔 assessment_id:", assessmentId);
+  console.log("📌 type: fisio");
+  console.log("📌 activeTab:", activeTab);
+  console.log("📦 responses (raw):", responses);
+  console.log("📦 payload (final):", payload);
+
+  try {
+    await submitAssessment(assessmentId, "fisio", payload);
+
+    console.log("✅ Submit Fisio Assessment SUCCESS");
+    alert("✅ Assessment Fisioterapi berhasil disimpan!");
+    router.push(`/terapis/asessment?type=paedagog&status=completed`);
+  } catch (err: any) {
+    console.error("❌ Submit Fisio Assessment error:", err);
+
+    const status = err?.response?.status;
+    const message =
+      err?.response?.data?.message ||
+      err?.message ||
+      "Terjadi kesalahan";
+
+    // ⛔ TIDAK PUNYA IZIN
+    if (status === 403) {
+      alert(
+        "❌ Anda tidak memiliki izin untuk menyimpan assessment ini.\n\n" +
+          "Pastikan:\n" +
+          "-  Anda login sebagai Asesor sesuai jenis terapi\n" +
+          "- Assessment ini adalah milik Anda"
+      );
+      return;
     }
-  };
+
+    // 🔐 TOKEN HABIS / BELUM LOGIN
+    if (status === 401) {
+      alert("⚠️ Sesi Anda telah berakhir. Silakan login kembali.");
+      window.location.href = "/login";
+      return;
+    }
+
+    // ❌ ERROR LAINNYA
+    alert("❌ Gagal menyimpan: " + message);
+  }
+};
+
 
   if (loading) {
     return (
@@ -251,8 +300,14 @@ export default function Page() {
                         : [];
 
                       return (
+                        
                         <div key={qKey} className="mb-6">
-                          <div className="font-medium mb-2">{q.question_text}</div>
+                          {section.group_key !== "palpasi_otot" && (
+  <div className="font-medium mb-2">
+    {q.question_text}
+  </div>
+)}
+
 
                           {/* Checkbox */}
                           {q.answer_type === "checkbox" && (
@@ -263,6 +318,7 @@ export default function Page() {
                                     type="checkbox"
                                     checked={responses[qKey]?.value?.includes(opt) || false}
                                     onChange={() => handleCheck(qKey, opt)}
+                                    className="accent-[#409E86]"
                                   />
                                   {opt}
                                 </label>
@@ -280,6 +336,7 @@ export default function Page() {
                                     name={qKey}
                                     checked={responses[qKey]?.value === opt}
                                     onChange={() => handleRadio(qKey, opt)}
+                                    className="accent-[#409E86]"
                                   />
                                   {opt}
                                 </label>
@@ -298,7 +355,9 @@ export default function Page() {
                                     checked={responses[qKey]?.value === opt}
                                     onChange={() =>
                                       handleRadioWithText(qKey, opt, "")
+                                      
                                     }
+                                    className="accent-[#409E86]"
                                   />
                                   {opt}
                                 </label>
@@ -354,68 +413,103 @@ export default function Page() {
                           )}
 
                           {/* Multi Segment */}
-                          {q.answer_type === "multi_segment" &&
-                            q.extra_schema &&
-                            (() => {
-                              const extra = JSON.parse(q.extra_schema);
-                              const segments = extra.answer_format || {};
-                              const segmentLabels = extra.segment_labels || {};
-                              const optionLabels = extra.option_labels || {};
+                          {/* Multi Segment – Palpasi Otot (SESUIAI GAMBAR, TANPA TABEL) */}
+{/* Multi Segment – Palpasi Otot (FINAL, RAPI, TANPA TABEL) */}
+{q.answer_type === "multi_segment" &&
+  q.extra_schema &&
+  section.group_key === "palpasi_otot" &&
+  q.id === section.questions[0].id && (() => {
 
-                              return Object.entries(segments).map(
-                                ([segment, opts]) => {
-                                  const onlyValue =
-                                    Array.isArray(opts) &&
-                                    opts.length === 1 &&
-                                    opts[0] === "value";
+    const rows = [
+      { key: "hypertonus", label: "Hypertonus (spastic / rigid)" },
+      { key: "hypotonus", label: "Hypotonus" },
+      { key: "fluktuatif", label: "Fluktuatif" },
+      { key: "normal", label: "Normal" },
+    ];
 
-                                  return (
-                                    <div
-                                      key={segment}
-                                      className="flex items-center gap-3 mb-2"
-                                    >
-                                      <div className="w-48 text-sm">
-                                        {segmentLabels[segment] || segment}
-                                      </div>
+    const renderDS = (rowKey: string, prefix: "aga" | "agb") => (
+      <div className="flex flex-col gap-2">
+        {["d", "s"].map((side) => {
+          const segmentKey = `${rowKey}_${prefix}_${side}`;
+          return (
+            <div
+              key={segmentKey}
+              className="flex items-center gap-2"
+            >
+              {/* LABEL D : / S : */}
+              <span className="w-7 text-right font-medium">
+                {side.toUpperCase()} :
+              </span>
 
-                                      {onlyValue ? (
-                                        <input
-                                          type="text"
-                                          className="border px-3 py-2 rounded w-full"
-                                          value={responses[qKey]?.[segment] || ""}
-                                          onChange={(e) =>
-                                            handleMultiSegment(
-                                              qKey,
-                                              segment,
-                                              e.target.value
-                                            )
-                                          }
-                                        />
-                                      ) : (
-                                        <select
-                                          className="border rounded px-3 py-2 w-full"
-                                          value={responses[qKey]?.[segment] || ""}
-                                          onChange={(e) =>
-                                            handleMultiSegment(
-                                              qKey,
-                                              segment,
-                                              e.target.value
-                                            )
-                                          }
-                                        >
-                                          <option value="">Pilih</option>
-                                          {(opts as string[]).map((opt) => (
-                                            <option key={opt} value={opt}>
-                                              {optionLabels[opt] || opt}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      )}
-                                    </div>
-                                  );
-                                }
-                              );
-                            })()}
+              {/* INPUT */}
+              <input
+                type="text"
+                className="border rounded px-2 py-1 w-32"
+                value={responses[qKey]?.[segmentKey] || ""}
+                onChange={(e) =>
+                  handleMultiSegment(
+                    qKey,
+                    segmentKey,
+                    e.target.value
+                  )
+                }
+              />
+            </div>
+          );
+        })}
+      </div>
+    );
+
+    return (
+      <div className="space-y-3">
+
+        {/* HEADER */}
+        <div className="grid grid-cols-[2.5fr_1.5fr_1.5fr_2fr] font-semibold text-gray-700 border-b pb-2">
+          <div>Abnormalitas Tonus Otot</div>
+          <div className="text-center">AGA</div>
+          <div className="text-center">AGB</div>
+          <div className="text-center">Perut</div>
+        </div>
+
+        {/* ISI */}
+        {rows.map((row) => (
+          <div
+            key={row.key}
+            className="grid grid-cols-[2.5fr_1.5fr_1.5fr_2fr] gap-4 py-3 border-b"
+          >
+            {/* LABEL BARIS */}
+            <div className="pt-2">
+              {row.label}
+            </div>
+
+            {/* AGA */}
+            {renderDS(row.key, "aga")}
+
+            {/* AGB */}
+            {renderDS(row.key, "agb")}
+
+            {/* PERUT */}
+            <textarea
+              className="border rounded px-2 py-1 w-full min-h-[70px]"
+              value={responses[qKey]?.[`${row.key}_perut`] || ""}
+              onChange={(e) =>
+                handleMultiSegment(
+                  qKey,
+                  `${row.key}_perut`,
+                  e.target.value
+                )
+              }
+            />
+          </div>
+        ))}
+
+      </div>
+    );
+  })()}
+
+
+    
+
                         </div>
                       );
                     })}

@@ -42,14 +42,7 @@ export default function TerimakasihPage() {
         </motion.p>
 
         {/* Tombol ke Login */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => router.push("/auth/login")}
-          className="px-8 py-3 bg-[#81B7A9] text-white rounded-full shadow-md font-medium hover:bg-[#36315B] transition-colors duration-300"
-        >
-          Login
-        </motion.button>
+        
       </div>
     </main>
   );

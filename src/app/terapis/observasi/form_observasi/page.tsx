@@ -279,27 +279,31 @@ export default function FormObservasiPage() {
                         />
                         <div className="flex items-center gap-4">
                           <label className="flex items-center gap-1">
-                            <input
-                              type="radio"
-                              name={`jawaban-${q.question_id}`}
-                              value="true"
-                              checked={answers[q.question_id]?.jawaban === true}
-                              onChange={() =>
-                                handleChange(q.question_id, "jawaban", true)
-                              }
-                            />
+                           <input
+  type="radio"
+  name={`jawaban-${q.question_id}`}
+  value="true"
+  checked={answers[q.question_id]?.jawaban === true}
+  onChange={() =>
+    handleChange(q.question_id, "jawaban", true)
+  }
+  className="w-4 h-4 accent-[#81B7A9]"
+/>
+
                             Ya
                           </label>
                           <label className="flex items-center gap-1">
-                            <input
-                              type="radio"
-                              name={`jawaban-${q.question_id}`}
-                              value="false"
-                              checked={answers[q.question_id]?.jawaban === false}
-                              onChange={() =>
-                                handleChange(q.question_id, "jawaban", false)
-                              }
-                            />
+                           <input
+  type="radio"
+  name={`jawaban-${q.question_id}`}
+  value="false"
+  checked={answers[q.question_id]?.jawaban === false}
+  onChange={() =>
+    handleChange(q.question_id, "jawaban", false)
+  }
+  className="w-4 h-4 accent-[#81B7A9]"
+/>
+
                             Tidak
                           </label>
                         </div>
@@ -373,11 +377,13 @@ export default function FormObservasiPage() {
                         (item) => (
                           <label key={item} className="flex items-center gap-2">
                             <input
-                              type="checkbox"
-                              value={item}
-                              checked={rekomendasiAssessment.includes(item)}
-                              onChange={(e) => handleAssessmentChange(item, e.target.checked)}
-                            />
+  type="checkbox"
+  value={item}
+  checked={rekomendasiAssessment.includes(item)}
+  onChange={(e) => handleAssessmentChange(item, e.target.checked)}
+  className="w-4 h-4 accent-[#81B7A9]"
+/>
+
                             {item}
                           </label>
                         )

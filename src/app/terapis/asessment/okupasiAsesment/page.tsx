@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
 import { getAssessmentQuestions, submitAssessment } from "@/lib/api/asesment";
@@ -45,6 +45,7 @@ const splitQuestion = (text: string) => {
 
 export default function OkupasiAssessmentPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const assessmentId = searchParams.get("assessment_id") || "";
 
   const [groups, setGroups] = useState<Group[]>([]);
@@ -106,7 +107,12 @@ export default function OkupasiAssessmentPage() {
   /* =======================
      SUBMIT
   ======================= */
-  const handleSubmit = async () => {
+    const handleSubmit = async () => {
+    if (!assessmentId) {
+      alert("❌ assessment_id tidak ditemukan");
+      return;
+    }
+
     const payloadAnswers: any[] = [];
 
     for (const g of groups) {
@@ -133,19 +139,56 @@ export default function OkupasiAssessmentPage() {
       }
     }
 
+    const payload = { answers: payloadAnswers };
+
+    // ======================
+    // CONSOLE DEBUG
+    // ======================
+    console.log("📦 Submit Okupasi Assessment");
+    console.log("🆔 assessment_id:", assessmentId);
+    console.log("📌 type: okupasi");
+    console.log("📦 payload:", payload);
+
     try {
       setSubmitting(true);
-      await submitAssessment(assessmentId, "okupasi", {
-        answers: payloadAnswers,
-      });
-      alert("Assessment berhasil disubmit");
-    } catch (err) {
-      console.error(err);
-      alert("Gagal submit assessment");
+      await submitAssessment(assessmentId, "okupasi", payload);
+
+      alert("✅ Assessment berhasil disubmit");
+      router.push(`/terapis/asessment?type=okupasi&status=completed`);
+    } catch (err: any) {
+      console.error("❌ Submit Okupasi Assessment error:", err);
+
+      const status = err?.response?.status;
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Terjadi kesalahan";
+
+      // ⛔ TIDAK PUNYA IZIN
+      if (status === 403) {
+        alert(
+          "❌ Anda tidak memiliki izin untuk mengirim assessment ini.\n\n" +
+            "Pastikan:\n" +
+            "- Login sebagai Asesor sesuai jenis terapi\n" +
+            "- Assessment ini adalah milik Anda"
+        );
+        return;
+      }
+
+      // 🔐 TOKEN HABIS / BELUM LOGIN
+      if (status === 401) {
+        alert("⚠️ Sesi Anda telah berakhir. Silakan login kembali.");
+        window.location.href = "/login";
+        return;
+      }
+
+      // ❌ ERROR LAINNYA
+      alert("❌ Gagal submit assessment: " + message);
     } finally {
       setSubmitting(false);
     }
   };
+
 
   /* =======================
      RENDER
@@ -184,29 +227,35 @@ export default function OkupasiAssessmentPage() {
                 const ui = answers[q.id] ?? {};
 
                 if (q.answer_type === "checkbox") {
-                  return (
-                    <div key={q.id}>
-                      <label className="font-semibold block mb-2">
-                        {q.question_text}
-                      </label>
-                      {["paedagog", "okupasi", "wicara", "fisio"].map((opt) => (
-                        <label key={opt} className="flex gap-2 items-center mb-1">
-                          <input
-                            type="checkbox"
-                            checked={ui.checked?.includes(opt) ?? false}
-                            onChange={(e) =>
-                              handleCheckboxToggle(
-                                q.id,
-                                opt,
-                                e.target.checked
-                              )
-                            }
-                          />
-                          {opt}
-                        </label>
-                      ))}
-                    </div>
-                  );
+                 return (
+  <div key={q.id}>
+    <label className="font-semibold block mb-2">
+      {q.question_text}
+    </label>
+
+    {["paedagog", "okupasi", "wicara", "fisio"].map((opt) => (
+      <label
+        key={opt}
+        className="flex gap-2 items-center mb-1 cursor-pointer"
+      >
+        <input
+          type="checkbox"
+          className="h-4 w-4 accent-[#409E86]"
+          checked={ui.checked?.includes(opt) ?? false}
+          onChange={(e) =>
+            handleCheckboxToggle(
+              q.id,
+              opt,
+              e.target.checked
+            )
+          }
+        />
+        <span className="capitalize">{opt}</span>
+      </label>
+    ))}
+  </div>
+);
+
                 }
 
                 return (

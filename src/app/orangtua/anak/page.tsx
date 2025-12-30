@@ -324,6 +324,7 @@ const handleAddChange = (
                 value="laki-laki"
                 checked={formAdd.child_gender === "laki-laki"}
                 onChange={handleAddChange}
+                className="accent-[#409E86] "
               />
               Laki - laki
             </label>
@@ -335,6 +336,7 @@ const handleAddChange = (
                 value="perempuan"
                 checked={formAdd.child_gender === "perempuan"}
                 onChange={handleAddChange}
+                className="accent-[#409E86] "
               />
               Perempuan
             </label>
@@ -409,6 +411,7 @@ const handleAddChange = (
         onChange={handleAddChange}
         name="child_service_choice"
         checked={formAdd.child_service_choice.includes(item)}
+        className="accent-[#409E86] "
       />
       {item}
     </label>
@@ -427,7 +430,7 @@ const handleAddChange = (
               </button>
               <button
                 onClick={handleTambah}
-                className="px-4 py-2 bg-green-500 text-white rounded-lg"
+                className="px-4 py-2 bg-[#409E86] text-white rounded-lg"
               >
                 Simpan
               </button>

@@ -235,25 +235,28 @@ export default function RiwayatJawabanPage() {
                         readOnly
                       />
 
-                      <div className="flex items-center gap-2">
-                        <label className="flex items-center gap-1">
-                          <input
-                            type="radio"
-                            checked={Number(q.answer) === 1}
-                            readOnly
-                          />
-                          Ya
-                        </label>
+                     <div className="flex items-center gap-2">
+  <label className="flex items-center gap-1">
+    <input
+      type="radio"
+      checked={Number(q.answer) === 1}
+      readOnly
+      className="w-4 h-4 accent-[#81B7A9]"
+    />
+    Ya
+  </label>
 
-                        <label className="flex items-center gap-1">
-                          <input
-                            type="radio"
-                            checked={Number(q.answer) === 0}
-                            readOnly
-                          />
-                          Tidak
-                        </label>
-                      </div>
+  <label className="flex items-center gap-1">
+    <input
+      type="radio"
+      checked={Number(q.answer) === 0}
+      readOnly
+      className="w-4 h-4 accent-[#81B7A9]"
+    />
+    Tidak
+  </label>
+</div>
+
                     </div>
                   </div>
                 ))}

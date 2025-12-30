@@ -37,13 +37,15 @@ const ORAL_GROUP_MAP = [
 
 /* ================== BAHASA ================== */
 const BAHASA_GROUP_MAP = [
-  { title: "Usia 0–6 Bulan", range: [200, 212] },
-  { title: "Usia 13–18 Bulan", range: [213, 221] },
-  { title: "Usia 19–24 Bulan", range: [222, 235] },
-  { title: "Usia 3–4 Tahun", range: [236, 258] },
-  { title: "Usia 4–5 Tahun", range: [259, 271] },
-  { title: "Usia 5–6 Tahun", range: [272, 298] },
-  { title: "Usia 6–7 Tahun", range: [299, 308] },
+  { title: "Usia 0–6 Bulan", range: [181, 189] },
+  { title: "Usia 7–12 Bulan", range: [190, 206] },
+  { title: "Usia 13–18 Bulan", range: [207, 215] },
+  { title: "Usia 19–24 Bulan", range: [216, 227] },
+  { title: "Usia 2–3 Tahun", range: [228, 251] },
+  { title: "Usia 3–4 Tahun", range: [252, 273] },
+  { title: "Usia 4–5 Tahun", range: [274, 291] },
+  { title: "Usia 5–6 Tahun", range: [292, 305] },
+  { title: "Usia 6–7 Tahun", range: [206, 315] },
 ];
 
 export default function RiwayatWicaraPage() {
@@ -176,10 +178,11 @@ export default function RiwayatWicaraPage() {
                           className="flex items-center gap-3 border-b pb-2"
                         >
                           <input
-                            type="checkbox"
-                            disabled
-                            checked={!!q.answer?.value}
-                          />
+  type="checkbox"
+  checked={!!q.answer?.value}
+  readOnly
+  className="accent-[#409E86] "
+/>
                           <span className="text-sm font-medium">
                             {q.question_text}
                           </span>

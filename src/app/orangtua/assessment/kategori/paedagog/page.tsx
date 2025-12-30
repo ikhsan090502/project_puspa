@@ -183,6 +183,7 @@ export default function PaedagogFormPage() {
                         name={`${group.group_key}-${q.id}`}
                         checked={answers[group.group_key]?.[q.id] === opt}
                         onChange={() => handleChange(group.group_key, q.id, opt)}
+                        className="accent-[#409E86] "
                       />
                       <span>{opt}</span>
                     </label>
@@ -216,7 +217,7 @@ export default function PaedagogFormPage() {
             Selanjutnya
           </button>
         ) : (
-          <button onClick={onSave} className="px-6 py-2 bg-green-600 text-white rounded-lg">
+          <button onClick={onSave} className="px-6 py-2 bg-[#81B7A9] text-white rounded-lg">
             Simpan Jawaban
           </button>
         )}

@@ -120,7 +120,12 @@ export default function AsesmenWicaraPage() {
     setNotes((p) => ({ ...p, [key]: value }));
 
   /* ================= SUBMIT ================= */
-  const handleSubmit = async () => {
+    const handleSubmit = async () => {
+    if (!assessmentId) {
+      alert("❌ assessment_id tidak ditemukan");
+      return;
+    }
+
     const answers: any[] = [];
 
     sections.forEach((s) => {
@@ -151,7 +156,7 @@ export default function AsesmenWicaraPage() {
             });
           }
         } else {
-          // Bahasa: hanya simpan jawaban yang diisi
+          // Bahasa
           if (responses[k] !== undefined) {
             answers.push({
               question_id: q.id,
@@ -162,23 +167,59 @@ export default function AsesmenWicaraPage() {
       });
     });
 
+    const payload = { answers };
+
+    // ======================
+    // CONSOLE DEBUG
+    // ======================
+    console.log("📦 Submit Wicara Assessment");
+    console.log("🆔 assessment_id:", assessmentId);
+    console.log("📌 type: wicara");
+    console.log("📌 activeTab:", activeTab);
+    console.log("📦 payload:", payload);
+
     try {
-      await submitAssessment(assessmentId, "wicara", { answers });
+      await submitAssessment(assessmentId, "wicara", payload);
 
       if (activeTab === "Oral Fasial") {
-        alert("Jawaban Oral Fasial berhasil disimpan");
+        alert("✅ Jawaban Oral Fasial berhasil disimpan");
         setActiveTab("Kemampuan Bahasa");
       } else {
-        alert("Jawaban Kemampuan Bahasa berhasil disimpan");
+        alert("✅ Jawaban Kemampuan Bahasa berhasil disimpan");
         router.push("/terapis/asessment?type=wicara&status=completed");
       }
-    } catch (err) {
-      console.error("Submit error:", err);
-      alert(
-        "Terjadi kesalahan saat menyimpan jawaban. Pastikan tidak ada jawaban duplikat."
-      );
+    } catch (err: any) {
+      console.error("❌ Submit Wicara Assessment error:", err);
+
+      const status = err?.response?.status;
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Terjadi kesalahan";
+
+      // ⛔ TIDAK PUNYA IZIN
+      if (status === 403) {
+        alert(
+          "❌ Anda tidak memiliki izin untuk menyimpan assessment ini.\n\n" +
+            "Pastikan:\n" +
+            "- Login sebagai Asesor sesuai jenis terapi\n" +
+            "- Assessment ini adalah milik Anda"
+        );
+        return;
+      }
+
+      // 🔐 TOKEN HABIS / BELUM LOGIN
+      if (status === 401) {
+        alert("⚠️ Sesi Anda telah berakhir. Silakan login kembali.");
+        router.push("/login");
+        return;
+      }
+
+      // ❌ ERROR LAINNYA
+      alert("❌ Gagal menyimpan: " + message);
     }
   };
+
 
   /* ================= RENDER ================= */
   return (
@@ -236,12 +277,13 @@ export default function AsesmenWicaraPage() {
                             <p>{q.label}</p>
                             {q.options.map((o: string) => (
                               <label key={o} className="flex gap-2">
-                                <input
-                                  type="radio"
-                                  name={k}
-                                  checked={responses[k] === o}
-                                  onChange={() => handleRadio(k, o)}
-                                />
+                                 <input
+  type="radio"
+  name={k}
+  checked={responses[k] === o}
+  onChange={() => handleRadio(k, o)}
+  className="accent-[#409E86]"
+/>
                                 {o}
                               </label>
                             ))}
@@ -266,12 +308,14 @@ export default function AsesmenWicaraPage() {
                             <p>{q.label}</p>
                             {q.options.map((o: string) => (
                               <label key={o} className="flex gap-2">
-                                <input
-                                  type="radio"
-                                  name={k}
-                                  checked={responses[k] === o}
-                                  onChange={() => handleRadio(k, o)}
-                                />
+                               <input
+  type="radio"
+  name={k}
+  checked={responses[k] === o}
+  onChange={() => handleRadio(k, o)}
+  className="accent-[#409E86]"
+/>
+
                                 {o}
                               </label>
                             ))}
@@ -288,6 +332,7 @@ export default function AsesmenWicaraPage() {
                               type="checkbox"
                               checked={Boolean(responses[k])}
                               onChange={() => handleCheckbox(k)}
+                              className="accent-[#409E86]"
                             />
                             <span>{q.label}</span>
                           </label>

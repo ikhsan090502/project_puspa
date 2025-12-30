@@ -116,41 +116,42 @@ export default function JadwalAsesmenPage() {
   };
 
   const handleOrtuRoute = (action: string, assessment_id: number) => {
-    const base = "/admin/ortu";
+  const base = "/admin/ortu";
 
-    const routes: Record<string, string> = {
-      umum: `${base}/data_umum`,
-      fisio: `${base}/fisioterapi`,
-      okupasi: `${base}/okupasi`,
-      wicara: `${base}/wicara`,
-      paedagog: `${base}/paedagog`,
-      upload: `${base}/upload_file`,
-    };
-
-    router.push(`${routes[action]}?id=${assessment_id}`);
+  const routes: Record<string, string> = {
+    umum: `${base}/data_umum`,
+    fisio: `${base}/fisioterapi`,
+    okupasi: `${base}/okupasi`,
+    wicara: `${base}/wicara`,
+    paedagog: `${base}/paedagog`,
+    upload: `${base}/upload_file`,
   };
+
+  router.push(`${routes[action]}?assessment_id=${assessment_id}`);
+};
 
   const handleAsessorRoute = (action: string, assessment_id: number) => {
-    const base = "/admin/asessor";
+  const base = "/admin/asesor";
 
-    const routes: Record<string, string> = {
-      umum: `${base}/data_umum`,
-      fisio: `${base}/fisioterapi`,
-      okupasi: `${base}/okupasi`,
-      wicara: `${base}/wicara`,
-      paedagog: `${base}/paedagog`,
-    };
-
-    router.push(`${routes[action]}?id=${assessment_id}`);
+  const routes: Record<string, string> = {
+    umum: `${base}/data_umum`,
+    fisio: `${base}/fisioterapi`,
+    okupasi: `${base}/okupasi`,
+    wicara: `${base}/wicara`,
+    paedagog: `${base}/paedagog`,
   };
 
-  const handleRiwayatJawaban = (id: number) => {
-    router.push(`/terapis/riwayat-hasil?id=${id}`);
-  };
+  router.push(`${routes[action]}?assessment_id=${assessment_id}`);
+};
 
-  const handleLihatHasil = (id: number) => {
-    router.push(`/terapis/hasil-observasi?id=${id}`);
-  };
+
+ const handleRiwayatJawaban = (id: number) => {
+  router.push(`/terapis/riwayat-hasil?assessment_id=${id}`);
+};
+
+const handleLihatHasil = (id: number) => {
+  router.push(`/terapis/hasil-observasi?assessment_id=${id}`);
+};
 
   useEffect(() => {
 const handleClickOutside = () => setOpenDropdown(null);

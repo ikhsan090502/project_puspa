@@ -209,25 +209,61 @@ export default function PLBAssessmentPage() {
     setOpenDropdown(null);
   };
 
-  const handleSubmit = async () => {
+   const handleSubmit = async () => {
     if (!assessmentId) return alert("❌ assessment_id tidak ditemukan");
 
-    const allComplete = Object.values(validationStatus).every((v) => v === "completed");
-    if (!allComplete) return alert("❌ Lengkapi semua penilaian sebelum menyimpan!");
+    const allComplete = Object.values(validationStatus).every(
+      (v) => v === "completed"
+    );
+    if (!allComplete)
+      return alert("❌ Lengkapi semua penilaian sebelum menyimpan!");
 
     const payload = mapAnswersToPayloadBE(answers, allQuestions);
+
+    console.log("📦 Payload submit assessment:", payload);
+    console.log("🆔 assessment_id:", assessmentId);
+    console.log("📌 type:", type);
 
     try {
       setLoading(true);
       await submitAssessment(assessmentId, type, payload);
+
       alert("✅ Penilaian berhasil disimpan!");
       router.push(`/terapis/asessment?type=paedagog&status=completed`);
     } catch (err: any) {
-      alert("❌ Gagal menyimpan: " + (err.message || err));
+      console.error("❌ Submit assessment error:", err);
+
+      const status = err?.response?.status;
+      const message =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Terjadi kesalahan";
+
+      // 👉 Khusus tidak punya izin
+      if (status === 403) {
+        alert(
+          "❌ Anda tidak memiliki izin untuk menyimpan penilaian ini.\n\n" +
+            "Pastikan:\n" +
+            "- Anda login sebagai Asesor sesuai jenis terapi\n" +
+            "- Assessment ini memang milik Anda"
+        );
+        return;
+      }
+
+      // 👉 Unauthorized / token habis
+      if (status === 401) {
+        alert("⚠️ Sesi Anda telah berakhir. Silakan login kembali.");
+        router.push("/login");
+        return;
+      }
+
+      // 👉 Error lainnya
+      alert("❌ Gagal menyimpan: " + message);
     } finally {
       setLoading(false);
     }
   };
+
 
   if (loadingQuestions) {
     return <div className="flex h-screen justify-center items-center text-lg">Memuat pertanyaan...</div>;

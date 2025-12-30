@@ -265,7 +265,7 @@ export default function FormAssessmentOrangtua() {
       await updateParentIdentity(payload);
 
       alert("Identitas berhasil disimpan.");
-      router.push("/orangtua/assessment");
+      
     } catch (err: any) {
       console.error("Gagal update identitas:", err);
       alert(err?.message || "Gagal menyimpan identitas");
@@ -458,11 +458,13 @@ export default function FormAssessmentOrangtua() {
 
                     <div className="flex flex-col">
                       <label className="font-medium mb-1">Tanggal Lahir</label>
-                      <input
-                        className="w-full border border-gray-300 p-2 rounded-md bg-gray-50"
-                        value={childBirthInfo}
-                        onChange={(e) => setChildBirthInfo(e.target.value)}
-                      />
+                    <input
+  className="w-full border border-gray-300 p-2 rounded-md bg-gray-50"
+  value={childBirthInfo}
+  onChange={(e) => setChildBirthInfo(e.target.value)}
+/>
+
+
                     </div>
 
                     <div className="flex flex-col col-span-2">
@@ -485,7 +487,13 @@ export default function FormAssessmentOrangtua() {
                   <h4 className="font-semibold text-[#36315B] text-sm mb-3">Ayah</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm mb-8">
                     <InputField label="Nama Ayah" value={parentIdentity.father_name || ""} onChange={(v) => setParentField("father_name", v)} />
-                    <InputField label="Tanggal Lahir" value={parentIdentity.father_birth_date || ""} onChange={(v) => setParentField("father_birth_date", v)} />
+                    <InputField
+  label="Tanggal Lahir"
+  type="date"
+  value={parentIdentity.father_birth_date || ""}
+  onChange={(v) => setParentField("father_birth_date", v)}
+/>
+
                     <InputField label="Pekerjaan" value={parentIdentity.father_occupation || ""} onChange={(v) => setParentField("father_occupation", v)} />
                     <InputField label="Nomor Telpon" value={parentIdentity.father_phone || ""} onChange={(v) => setParentField("father_phone", v)} />
                     <InputField label="Hubungan dengan anak" value={parentIdentity.father_relationship || ""} onChange={(v) => setParentField("father_relationship", v)} />
@@ -496,7 +504,13 @@ export default function FormAssessmentOrangtua() {
                   <h4 className="font-semibold text-[#36315B] text-sm mb-3">Ibu</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm mb-8">
                     <InputField label="Nama Ibu" value={parentIdentity.mother_name || ""} onChange={(v) => setParentField("mother_name", v)} />
-                    <InputField label="Tanggal Lahir" value={parentIdentity.mother_birth_date || ""} onChange={(v) => setParentField("mother_birth_date", v)} />
+                    <InputField
+  label="Tanggal Lahir"
+  type="date"
+  value={parentIdentity.mother_birth_date || ""}
+  onChange={(v) => setParentField("mother_birth_date", v)}
+/>
+
                     <InputField label="Pekerjaan" value={parentIdentity.mother_occupation || ""} onChange={(v) => setParentField("mother_occupation", v)} />
                     <InputField label="Nomor Telpon" value={parentIdentity.mother_phone || ""} onChange={(v) => setParentField("mother_phone", v)} />
                     <InputField label="Hubungan dengan anak" value={parentIdentity.mother_relationship || ""} onChange={(v) => setParentField("mother_relationship", v)} />
@@ -507,7 +521,13 @@ export default function FormAssessmentOrangtua() {
                   <h4 className="font-semibold text-[#36315B] text-sm mb-3">Wali</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm mb-8">
                     <InputField label="Nama Wali" value={parentIdentity.guardian_name || ""} onChange={(v) => setParentField("guardian_name", v)} />
-                    <InputField label="Tanggal Lahir" value={parentIdentity.guardian_birth_date || ""} onChange={(v) => setParentField("guardian_birth_date", v)} />
+                    <InputField
+  label="Tanggal Lahir"
+  type="date"
+  value={parentIdentity.guardian_birth_date || ""}
+  onChange={(v) => setParentField("guardian_birth_date", v)}
+/>
+
                     <InputField label="Pekerjaan" value={parentIdentity.guardian_occupation || ""} onChange={(v) => setParentField("guardian_occupation", v)} />
                     <InputField label="Nomor Telpon" value={parentIdentity.guardian_phone || ""} onChange={(v) => setParentField("guardian_phone", v)} />
                     <InputField label="Hubungan dengan Anak" value={parentIdentity.guardian_relationship || ""} onChange={(v) => setParentField("guardian_relationship", v)} />
@@ -577,14 +597,25 @@ export default function FormAssessmentOrangtua() {
                         )}
 
                         {/* NUMBER */}
-                        {q.answer_type === "number" && (
-                          <input
-                            type="number"
-                            className="border rounded-md p-2 w-full sm:w-32"
-                            value={answers[q.id] ?? ""}
-                            onChange={(e) => setAnswer(q.id, e.target.value)}
-                          />
-                        )}
+                       {/* NUMBER */}
+{q.answer_type === "number" && (
+  <input
+    type="text"
+    inputMode="numeric"
+    pattern="[0-9]*"
+    className="border rounded-md p-2 w-full sm:w-32"
+    value={answers[q.id] ?? ""}
+    onChange={(e) => {
+      const v = e.target.value;
+      if (/^\d*$/.test(v)) {
+        setAnswer(q.id, v);
+      }
+    }}
+  />
+)}
+
+
+                       
 
                         {/* TEXTAREA */}
                         {q.answer_type === "textarea" && (
@@ -621,6 +652,7 @@ export default function FormAssessmentOrangtua() {
                                   value={opt}
                                   checked={answers[q.id] === opt}
                                   onChange={(e) => setAnswer(q.id, e.target.value)}
+                                   className="accent-[#409E86] "
                                 />
                                 {opt}
                               </label>
@@ -637,6 +669,7 @@ export default function FormAssessmentOrangtua() {
                                   type="checkbox"
                                   checked={Array.isArray(answers[q.id]) && answers[q.id].includes(opt)}
                                   onChange={() => toggleCheckboxValue(q.id, opt)}
+                                   className="accent-[#409E86] "
                                 />
                                 {opt}
                               </label>
@@ -655,6 +688,7 @@ export default function FormAssessmentOrangtua() {
                                   value={opt}
                                   checked={answers[q.id]?.value === opt}
                                   onChange={() => setAnswer(q.id, { value: opt, note: "" })}
+                                   className="accent-[#409E86] "
                                 />
                                 {opt}
                               </label>
@@ -815,16 +849,19 @@ function InputField({
   name,
   value,
   onChange,
+  type = "text",
 }: {
   label: string;
   name?: string;
   value?: string;
   onChange?: (v: string) => void;
+  type?: string;
 }) {
   return (
     <div className="flex flex-col">
       <label className="mb-1">{label}</label>
       <input
+        type={type}
         className="border p-2 rounded-md"
         name={name}
         value={value ?? ""}
@@ -833,3 +870,4 @@ function InputField({
     </div>
   );
 }
+

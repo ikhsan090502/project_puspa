@@ -108,8 +108,28 @@ export default function RiwayatJawabanPaedagogPage() {
     fetchAnswers();
   }, [assessmentId]);
 
+  /* ======================
+     NAVIGATION LOGIC
+  ====================== */
   const aspekList = Object.keys(answers);
   const currentQuestions = answers[activeAspek] ?? [];
+
+  const currentAspekIndex = aspekList.findIndex(
+    (a) => a === activeAspek
+  );
+
+  const hasPrev = currentAspekIndex > 0;
+  const hasNext = currentAspekIndex < aspekList.length - 1;
+
+  const goPrev = () => {
+    if (!hasPrev) return;
+    setActiveAspek(aspekList[currentAspekIndex - 1]);
+  };
+
+  const goNext = () => {
+    if (!hasNext) return;
+    setActiveAspek(aspekList[currentAspekIndex + 1]);
+  };
 
   /* ======================
      STATES
@@ -228,6 +248,39 @@ export default function RiwayatJawabanPaedagogPage() {
                 </div>
               );
             })}
+          </div>
+
+          {/* NAVIGATION BUTTONS */}
+          <div className="mt-8 flex items-center justify-between">
+            <button
+              onClick={goPrev}
+              disabled={!hasPrev}
+              className={`rounded-lg px-6 py-3 font-semibold transition
+                ${
+                  hasPrev
+                    ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    : "cursor-not-allowed bg-gray-100 text-gray-400"
+                }`}
+            >
+              ← Sebelumnya
+            </button>
+
+            <span className="text-sm font-medium text-gray-500">
+              {currentAspekIndex + 1} / {aspekList.length}
+            </span>
+
+            <button
+              onClick={goNext}
+              disabled={!hasNext}
+              className={`rounded-lg px-6 py-3 font-semibold transition
+                ${
+                  hasNext
+                    ? "bg-[#81B7A9] text-white hover:bg-[#81B7A9]"
+                    : "cursor-not-allowed bg-gray-100 text-gray-400"
+                }`}
+            >
+              Selanjutnya →
+            </button>
           </div>
         </main>
       </div>
