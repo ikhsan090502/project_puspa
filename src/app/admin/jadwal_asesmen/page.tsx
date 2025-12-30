@@ -75,9 +75,9 @@ export default function JadwalAsesmenPage() {
   const [error, setError] = useState<string | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<{
-    assessment_id: number;
-    role: "ortu" | "asessor";
-  } | null>(null);
+  assessment_id: number;
+  role: "ortu" | "asessor";
+} | null>(null);
 
   const [openAsesmen, setOpenAsesmen] = useState(false);
   const fetchJadwal = async () => {
@@ -153,7 +153,7 @@ export default function JadwalAsesmenPage() {
   };
 
   useEffect(() => {
-    const handleClickOutside = () => setOpenDropdown(null);
+const handleClickOutside = () => setOpenDropdown(null);
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
@@ -379,10 +379,10 @@ export default function JadwalAsesmenPage() {
                             e.stopPropagation();
                             setSelectedPasien(j);
                             setOpenDropdown(
-                              openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "ortu"
-                                ? null
-                                : { assessment_id: j.assessment_id, role: "ortu" }
-                            );
+  openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "ortu"
+    ? null
+    : { assessment_id: j.assessment_id, role: "ortu" }
+);
                           }}
                           className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                         >
