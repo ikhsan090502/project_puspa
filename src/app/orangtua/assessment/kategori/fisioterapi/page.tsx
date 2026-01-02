@@ -52,6 +52,8 @@ export default function DataFisioterapiPage() {
       setLoading(true);
       await submitParentAssessment(assessmentId, "fisio_parent", payload);
       alert("Berhasil menyimpan data fisioterapi!");
+       router.push( `/orangtua/assessment/kategori?assessment_id=${assessmentId}`);
+       
     } catch (err) {
       console.error(err);
       alert("Gagal menyimpan data.");
@@ -75,7 +77,7 @@ export default function DataFisioterapiPage() {
       {/* CLOSE BUTTON */}
       <div className="flex justify-end mb-4">
         <button
-          onClick={() => router.push("/orangtua/assessment")}
+          onClick={() => router.push(`/orangtua/assessment/kategori?assessment_id=${assessmentId}`)}
           className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
         >
           ✕

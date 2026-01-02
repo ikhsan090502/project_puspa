@@ -203,7 +203,7 @@ export default function DataTerapiOkupasiPageReadOnly() {
     <ResponsiveOrangtuaLayout>
       <div className="bg-white rounded-2xl p-4 md:p-8 max-w-5xl mx-auto relative mt-5">
         <div className="flex justify-end mb-4">
-          <button onClick={() => router.push("/orangtua/assessment")} className="text-[#36315B] hover:text-red-500 font-bold text-2xl">✕</button>
+          <button onClick={() => router.push(`/orangtua/assessment/kategori?assessment_id=${assessmentId}`)} className="text-[#36315B] hover:text-red-500 font-bold text-2xl">✕</button>
         </div>
 
         {/* Stepper */}

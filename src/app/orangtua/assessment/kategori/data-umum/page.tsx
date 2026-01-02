@@ -324,7 +324,7 @@ export default function FormAssessmentOrangtua() {
       );
 
       alert("Jawaban assessment berhasil dikirim.");
-      router.push("/orangtua/assessment");
+      router.push( `/orangtua/assessment/kategori?assessment_id=${assessmentIdFromQuery}`);
     } catch (err: any) {
       console.error("Gagal submit assessment:", err);
       alert(err?.message || "Gagal mengirim jawaban assessment");
@@ -379,7 +379,12 @@ export default function FormAssessmentOrangtua() {
           {/* CLOSE BUTTON */}
           <div className="flex justify-end mb-4">
             <button
-              onClick={() => router.push("/orangtua/assessment")}
+              onClick={() =>
+  router.push(
+    `/orangtua/assessment/kategori?assessment_id=${assessmentIdFromQuery}`
+  )
+}
+
               className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
             >
               ✕

@@ -165,6 +165,7 @@ export default function TerapiWicaraPage() {
       );
 
       alert("Jawaban berhasil disimpan!");
+      router.push( `/orangtua/assessment/kategori?assessment_id=${assessmentId}`);
     } catch (err: any) {
       console.error("Submit error:", err);
       alert(err?.response?.data?.message || "Gagal submit jawaban");
@@ -184,7 +185,9 @@ export default function TerapiWicaraPage() {
 
           <div className="flex justify-end mb-4">
             <button
-              onClick={() => router.push("/orangtua/assessment")}
+              onClick={() => router.push(
+      `/orangtua/assessment/kategori?assessment_id=${assessmentId}`
+    )}
               className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
             >
               ✕

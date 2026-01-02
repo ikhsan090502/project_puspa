@@ -1,0 +1,105 @@
+Dokumentasi Project Website Puspa 
+
+1. NAMA PROJECT: project_pupsa 
+
+2. DESKRIPSI PROJECT: Proyek ini merupakan pengembangan Frontend website Sistem Layanan Terapi di Puspa Holistic Integrative Care yang bertujuan untuk mendukung pengelolaan data terapi anak secara terintegrasi, terstruktur, dan mudah diakses. Website ini digunakan oleh Admin, Terapis, dan Orang Tua untuk memantau, mengelola, serta meninjau proses dan hasil layanan terapi anak.
+
+3. FITUR UTAMA: 
+	a. Sistem login multi-user (Admin, Terapis, Asesor, Orang Tua, Owner) 
+	b. Pendaftaran pasien secara online
+	c. Pengelolaan jadwal observasi dan asesmen
+	d. Observasi perkembangan anak oleh Terapis
+	e. Observasi dan pelaksanaan asesmen oleh Asesor
+	f. Pencatatan hasil observasi dan asesmen perkembangan anak
+	g. Akses riwayat hasil observasi dan asesmen perkembangan anak oleh orang tua
+	h. Verifikasi akun admin, terapis, dan asesor oleh Owner
+	i. Statistik dan laporan bulanan layanan klinik untuk Owner
+
+4. INSTALASI:
+Ikuti langkah-langkah berikut untuk menjalankan proyek secara lokal beserta instalasi seluruh dependencies yang dibutuhkan agar website dapat berjalan dengan lancar:  
+
+Pastikan perangkat sudah terpasang:
+Node.js ≥ 18.17.0
+Package Manager (pilih salah satu):
+	a. npm (default)
+	b. pnpm
+	c. yarn
+     Cek versi:
+	a. node -v
+	b. npm -v
+Clone Repository
+git clone  https://github.com/annisanqh/project_puspa
+cd project_puspa
+ Install Dependencies
+ 	a. Menggunakan npm (default)
+	   npm install
+	b. Menggunakan pnpm 
+	   pnpm install
+
+Jika belum terpasang:
+	a. npm install -g pnpm
+	b. Menggunakan yarn
+	c. yarn install
+
+Jika belum terpasang:
+	a. npm install -g yarn
+
+📌 Catatan:
+Gunakan satu package manager saja (jangan campur package-lock.json, pnpm-lock.yaml, dan yarn.lock)
+
+
+5. MENJALANKAN APLIKASI:
+
+npm run dev
+# atau
+pnpm dev
+# atau
+yarn dev
+
+Akses website di:
+http://localhost:3000
+Catatan: Proses npm install akan secara otomatis mengunduh dan menginstal seluruh dependencies beserta versinya yang tercantum pada file package.json dan package-lock.json. Pastikan Node.js dan npm telah terpasang agar aplikasi dapat berjalan dengan baik.
+
+Cara Penggunaan
+
+Jalankan aplikasi sesuai instruksi instalasi.
+
+Buka browser dan akses http://localhost:3000.
+
+Login sesuai peran pengguna:
+
+	a. Admin    : mengelola pendaftaran pasien, data admin, data terapis dan jadwal layanan
+	b. Terapis  : melakukan observasi perkembangan anak
+	c. Asesor   : melakukan observasi dan menjalankan asesmen anak
+	d. Orang Tua: melihat jadwal, hasil observasi dan asesmen anak
+	e. Owner    : memverifikasi akun pengguna serta melihat statistik dan laporan bulanan
+	f. Gunakan fitur sesuai dengan hak akses masing-masing peran.
+
+6. TEKNOLOGI YANG DIGUNAKAN 
+
+Bahasa
+  a. JavaScript
+  b. TypeScript
+
+Framework & Library
+  a. Next.js (App Router)
+  b. React
+  c. @tanstack/react-query (manajemen data & cache API)
+  d. Axios (komunikasi API)
+  e. Framer Motion (animasi UI)
+  f. Recharts (visualisasi data & laporan)
+  g. React Icons & Lucide React (ikon)
+
+Styling
+  a. Tailwind CSS
+  b. PostCSS
+  c. Autoprefixer
+
+Database
+  a. Terintegrasi dengan sistem backend klinik melalui REST API
+
+Tools Pendukung
+  a. Git & GitHub (version control)
+  b. npm / pnpm / yarn (package manager)
+  c. ESLint (code quality)
+

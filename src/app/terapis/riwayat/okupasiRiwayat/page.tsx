@@ -103,8 +103,11 @@ export default function RiwayatOkupasiParentPage() {
     if (typeof value === "number") {
       return (
         <div className="flex items-center gap-4">
-          <input type="range" min={1} max={5} value={value} disabled className="w-full" />
-          <span className="text-sm font-semibold">{value}</span>
+          <input type="range" min={1} max={5} value={value} readOnly className="w-full accent-[#6BB1A0]" />
+          <span className="text-sm font-semibold">{value}
+            
+          </span>
+          
         </div>
       );
     }

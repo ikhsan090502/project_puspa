@@ -116,6 +116,7 @@ export default function PaedagogFormPage() {
 
       await submitParentAssessment(assessmentId, "paedagog_parent", { answers: formattedAnswers });
       alert("Jawaban berhasil disimpan");
+      router.push( `/orangtua/assessment/kategori?assessment_id=${assessmentId}`);
     } catch (error: any) {
       console.error(error);
       alert(error.message || "Gagal submit jawaban");
@@ -131,7 +132,9 @@ export default function PaedagogFormPage() {
     <ResponsiveOrangtuaLayout>
       <div className="flex justify-end mb-4">
         <button
-          onClick={() => router.push("/orangtua/assessment")}
+          onClick={() => router.push(
+      `/orangtua/assessment/kategori?assessment_id=${assessmentId}`
+    )}
           className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
         >
           ✕

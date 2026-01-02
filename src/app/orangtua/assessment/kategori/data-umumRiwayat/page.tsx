@@ -202,7 +202,7 @@ export default function RiwayatJawabanOrangtua() {
           Riwayat Jawaban Orangtua
         </h2>
         <button
-          onClick={() => router.push("/orangtua/assessment")}
+          onClick={() => router.push(`/orangtua/assessment/kategori?assessment_id=${assessmentId}`)}
           className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
         >
           ✕
@@ -231,7 +231,11 @@ export default function RiwayatJawabanOrangtua() {
             Data Ayah
           </div>
           <div><p className="font-semibold">Nama Ayah</p><p>{familyInfo.father_name || "-"}</p></div>
-          <div><p className="font-semibold">Tanggal Lahir / Usia</p><p>{familyInfo.father_age || "-"}</p></div>
+          <div>
+  <p className="font-semibold">Tanggal Lahir</p>
+  <p>{familyInfo.father_birth_date || "-"}</p>
+</div>
+
           <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.father_phone || "-"}</p></div>
           <div><p className="font-semibold">NIK</p><p>{familyInfo.father_identity_number || "-"}</p></div>
           <div><p className="font-semibold">Pekerjaan</p><p>{familyInfo.father_occupation || "-"}</p></div>
@@ -241,7 +245,11 @@ export default function RiwayatJawabanOrangtua() {
             Data Ibu
           </div>
           <div><p className="font-semibold">Nama Ibu</p><p>{familyInfo.mother_name || "-"}</p></div>
-          <div><p className="font-semibold">Tanggal Lahir / Usia</p><p>{familyInfo.mother_age || "-"}</p></div>
+          <div>
+  <p className="font-semibold">Tanggal Lahir</p>
+  <p>{familyInfo.mother_birth_date || "-"}</p>
+</div>
+
           <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.mother_phone || "-"}</p></div>
           <div><p className="font-semibold">NIK</p><p>{familyInfo.mother_identity_number || "-"}</p></div>
           <div><p className="font-semibold">Pekerjaan</p><p>{familyInfo.mother_occupation || "-"}</p></div>
@@ -251,7 +259,11 @@ export default function RiwayatJawabanOrangtua() {
             Data Wali
           </div>
           <div><p className="font-semibold">Nama Wali</p><p>{familyInfo.guardian_name || "-"}</p></div>
-          <div><p className="font-semibold">Tanggal Lahir / Usia</p><p>{familyInfo.guardian_age || "-"}</p></div>
+         <div>
+  <p className="font-semibold">Tanggal Lahir</p>
+  <p>{familyInfo.guardian_birth_date || "-"}</p>
+</div>
+
           <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.guardian_phone || "-"}</p></div>
           <div><p className="font-semibold">NIK</p><p>{familyInfo.guardian_identity_number || "-"}</p></div>
           <div><p className="font-semibold">Pekerjaan</p><p>{familyInfo.guardian_occupation || "-"}</p></div>

@@ -180,7 +180,7 @@ export default function Page() {
 
     console.log("✅ Submit Fisio Assessment SUCCESS");
     alert("✅ Assessment Fisioterapi berhasil disimpan!");
-    router.push(`/terapis/asessment?type=paedagog&status=completed`);
+    router.push(`/terapis/asessment?type=fisio&status=completed`);
   } catch (err: any) {
     console.error("❌ Submit Fisio Assessment error:", err);
 

@@ -128,7 +128,17 @@ export default function PaedagogFormPageReadOnly() {
       <div className="p-4 md:p-8 max-w-5xl mx-auto">
         {/* CLOSE */}
         <div className="flex justify-end mb-4">
-          <button onClick={() => router.push("/orangtua/assessment")} className="font-bold text-2xl hover:text-red-500">✕</button>
+          <button
+  onClick={() =>
+    router.push(
+      `/orangtua/assessment/kategori?assessment_id=${assessmentId}`
+    )
+  }
+  className="font-bold text-2xl hover:text-red-500"
+>
+  ✕
+</button>
+
         </div>
 
         {/* STEP PROGRESS */}

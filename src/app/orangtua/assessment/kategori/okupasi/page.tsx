@@ -143,6 +143,7 @@ export default function DataTerapiOkupasiPage() {
     try {
       await submitParentAssessment(assessmentId, "okupasi_parent", payload);
       alert("Jawaban berhasil dikirim!");
+      router.push( `/orangtua/assessment/kategori?assessment_id=${assessmentId}`);
     } catch (e) {
       console.error("Error submit okupasi:", e);
       alert("Gagal mengirim jawaban.");
@@ -164,7 +165,7 @@ export default function DataTerapiOkupasiPage() {
       {/* CLOSE BUTTON */}
       <div className="flex justify-end mb-4">
         <button
-          onClick={() => router.push("/orangtua/assessment")}
+          onClick={() => router.push(`/orangtua/assessment/kategori?assessment_id=${assessmentId}`)}
           className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
         >
           ✕
