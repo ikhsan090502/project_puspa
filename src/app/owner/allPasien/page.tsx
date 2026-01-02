@@ -213,7 +213,7 @@ const DataAnakListPage: React.FC = () => {
                       <li>Usia : {selectedChildDetail.father_age || "-"}</li>
                       <li>Pekerjaan : {selectedChildDetail.father_occupation || "-"}</li>
                       <li>Nomor Telpon : {selectedChildDetail.father_phone || "-"}</li>
-                      <li>NIK : {selectedChildDetail.father_identity_name || "-"}</li>
+                      <li>NIK : {selectedChildDetail.father_identity_number || "-"}</li>
                     </ul>
                   </div>
 
@@ -225,7 +225,7 @@ const DataAnakListPage: React.FC = () => {
                       <li>Usia : {selectedChildDetail.mother_age || "-"}</li>
                       <li>Pekerjaan : {selectedChildDetail.mother_occupation || "-"}</li>
                       <li>Nomor Telpon : {selectedChildDetail.mother_phone || "-"}</li>
-                      <li>NIK : {selectedChildDetail.mother_identity_name || "-"}</li>
+                      <li>NIK : {selectedChildDetail.mother_identity_number || "-"}</li>
                     </ul>
                   </div>
 
@@ -237,7 +237,7 @@ const DataAnakListPage: React.FC = () => {
                       <li>Usia : {selectedChildDetail.guardian_age || "-"}</li>
                       <li>Pekerjaan : {selectedChildDetail.guardian_occupation || "-"}</li>
                       <li>Nomor Telpon : {selectedChildDetail.guardian_phone || "-"}</li>
-                      <li>NIK : {selectedChildDetail.guardian_identity_name || "-"}</li>
+                      <li>NIK : {selectedChildDetail.guardian_identity_number || "-"}</li>
                     </ul>
                   </div>
                 </div>

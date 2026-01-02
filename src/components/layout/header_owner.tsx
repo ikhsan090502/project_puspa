@@ -3,15 +3,31 @@
 import Image from "next/image";
 import { Bell, User } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { menu } from "./sidebar";
+import { menu } from "./sidebar_owner";
+
+
+interface MenuItem {
+  name: string;
+  href: string;
+}
+
+interface MenuGroup {
+  title?: string;
+  items: MenuItem[];
+}
+
 
 export default function Header() {
   const pathname = usePathname();
 
-  const allItems = menu.flatMap((group) => group.items);
+  const allItems = (menu as MenuGroup[]).flatMap(
+  (group) => group.items
+);
+
   const activeItem = allItems.find(
     (item) => pathname === item.href || pathname.startsWith(item.href + "/")
   );
+
 
   // Custom title untuk Owner Pages yang tidak ada di menu
   const routeTitles: Record<string, string> = {

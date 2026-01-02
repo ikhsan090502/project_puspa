@@ -103,3 +103,13 @@ html, body {
 .react-calendar__tile--now {
   background: #E7F3F0 !important;
 }
+
+/* MATIKAN ICON PASSWORD BAWAAN BROWSER */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+input[type="password"]::-webkit-textfield-decoration-container {
+  display: none;
+}
