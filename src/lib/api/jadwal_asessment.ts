@@ -74,3 +74,20 @@ export async function updateAsessmentSchedule(
     throw error;
   }
 }
+
+// src/lib/api/jadwal_asesmen.ts
+export async function getAssessmentDetail(assessment_id: number) {
+  const token =
+    typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  const res = await api.get(
+    `/assessments/${assessment_id}/detail`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return res.data.data;
+}

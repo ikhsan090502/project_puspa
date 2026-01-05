@@ -17,6 +17,8 @@ import { id } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import FormEditAsesment from "@/components/form/FormEditAsesment";
 import { getAssessmentsAdmin } from "@/lib/api/jadwal_asessment";
+import { updateAsessmentSchedule } from "@/lib/api/jadwal_asessment";
+import { getAssessmentDetail } from "@/lib/api/jadwal_asessment";
 import FormDetailAsesment from "@/components/form/FormDetailAsesment";
 
 
@@ -68,28 +70,35 @@ export default function JadwalAsesmenPage() {
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"terjadwal" | "selesai">("terjadwal");
   const [jadwalList, setJadwalList] = useState<Jadwal[]>([]);
-  const [originalList, setOriginalList] = useState<Jadwal[]>([]);
   const [selectedPasien, setSelectedPasien] = useState<Jadwal | null>(null);
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [filterDate, setFilterDate] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [openDetail, setOpenDetail] = useState(false);
   const [openDropdown, setOpenDropdown] = useState<{
-  assessment_id: number;
-  role: "ortu" | "asessor";
-} | null>(null);
+    assessment_id: number;
+    role: "ortu" | "asessor";
+  } | null>(null);
+  const [detailPasien, setDetailPasien] = useState<any | null>(null);
 
   const [openAsesmen, setOpenAsesmen] = useState(false);
   const fetchJadwal = async () => {
     setLoading(true);
     setError(null);
+
     try {
       const status = tab === "terjadwal" ? "scheduled" : "completed";
-      const data = await getAssessmentsAdmin(status, "", selectedDate || undefined);
+
+      const data = await getAssessmentsAdmin(
+        status,
+        "",
+        tab === "terjadwal" ? selectedDate ?? undefined : undefined
+      );
+
       setJadwalList(data);
-      setOriginalList(data);
     } catch (err) {
-      console.error("Gagal memuat data jadwal:", err);
+      console.error(err);
       setError("Gagal memuat data jadwal");
     } finally {
       setLoading(false);
@@ -98,75 +107,76 @@ export default function JadwalAsesmenPage() {
 
   useEffect(() => {
     fetchJadwal();
-    setSelectedDate(null);
-  }, [tab]);
+  }, [tab, selectedDate]);
 
   const filtered = jadwalList.filter((j) => {
-    const nama = j.nama?.toLowerCase() || "";
-    const sekolah = j.sekolah?.toLowerCase() || "";
-    const orangtua = j.orangtua?.toLowerCase() || "";
-    const q = search.toLowerCase();
-    return nama.includes(q) || sekolah.includes(q) || orangtua.includes(q);
-  });
+  const q = search.toLowerCase();
 
-  const handleDateSelect = (date: Date) => {
-    const formatted = format(date, "yyyy-MM-dd", { locale: id });
+  const matchSearch =
+    j.nama?.toLowerCase().includes(q) ||
+    j.orangtua?.toLowerCase().includes(q);
+
+  const matchDateSelesai =
+    tab === "selesai" && filterDate
+      ? j.tanggalObservasi === format(new Date(filterDate), "dd/MM/yyyy")
+      : true;
+
+  return matchSearch && matchDateSelesai;
+});
+
+
+ const handleDateSelect = async (date: Date) => {
+    const formatted = format(date, "yyyy-MM-dd");
     setSelectedDate(formatted);
-    fetchJadwal();
   };
+
+
 
   const handleOrtuRoute = (action: string, assessment_id: number) => {
-  const base = "/admin/ortu";
+    const base = "/admin/ortu";
 
-  const routes: Record<string, string> = {
-    umum: `${base}/data_umum`,
-    fisio: `${base}/fisioterapi`,
-    okupasi: `${base}/okupasi`,
-    wicara: `${base}/wicara`,
-    paedagog: `${base}/paedagog`,
-    upload: `${base}/upload_file`,
+    const routes: Record<string, string> = {
+      umum: `${base}/data_umum`,
+      fisio: `${base}/fisioterapi`,
+      okupasi: `${base}/okupasi`,
+      wicara: `${base}/wicara`,
+      paedagog: `${base}/paedagog`,
+      upload: `${base}/upload_file`,
+    };
+
+    router.push(`${routes[action]}?assessment_id=${assessment_id}`);
   };
-
-  router.push(`${routes[action]}?assessment_id=${assessment_id}`);
-};
 
   const handleAsessorRoute = (action: string, assessment_id: number) => {
-  const base = "/admin/asesor";
+    const base = "/admin/asesor";
 
-  const routes: Record<string, string> = {
-    umum: `${base}/data_umum`,
-    fisio: `${base}/fisioterapi`,
-    okupasi: `${base}/okupasi`,
-    wicara: `${base}/wicara`,
-    paedagog: `${base}/paedagog`,
+    const routes: Record<string, string> = {
+      umum: `${base}/data_umum`,
+      fisio: `${base}/fisioterapi`,
+      okupasi: `${base}/okupasi`,
+      wicara: `${base}/wicara`,
+      paedagog: `${base}/paedagog`,
+    };
+
+    router.push(`${routes[action]}?assessment_id=${assessment_id}`);
   };
 
-  router.push(`${routes[action]}?assessment_id=${assessment_id}`);
-};
 
-
- const handleRiwayatJawaban = (id: number) => {
-  router.push(`/terapis/riwayat-hasil?assessment_id=${id}`);
-};
-
-const handleLihatHasil = (id: number) => {
-  router.push(`/terapis/hasil-observasi?assessment_id=${id}`);
-};
-
+  
   useEffect(() => {
-const handleClickOutside = () => setOpenDropdown(null);
+    const handleClickOutside = () => setOpenDropdown(null);
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-  const DualCalendar = () => {
+const DualCalendar = () => {
     const today = selectedDate ? new Date(selectedDate) : new Date();
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
     return (
       <div className="flex justify-center gap-6 bg-[#F9FAFB] p-4 rounded-lg">
         <Calendar
-          onChange={handleDateSelect}
+          onChange={(d) => handleDateSelect(d as Date)}
           locale="id-ID"
           showNeighboringMonth={false}
           next2Label={null}
@@ -174,7 +184,7 @@ const handleClickOutside = () => setOpenDropdown(null);
           value={today}
         />
         <Calendar
-          onChange={handleDateSelect}
+          onChange={(d) => handleDateSelect(d as Date)}
           locale="id-ID"
           showNeighboringMonth={false}
           next2Label={null}
@@ -184,6 +194,7 @@ const handleClickOutside = () => setOpenDropdown(null);
       </div>
     );
   };
+
 
   return (
     <div className="flex min-h-screen bg-gray-50">
@@ -196,7 +207,25 @@ const handleClickOutside = () => setOpenDropdown(null);
             Jadwal Asesmen
           </h1>
 
-          {tab === "terjadwal" && <DualCalendar />}
+{tab === "terjadwal" && (
+  <>
+    <DualCalendar />
+
+    {tab === "terjadwal" && selectedDate && (
+  <button
+  onClick={() => {
+    setSelectedDate(null);
+  }}
+  className="px-4 py-2 text-sm border rounded-full"
+>
+  Reset Filter Tanggal
+</button>
+
+)}
+
+  </>
+)}
+
 
           <div className="flex justify-between items-center mt-2">
             <div className="flex gap-6">
@@ -214,19 +243,47 @@ const handleClickOutside = () => setOpenDropdown(null);
               ))}
             </div>
 
-            <div className="relative w-64">
-              <input
-                type="text"
-                placeholder="Cari Pasien"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full border border-[#ADADAD] rounded-full pl-3 pr-9 py-2 text-sm outline-none focus:ring-2 focus:ring-[#81B7A9]"
-              />
-              <SearchIcon
-                size={16}
-                className="absolute right-3 top-2.5 text-gray-400"
-              />
-            </div>
+            {tab === "selesai" ? (
+  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+    {/* FILTER TANGGAL */}
+    <input
+                  type="date"
+                  value={filterDate}
+                  onChange={(e) => setFilterDate(e.target.value)}
+                  className="border rounded-full px-3 py-2 text-sm"
+                />
+
+    {/* SEARCH NAMA */}
+    <div className="relative w-full sm:w-64">
+      <input
+                    type="text"
+                    placeholder="Cari Pasien"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="border rounded-full pl-3 pr-9 py-2 text-sm"
+                  />
+                  <SearchIcon
+                    size={16}
+                    className="absolute right-3 top-2.5 text-gray-400"
+                  />
+                </div>
+              </div>
+            ) : (
+  <div className="relative w-64">
+    <input
+                  type="text"
+                  placeholder="Cari Pasien"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="w-full border rounded-full pl-3 pr-9 py-2 text-sm"
+                />
+                <SearchIcon
+                  size={16}
+                  className="absolute right-3 top-2.5 text-gray-400"
+                />
+  </div>
+)}
+
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
@@ -380,10 +437,10 @@ const handleClickOutside = () => setOpenDropdown(null);
                             e.stopPropagation();
                             setSelectedPasien(j);
                             setOpenDropdown(
-  openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "ortu"
-    ? null
-    : { assessment_id: j.assessment_id, role: "ortu" }
-);
+                              openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "ortu"
+                                ? null
+                                : { assessment_id: j.assessment_id, role: "ortu" }
+                            );
                           }}
                           className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                         >
@@ -392,7 +449,7 @@ const handleClickOutside = () => setOpenDropdown(null);
                           <ChevronDown size={12} className="ml-1" />
                         </button>
 
-                        {/* DROPDOWN AKSI — SAMA DENGAN OBSERVASI */}
+                        {/* DROPDOWN AKSI */}
                         {openDropdown?.assessment_id === j.assessment_id && tab === "terjadwal" && (
                           <div
                             className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-56 text-[#5F52BF]"
@@ -413,10 +470,19 @@ const handleClickOutside = () => setOpenDropdown(null);
 
                               {/* DETAIL */}
                               <button
-                                onClick={() => {
+                                onClick={async () => {
                                   setOpenDropdown(null);
                                   setOpenDetail(true);
+                                  setDetailPasien(null);
+
+                                  try {
+                                    const detail = await getAssessmentDetail(j.assessment_id);
+                                    setDetailPasien(detail);
+                                  } catch (err) {
+                                    console.error("Gagal ambil detail asesmen", err);
+                                  }
                                 }}
+
                                 className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
                               >
                                 <Eye size={16} className="mr-2" />
@@ -441,37 +507,52 @@ const handleClickOutside = () => setOpenDropdown(null);
 
       {openAsesmen && selectedPasien && (
         <FormEditAsesment
-          title={tab === "terjadwal" ? "Edit Asesment" : "Atur Asesment"}
+          title={tab === "terjadwal" ? "Edit Asesmen" : "Atur Asesmen"}
           pasienName={selectedPasien.nama}
-          initialDate={selectedPasien.tanggalObservasi || ""}
-          initialTime={selectedPasien.waktu || ""}
+          initialDate={
+            selectedPasien.tanggalObservasi !== "-"
+              ? selectedPasien.tanggalObservasi
+              : ""
+          }
+          initialTime={
+            selectedPasien.waktu !== "-"
+              ? selectedPasien.waktu
+              : ""
+          }
           onClose={() => {
             setOpenAsesmen(false);
             setSelectedPasien(null);
           }}
-          onSave={(date, time) => {
-            console.log(
-              tab === "selesai"
-                ? "🔹 Simpan Asesmen:"
-                : "🔹 Simpan Observasi:",
-              "\nTanggal:",
-              date,
-              "\nWaktu:",
-              time,
-              "\nPasien:",
-              selectedPasien.nama
-            );
+          onSave={async (date, time) => {
+            if (!date || !time) {
+              alert("Tanggal dan waktu wajib diisi");
+              return;
+            }
+
+            try {
+              await updateAsessmentSchedule(
+                selectedPasien.assessment_id,
+                date,
+                time
+              );
+
+              await fetchJadwal();
+            } catch (err) {
+              console.error("Gagal update asesmen:", err);
+              alert("Gagal menyimpan jadwal asesmen");
+            }
           }}
         />
       )}
       <FormDetailAsesment
         open={openDetail}
-        pasien={selectedPasien}
+        pasien={detailPasien}
         onClose={() => {
           setOpenDetail(false);
-          setSelectedPasien(null);
+          setDetailPasien(null);
         }}
       />
+
     </div>
   );
 }

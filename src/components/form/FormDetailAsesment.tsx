@@ -9,7 +9,17 @@ export default function FormDetailAsesment({
   onClose: () => void;
   pasien: any | null;
 }) {
-  if (!open || !pasien) return null;
+  if (!open) return null;
+
+  if (open && !pasien) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
+        <div className="bg-white p-6 rounded-lg text-sm">
+          Memuat detail asesmen...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-black/30 z-50">
@@ -31,15 +41,17 @@ export default function FormDetailAsesment({
           Informasi Anak
         </p>
         <ul className="text-sm text-[#36315B] space-y-1 mt-2">
-          <li>• Nama Lengkap : {pasien.child_name || pasien.nama}</li>
-          <li>• Tanggal Lahir : {pasien.child_birth_date || "-"}</li>
-          <li>• Usia : {pasien.child_age || pasien.usia || "-"}</li>
-          <li>• Jenis Kelamin : {pasien.child_gender || pasien.jenisKelamin || "-"}</li>
-          <li>• Sekolah : {pasien.child_school || pasien.sekolah || "-"}</li>
-          <li>• Alamat : {pasien.child_address || "-"}</li>
-          <li>• Tanggal Asesmen : {pasien.tanggalObservasi || "-"}</li>
-          <li>• Waktu : {pasien.waktu || "-"}</li>
-          <li>• Tipe Asesmen : {pasien.tipe || "-"}</li>
+          <li>Nama: {pasien.child_name}</li>
+          <li>Tanggal Lahir: {pasien.child_birth_date}</li>
+          <li>Usia: {pasien.child_age}</li>
+          <li>Jenis Kelamin: {pasien.child_gender}</li>
+          <li>Sekolah: {pasien.child_school}</li>
+          <li>Alamat: {pasien.child_address}</li>
+          <li>Tanggal Asesmen: {pasien.scheduled_date}</li>
+          <li>Waktu: {pasien.scheduled_time}</li>
+          <li>Tipe Asesmen: {pasien.type}</li>
+
+
         </ul>
 
         {/* INFORMASI ORANGTUA / WALI */}
@@ -49,8 +61,10 @@ export default function FormDetailAsesment({
           </p>
 
           <ul className="text-sm text-[#36315B] space-y-1 mt-2 ml-3">
-            <li>• Nama Orangtua : {pasien.orangtua || pasien.parent_name || "-"}</li>
-            <li>• Nomor WhatsApp : {pasien.telepon || pasien.parent_phone || "-"}</li>
+            <li>• Nama Orangtua : {pasien.parent_name}</li>
+            <li>• Nomor WhatsApp : {pasien.parent_phone}</li>
+            <li>• Status Orangtua : {pasien.parent_type}</li>
+            <li>• Hubungan : {pasien.relationship}</li>
           </ul>
         </div>
 
@@ -60,43 +74,13 @@ export default function FormDetailAsesment({
             Informasi Admin
           </p>
           <ul className="text-sm text-[#36315B] mt-2 ml-3">
-            <li>
-              • Nama Administrator : {pasien.administrator || pasien.admin_name || "-"}
-            </li>
+
+            <li>• Nama Administrator : {pasien.admin_name}</li>
+
           </ul>
         </div>
 
-        {/* KELUHAN */}
-        {pasien.child_complaint && (
-          <div className="mt-4">
-            <p className="text-sm font-medium text-[#36315B]">
-              Keluhan
-            </p>
-            <p className="text-sm text-[#36315B] mt-1">
-              {pasien.child_complaint}
-            </p>
-          </div>
-        )}
 
-        {/* JENIS LAYANAN */}
-        {pasien.child_service_choice && (
-          <div className="mt-4 mb-3">
-            <p className="text-sm font-medium text-[#36315B]">
-              Jenis Layanan
-            </p>
-
-            <ul className="text-sm text-[#36315B] space-y-1 mt-1 ml-2">
-              {Array.isArray(pasien.child_service_choice)
-                ? pasien.child_service_choice.map(
-                    (service: string, i: number) => (
-                      <li key={i}>• {service}</li>
-                    )
-                  )
-                : <li>• {pasien.child_service_choice}</li>
-              }
-            </ul>
-          </div>
-        )}
       </div>
     </div>
   );
