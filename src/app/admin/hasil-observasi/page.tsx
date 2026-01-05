@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import {
@@ -9,12 +9,9 @@ import {
   getObservations,
   CompletedObservationDetail,
 } from "@/lib/api/observasiSubmit";
-import { useRouter } from "next/navigation";
-
 
 export default function HasilObservasiFrame() {
-      const router = useRouter(); // ✅ TARUH DI SINI
-
+  const router = useRouter();
   const searchParams = useSearchParams();
   const observationId = searchParams.get("observation_id") || searchParams.get("id") || "";
 
@@ -36,8 +33,6 @@ export default function HasilObservasiFrame() {
         // Ambil daftar observasi completed
         const list = await getObservations("completed");
 
-        
-
         // Ambil detail observasi spesifik
         const detail = await getObservationDetail(observationId, "completed");
 
@@ -52,7 +47,7 @@ export default function HasilObservasiFrame() {
         } else {
           setData({
             ...detail,
-            scheduled_date: scheduleItem?.scheduled_date || "-",
+            scheduled_date: scheduleItem?.scheduled_date ?? "-",
           });
           setError(null);
         }
@@ -80,13 +75,14 @@ export default function HasilObservasiFrame() {
 
         <main className="p-10 bg-white m-4 rounded-xl shadow-md overflow-auto">
           <div className="flex justify-end mb-4">
-  <button
-  onClick={() => router.replace("/admin/jadwal_observasi?tab=selesai")}
-    className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
-  >
-    ✕
-  </button>
-</div>
+            <button
+              onClick={() => router.replace("/admin/jadwal_observasi?tab=selesai")}
+              className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+            >
+              ✕
+            </button>
+          </div>
+
           {loading ? (
             <div className="flex items-center justify-center h-96 text-gray-500 animate-pulse">
               Memuat hasil observasi...
@@ -113,20 +109,20 @@ export default function HasilObservasiFrame() {
                 </h2>
                 <hr className="border-gray-300 mb-6" />
                 <div className="grid grid-cols-2 md:grid-cols-2 gap-y-4 text-sm">
-                  <InfoItem label="Nama" value={data.child_name} />
+                  <InfoItem label="Nama" value={data.child_name ?? "-"} />
                   <InfoItem
                     label="Tempat, Tanggal Lahir"
-                    value={data.child_birth_place_date}
+                    value={data.child_birth_place_date ?? "-"}
                   />
-                  <InfoItem label="Usia" value={data.child_age} />
-                  <InfoItem label="Jenis Kelamin" value={data.child_gender} />
-                  <InfoItem label="Sekolah" value={data.child_school} />
-                  <InfoItem label="Alamat" value={data.child_address} />
-                  <InfoItem label="Nama Orang Tua" value={data.parent_name} />
-                  <InfoItem label="Hubungan (Ayah/Ibu)" value={data.parent_type} />
+                  <InfoItem label="Usia" value={data.child_age ?? "-"} />
+                  <InfoItem label="Jenis Kelamin" value={data.child_gender ?? "-"} />
+                  <InfoItem label="Sekolah" value={data.child_school ?? "-"} />
+                  <InfoItem label="Alamat" value={data.child_address ?? "-"} />
+                  <InfoItem label="Nama Orang Tua" value={data.parent_name ?? "-"} />
+                  <InfoItem label="Hubungan (Ayah/Ibu)" value={data.parent_type ?? "-"} />
                   <InfoItem
                     label="Tanggal Observasi"
-                    value={data.scheduled_date}
+                    value={data.scheduled_date ?? "-"}
                   />
                 </div>
               </section>
@@ -152,7 +148,7 @@ export default function HasilObservasiFrame() {
                     Rekomendasi
                   </p>
                   <p className="text-[#36315B] font-medium">
-                    {data.recommendation || "-"}
+                    {data.recommendation ?? "-"}
                   </p>
                 </div>
 
@@ -161,7 +157,7 @@ export default function HasilObservasiFrame() {
                     Kesimpulan Observasi
                   </p>
                   <p className="text-[#36315B] font-medium">
-                    {data.conclusion || "-"}
+                    {data.conclusion ?? "-"}
                   </p>
                 </div>
               </section>
@@ -169,7 +165,7 @@ export default function HasilObservasiFrame() {
               {/* Tombol Kembali */}
               <div className="mt-10 flex justify-end">
                 <button
-  onClick={() => router.replace("/admin/jadwal_observasi?tab=selesai")}
+                  onClick={() => router.replace("/admin/jadwal_observasi?tab=selesai")}
                   className="px-6 py-2 bg-[#81B7A9] hover:bg-[#36315B] text-white font-semibold rounded-lg transition"
                 >
                   Kembali
