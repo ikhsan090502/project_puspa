@@ -52,7 +52,6 @@ const ORTU_ACTIONS = [
 ];
 
 const ASESSOR_ACTIONS = [
-  { key: "umum", label: "Data Umum" },
   { key: "fisio", label: "Data Fisioterapi" },
   { key: "okupasi", label: "Data Terapi Okupasi" },
   { key: "wicara", label: "Data Terapi Wicara" },
@@ -110,22 +109,22 @@ export default function JadwalAsesmenPage() {
   }, [tab, selectedDate]);
 
   const filtered = jadwalList.filter((j) => {
-  const q = search.toLowerCase();
+    const q = search.toLowerCase();
 
-  const matchSearch =
-    j.nama?.toLowerCase().includes(q) ||
-    j.orangtua?.toLowerCase().includes(q);
+    const matchSearch =
+      j.nama?.toLowerCase().includes(q) ||
+      j.orangtua?.toLowerCase().includes(q);
 
-  const matchDateSelesai =
-    tab === "selesai" && filterDate
-      ? j.tanggalObservasi === format(new Date(filterDate), "dd/MM/yyyy")
-      : true;
+    const matchDateSelesai =
+      tab === "selesai" && filterDate
+        ? j.tanggalObservasi === format(new Date(filterDate), "dd/MM/yyyy")
+        : true;
 
-  return matchSearch && matchDateSelesai;
-});
+    return matchSearch && matchDateSelesai;
+  });
 
 
- const handleDateSelect = async (date: Date) => {
+  const handleDateSelect = async (date: Date) => {
     const formatted = format(date, "yyyy-MM-dd");
     setSelectedDate(formatted);
   };
@@ -162,14 +161,14 @@ export default function JadwalAsesmenPage() {
   };
 
 
-  
+
   useEffect(() => {
     const handleClickOutside = () => setOpenDropdown(null);
     window.addEventListener("click", handleClickOutside);
     return () => window.removeEventListener("click", handleClickOutside);
   }, []);
 
-const DualCalendar = () => {
+  const DualCalendar = () => {
     const today = selectedDate ? new Date(selectedDate) : new Date();
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
 
@@ -207,24 +206,24 @@ const DualCalendar = () => {
             Jadwal Asesmen
           </h1>
 
-{tab === "terjadwal" && (
-  <>
-    <DualCalendar />
+          {tab === "terjadwal" && (
+            <>
+              <DualCalendar />
 
-    {tab === "terjadwal" && selectedDate && (
-  <button
-  onClick={() => {
-    setSelectedDate(null);
-  }}
-  className="px-4 py-2 text-sm border rounded-full"
->
-  Reset Filter Tanggal
-</button>
+              {tab === "terjadwal" && selectedDate && (
+                <button
+                  onClick={() => {
+                    setSelectedDate(null);
+                  }}
+                  className="px-4 py-2 text-sm border rounded-full"
+                >
+                  Reset Filter Tanggal
+                </button>
 
-)}
+              )}
 
-  </>
-)}
+            </>
+          )}
 
 
           <div className="flex justify-between items-center mt-2">
@@ -244,18 +243,18 @@ const DualCalendar = () => {
             </div>
 
             {tab === "selesai" ? (
-  <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-    {/* FILTER TANGGAL */}
-    <input
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
+                {/* FILTER TANGGAL */}
+                <input
                   type="date"
                   value={filterDate}
                   onChange={(e) => setFilterDate(e.target.value)}
                   className="border rounded-full px-3 py-2 text-sm"
                 />
 
-    {/* SEARCH NAMA */}
-    <div className="relative w-full sm:w-64">
-      <input
+                {/* SEARCH NAMA */}
+                <div className="relative w-full sm:w-64">
+                  <input
                     type="text"
                     placeholder="Cari Pasien"
                     value={search}
@@ -269,8 +268,8 @@ const DualCalendar = () => {
                 </div>
               </div>
             ) : (
-  <div className="relative w-64">
-    <input
+              <div className="relative w-64">
+                <input
                   type="text"
                   placeholder="Cari Pasien"
                   value={search}
@@ -281,8 +280,8 @@ const DualCalendar = () => {
                   size={16}
                   className="absolute right-3 top-2.5 text-gray-400"
                 />
-  </div>
-)}
+              </div>
+            )}
 
           </div>
 

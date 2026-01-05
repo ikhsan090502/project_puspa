@@ -75,6 +75,19 @@ export interface FormUbahPatientProps {
     };
 }
 
+const toISODate = (value?: string) => {
+  if (!value || value === "-") return "";
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 10);
+};
+
+const parseBirthInfo = (str?: string) => {
+  if (!str) return { place: "", date: "" };
+  const [place, date] = str.split(", ");
+  return { place: place || "", date: date || "" };
+};
+
+
 export default function FormUbahPatient({ open, onClose, onUpdate, initialData }: FormUbahPatientProps) {
     const [form, setForm] = useState({
         child_name: "",
@@ -110,25 +123,14 @@ export default function FormUbahPatient({ open, onClose, onUpdate, initialData }
     });
 
 
-    useEffect(() => {
+ useEffect(() => {
   if (!initialData) return;
 
-  // pastikan tanggal lahir child di-format ke YYYY-MM-DD
-  const formatDate = (dateStr?: string) => {
-  if (!dateStr) return "";
-  const date = new Date(dateStr);
-  if (isNaN(date.getTime())) return "";
-  const yyyy = date.getFullYear();
-  const mm = String(date.getMonth() + 1).padStart(2, "0");
-  const dd = String(date.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-};
+  const parsed = parseBirthInfo(initialData.child_birth_info);
 
-
-  setForm((prev) => ({
-    ...prev,
-    child_name: initialData.child_name,
-    child_birth_date: formatDate(initialData.child_birth_date),
+  setForm({
+    child_name: initialData.child_name ?? "",
+    child_birth_date: toISODate(parsed.date), // 🔥 FIX UTAMA
     child_gender: initialData.child_gender ?? "",
     child_school: initialData.child_school ?? "",
     child_address: initialData.child_address ?? "",
@@ -136,28 +138,29 @@ export default function FormUbahPatient({ open, onClose, onUpdate, initialData }
     father_identity_number: initialData.father_identity_number ?? "",
     father_name: initialData.father_name ?? "",
     father_phone: initialData.father_phone ?? "",
-    father_birth_date: formatDate(initialData.father_birth_date),
+    father_birth_date: toISODate(initialData.father_birth_date),
     father_occupation: initialData.father_occupation ?? "",
     father_relationship: "Ayah",
 
     mother_identity_number: initialData.mother_identity_number ?? "",
     mother_name: initialData.mother_name ?? "",
     mother_phone: initialData.mother_phone ?? "",
-    mother_birth_date: formatDate(initialData.mother_birth_date),
+    mother_birth_date: toISODate(initialData.mother_birth_date),
     mother_occupation: initialData.mother_occupation ?? "",
     mother_relationship: "Ibu",
 
     guardian_identity_number: initialData.guardian_identity_number ?? "",
     guardian_name: initialData.guardian_name ?? "",
     guardian_phone: initialData.guardian_phone ?? "",
-    guardian_birth_date: formatDate(initialData.guardian_birth_date),
+    guardian_birth_date: toISODate(initialData.guardian_birth_date),
     guardian_occupation: initialData.guardian_occupation ?? "",
     guardian_relationship: initialData.guardian_relationship ?? "",
 
     child_complaint: initialData.child_complaint ?? "",
     child_service_choice: initialData.child_service_choice ?? "",
-  }));
+  });
 }, [initialData]);
+
 
 
     if (!open) return null;
