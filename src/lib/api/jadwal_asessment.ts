@@ -1,6 +1,7 @@
 // src/lib/api/jadwal_asesmen.ts
 import api from "@/lib/axios";
-import type { Jadwal } from "@/app/admin/jadwal_asesmen/page"; // sesuaikan path
+import type { Jadwal } from "../types/jadwal_asesmen";
+
 
 export async function getAssessmentsAdmin(
   status: "scheduled" | "completed",
