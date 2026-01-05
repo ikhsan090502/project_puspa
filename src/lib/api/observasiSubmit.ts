@@ -1,7 +1,7 @@
 import axiosInstance from "@/lib/axios";
 
+/* ==================== Interface ==================== */
 
-// ==================== Interface ====================
 export interface CompletedObservationDetail {
   observation_id: number;
   child_name: string;
@@ -18,110 +18,126 @@ export interface CompletedObservationDetail {
   scheduled_date?: string;
 }
 
-// ==================== Header Token ====================
-const getAuthHeaders = (): Record<string, string> => {
-  const token = localStorage.getItem("token");
-  const tokenType = localStorage.getItem("tokenType") || "Bearer";
-  return {
-    Authorization: `${tokenType} ${token}`,
-    "Content-Type": "application/json",
-  };
-};
+export type ObservationStatus = "scheduled" | "completed";
 
-// ==================== Observations API ====================
-
-// 🟢 Ambil daftar observasi scheduled atau completed
-export const getObservations = async (
-  status: "scheduled" | "completed",
-  date?: string,
-  nama?: string
-): Promise<any[]> => {
-  try {
-    const params: Record<string, string> = {};
-    if (date) params.scheduled_date = date;
-    if (nama) params.child_name = nama;
-
-    const res = await axiosInstance.get(`/observations/${status}`, {
-      headers: getAuthHeaders(),
-      params,
-    });
-
-    return res.data?.data ?? [];
-  } catch (err: any) {
-    console.error(`❌ Gagal ambil data observasi (${status}):`, err);
-    throw err;
-  }
-};
-
-// 🟢 Ambil detail observation scheduled/completed
 export type ObservationDetailType =
   | "scheduled"
   | "completed"
   | "question"
   | "answer";
 
-// 🟢 Ambil detail observasi (scheduled / completed / question / answer)
+/* ==================== Header Token (SAFE) ==================== */
+
+const getAuthHeaders = (): Record<string, string> => {
+  if (typeof window === "undefined") return {};
+
+  const token = localStorage.getItem("token");
+  const tokenType = localStorage.getItem("tokenType") || "Bearer";
+
+  return {
+    Authorization: `${tokenType} ${token}`,
+    "Content-Type": "application/json",
+  };
+};
+
+/* ==================== Observations API ==================== */
+
+// 🟢 Ambil daftar observasi
+export const getObservations = async (
+  status: ObservationStatus,
+  date?: string,
+  nama?: string
+): Promise<Record<string, unknown>[]> => {
+  const params: Record<string, string> = {};
+  if (date) params.scheduled_date = date;
+  if (nama) params.child_name = nama;
+
+  const res = await axiosInstance.get(`/observations/${status}`, {
+    headers: getAuthHeaders(),
+    params,
+  });
+
+  return res.data?.data ?? [];
+};
+
+// 🟢 Ambil detail observasi
 export const getObservationDetail = async (
   observation_id: string,
   type: ObservationDetailType
-): Promise<any> => {
+): Promise<Record<string, unknown> | null> => {
   if (!observation_id) return null;
-  try {
-    const res = await axiosInstance.get(
-      `/observations/${observation_id}/detail`,
-      {
-        headers: getAuthHeaders(),
-        params: { type },
-      }
-    );
 
-    return res.data?.data ?? null;
-  } catch (err: any) {
-    console.error("❌ Gagal ambil detail observasi:", err);
-    return null;
-  }
+  const res = await axiosInstance.get(
+    `/observations/${observation_id}/detail`,
+    {
+      headers: getAuthHeaders(),
+      params: { type },
+    }
+  );
+
+  return res.data?.data ?? null;
 };
 
-
 // 🟢 Ambil pertanyaan observasi
-export const getObservationQuestions = async (observation_id: string): Promise<any[]> => {
+export const getObservationQuestions = async (
+  observation_id: string
+): Promise<Record<string, unknown>[]> => {
   if (!observation_id) return [];
-  try {
-    const res = await axiosInstance.get(
-      `/observations/${observation_id}/detail?type=question`,
-      { headers: getAuthHeaders() }
-    );
-    return res.data?.data ?? [];
-  } catch (err: any) {
-    console.error("❌ Gagal ambil pertanyaan:", err);
-    throw err;
-  }
+
+  const res = await axiosInstance.get(
+    `/observations/${observation_id}/detail`,
+    {
+      headers: getAuthHeaders(),
+      params: { type: "question" },
+    }
+  );
+
+  return res.data?.data ?? [];
 };
 
 // 🟢 Submit hasil observasi
-export const submitObservation = async (observation_id: string, payload: any): Promise<any> => {
-  try {
-    const res = await axiosInstance.post(`/observations/${observation_id}/submit`, payload, {
-      headers: getAuthHeaders(),
-    });
-    return res.data;
-  } catch (err: any) {
-    console.error("❌ Gagal submit observasi:", err);
-    throw err;
-  }
-};
-// 🟢 Ambil jawaban observasi (answer_details)
-export const getObservationAnswers = async (observation_id: string): Promise<any[]> => {
-  if (!observation_id) return [];
-  try {
-    const res = await axiosInstance.get(
-      `/observations/${observation_id}/detail?type=completed`,
-      { headers: getAuthHeaders() }
-    );
+export const submitObservation = async (
+  observation_id: string,
+  payload: Record<string, unknown>
+): Promise<Record<string, unknown>> => {
+  const res = await axiosInstance.post(
+    `/observations/${observation_id}/submit`,
+    payload,
+    { headers: getAuthHeaders() }
+  );
 
-    return res.data?.data?.answer_details || [];
-  } catch (err: any) {
-    console.error("❌ Gagal ambil jawaban observasi:", err);
-    return [];
-  }
+  return res.data;
+};
+
+// 🟢 Ambil jawaban observasi
+export const getObservationAnswers = async (
+  observation_id: string
+): Promise<Record<string, unknown>[]> => {
+  if (!observation_id) return [];
+
+  const res = await axiosInstance.get(
+    `/observations/${observation_id}/detail`,
+    {
+      headers: getAuthHeaders(),
+      params: { type: "completed" },
+    }
+  );
+
+  return res.data?.data?.answer_details ?? [];
+};
+
+/* ==================== ✅ FIX ERROR IMPORT ==================== */
+
+// 🟢 UPDATE tanggal assessment (INI YANG TADI ERROR)
+export const updateAssessmentDate = async (
+  observation_id: string,
+  scheduled_date: string
+): Promise<Record<string, unknown>> => {
+  const res = await axiosInstance.put(
+    `/observations/${observation_id}/schedule`,
+    { scheduled_date },
+    { headers: getAuthHeaders() }
+  );
+
+  return res.data;
 };
