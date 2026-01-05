@@ -1,35 +1,37 @@
 // src/lib/helpers/paedagog.ts
+import { AnswersState, QuestionsData } from "../types/paedagog";
 
-export type AnswerItem = {
-  question_id: string;
-  question_text: string;
-  answer: { value: number | string };
-  note: string | null;
-};
+export const mapAnswersToPayloadBE = (
+  answersState: AnswersState,
+  questionsData: QuestionsData
+) => {
+  const answersPayload: any[] = [];
 
-export type GroupedAnswers = Record<string, AnswerItem[]>;
+  for (const aspek of questionsData) {
+    const akey = aspek.key;
+    const aspekAnswers = answersState[akey] || {};
 
-const ASPEK_RANGE = [
-  { title: "Membaca", from: 69, to: 78 },
-  { title: "Menulis", from: 79, to: 90 },
-  { title: "Berhitung", from: 91, to: 97 },
-  { title: "Kesiapan Belajar", from: 98, to: 104 },
-  { title: "Pengetahuan Umum", from: 105, to: 112 },
-];
+    Object.entries(aspekAnswers).forEach(([idx, val]) => {
+      const q = aspek.questions[Number(idx)];
+      if (!q) return;
 
-const getAspekByQuestionId = (id: number) => {
-  const found = ASPEK_RANGE.find(r => id >= r.from && id <= r.to);
-  return found?.title ?? "Lainnya";
-};
+      const payloadItem: any = {
+        question_id: q.id,
+      };
 
-export const groupByAspek = (items: AnswerItem[]): GroupedAnswers => {
-  const grouped: GroupedAnswers = {};
+      // ✨ Cast val agar TypeScript tahu tipenya
+      const answerVal = val as { desc?: string; score?: number };
 
-  items.forEach(item => {
-    const aspek = getAspekByQuestionId(Number(item.question_id));
-    if (!grouped[aspek]) grouped[aspek] = [];
-    grouped[aspek].push(item);
-  });
+      if (q.answer_type === "text") {
+        payloadItem.answer = { value: answerVal.desc || "" };
+      } else if (answerVal.score !== undefined) {
+        payloadItem.answer = { value: answerVal.score };
+        if (answerVal.desc) payloadItem.note = answerVal.desc;
+      }
 
-  return grouped;
+      answersPayload.push(payloadItem);
+    });
+  }
+
+  return { answers: answersPayload };
 };

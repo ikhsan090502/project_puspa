@@ -7,13 +7,13 @@ import { ChevronDown } from "lucide-react";
 
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
-
 import { submitAssessment, getAssessmentQuestions } from "@/lib/api/asesment";
+import { mapAnswersToPayloadBE } from "@/lib/helpers/paedagog";
 
 // ==========================================================
-// API INTERFACES
+// API TYPES
 // ==========================================================
-export interface Question {
+export interface ApiQuestion {
   id: number;
   question_code: string;
   question_number: string;
@@ -24,83 +24,48 @@ export interface Question {
   extra_schema: string | null;
 }
 
-export interface Group {
+export interface ApiGroup {
   group_id: number;
   group_key: string;
   title: string;
   filled_by: string;
   sort_order: string;
-  questions: Question[];
+  questions: ApiQuestion[];
 }
 
-export interface PaedagogData {
+export interface ApiResponse {
   assessment_type: string;
-  groups: Group[];
+  groups: ApiGroup[];
 }
 
 // ==========================================================
 // FRONTEND TYPES
 // ==========================================================
-type QuestionItem = {
+export interface QuestionItem {
   field: string;
   label: string;
   options: number[];
   id: number;
   answer_type: string;
-};
+}
 
-type AspectItem = {
+export interface AspectItem {
   key: string;
   title: string;
   questions: QuestionItem[];
-};
+}
 
-type QuestionsData = AspectItem[];
+export type QuestionsData = AspectItem[];
 
-type Answer = { desc?: string; score?: number };
-type AnswersState = Record<string, Record<number, Answer>>;
-
-// ==========================================================
-// MAP ANSWERS → PAYLOAD
-// ==========================================================
-export const mapAnswersToPayloadBE = (
-  answersState: AnswersState,
-  questionsData: QuestionsData
-) => {
-  const answersPayload: any[] = [];
-
-  for (const aspek of questionsData) {
-    const akey = aspek.key;
-    const aspekAnswers = answersState[akey] || {};
-
-    Object.entries(aspekAnswers).forEach(([idx, val]) => {
-      const q = aspek.questions[Number(idx)];
-      const payloadItem: any = {
-        question_id: q.id,
-      };
-
-      if (q.answer_type === "text") {
-        // Untuk pertanyaan text (kesimpulan) simpan desc saja
-        payloadItem.answer = { value: val.desc || "" };
-      } else if (val.score !== undefined) {
-        payloadItem.answer = { value: val.score };
-        if (val.desc) payloadItem.note = val.desc;
-      }
-
-      answersPayload.push(payloadItem);
-    });
-  }
-
-  return { answers: answersPayload };
-};
+export type Answer = { desc?: string; score?: number };
+export type AnswersState = Record<string, Record<number, Answer>>;
 
 // ==========================================================
-// COMPONENT
+// PAGE COMPONENT
 // ==========================================================
 export default function PLBAssessmentPage() {
   const params = useSearchParams();
   const router = useRouter();
-
   const assessmentId = params.get("assessment_id");
   const type = "paedagog";
 
@@ -112,23 +77,25 @@ export default function PLBAssessmentPage() {
   const [openDropdown, setOpenDropdown] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
 
+  // ================================
   // FETCH QUESTIONS
+  // ================================
   useEffect(() => {
     const fetchQuestions = async () => {
       try {
         setLoadingQuestions(true);
-        const res = await getAssessmentQuestions("paedagog");
-        const groups: Group[] = res?.groups ?? [];
+        const res: ApiResponse = await getAssessmentQuestions("paedagog");
+        const groups: ApiGroup[] = res.groups ?? [];
 
         if (!groups.length) {
           setAllQuestions([]);
           return;
         }
 
-        const mapped: QuestionsData = groups.map((g) => ({
+        const mapped: QuestionsData = groups.map((g: ApiGroup) => ({
           key: g.group_key,
           title: g.title,
-          questions: g.questions.map((q) => ({
+          questions: g.questions.map((q: ApiQuestion) => ({
             field: q.question_code,
             label: q.question_text,
             options: q.answer_options ? JSON.parse(q.answer_options) : [],
@@ -150,25 +117,26 @@ export default function PLBAssessmentPage() {
     fetchQuestions();
   }, []);
 
-  const aspekTabs = useMemo(() => allQuestions.map((a) => a.key), [allQuestions]);
+  // ================================
+  // MEMOIZED DATA
+  // ================================
+  const aspekTabs = useMemo(() => allQuestions.map((a: AspectItem) => a.key), [allQuestions]);
   const activeAspectObj = useMemo(
-    () => allQuestions.find((x) => x.key === activeAspek) ?? allQuestions[0],
+    () => allQuestions.find((x: AspectItem) => x.key === activeAspek) ?? allQuestions[0],
     [activeAspek, allQuestions]
   );
   const currentQuestions = useMemo(() => activeAspectObj?.questions ?? [], [activeAspectObj]);
 
   const validationStatus = useMemo(() => {
     const status: Record<string, "completed" | "scheduled"> = {};
-    aspekTabs.forEach((key) => {
-      const aspek = allQuestions.find((a) => a.key === key);
+    aspekTabs.forEach((key: string) => {
+      const aspek = allQuestions.find((a: AspectItem) => a.key === key);
       if (!aspek) {
         status[key] = "scheduled";
         return;
       }
       const total = aspek.questions.length;
-      const answered = Object.values(answers[key] || {}).filter((a) =>
-        a.score !== undefined || a.desc
-      ).length;
+      const answered = Object.values(answers[key] || {}).filter((a) => a.score !== undefined || a.desc).length;
       status[key] = answered >= total ? "completed" : "scheduled";
     });
     return status;
@@ -177,6 +145,9 @@ export default function PLBAssessmentPage() {
   const isLast = aspekTabs.indexOf(activeAspek) === aspekTabs.length - 1;
   const isFirst = aspekTabs.indexOf(activeAspek) === 0;
 
+  // ================================
+  // HELPERS
+  // ================================
   const validateCurrentAspek = () => {
     const qList = currentQuestions;
     const currentAnswers = answers[activeAspek] || {};
@@ -209,61 +180,43 @@ export default function PLBAssessmentPage() {
     setOpenDropdown(null);
   };
 
-   const handleSubmit = async () => {
+  const handleSubmit = async () => {
     if (!assessmentId) return alert("❌ assessment_id tidak ditemukan");
-
-    const allComplete = Object.values(validationStatus).every(
-      (v) => v === "completed"
-    );
-    if (!allComplete)
-      return alert("❌ Lengkapi semua penilaian sebelum menyimpan!");
+    const allComplete = Object.values(validationStatus).every((v) => v === "completed");
+    if (!allComplete) return alert("❌ Lengkapi semua penilaian sebelum menyimpan!");
 
     const payload = mapAnswersToPayloadBE(answers, allQuestions);
-
     console.log("📦 Payload submit assessment:", payload);
-    console.log("🆔 assessment_id:", assessmentId);
-    console.log("📌 type:", type);
 
     try {
       setLoading(true);
       await submitAssessment(assessmentId, type, payload);
-
       alert("✅ Penilaian berhasil disimpan!");
       router.push(`/terapis/asessment?type=paedagog&status=completed`);
     } catch (err: any) {
       console.error("❌ Submit assessment error:", err);
-
       const status = err?.response?.status;
-      const message =
-        err?.response?.data?.message ||
-        err?.message ||
-        "Terjadi kesalahan";
+      const message = err?.response?.data?.message || err?.message || "Terjadi kesalahan";
 
-      // 👉 Khusus tidak punya izin
       if (status === 403) {
         alert(
           "❌ Anda tidak memiliki izin untuk menyimpan penilaian ini.\n\n" +
-            "Pastikan:\n" +
-            "- Anda login sebagai Asesor sesuai jenis terapi\n" +
-            "- Assessment ini memang milik Anda"
+          "Pastikan:\n- Anda login sebagai Asesor sesuai jenis terapi\n- Assessment ini memang milik Anda"
         );
         return;
       }
 
-      // 👉 Unauthorized / token habis
       if (status === 401) {
         alert("⚠️ Sesi Anda telah berakhir. Silakan login kembali.");
         router.push("/login");
         return;
       }
 
-      // 👉 Error lainnya
       alert("❌ Gagal menyimpan: " + message);
     } finally {
       setLoading(false);
     }
   };
-
 
   if (loadingQuestions) {
     return <div className="flex h-screen justify-center items-center text-lg">Memuat pertanyaan...</div>;
@@ -272,6 +225,9 @@ export default function PLBAssessmentPage() {
     return <div className="flex h-screen justify-center items-center text-lg">❌ Tidak ada pertanyaan tersedia.</div>;
   }
 
+  // ================================
+  // RENDER
+  // ================================
   return (
     <div className="flex h-screen text-[#36315B] font-playpen">
       <SidebarTerapis />
@@ -293,7 +249,7 @@ export default function PLBAssessmentPage() {
 
           {/* TABS */}
           <div className="flex flex-wrap gap-3 justify-center mb-6">
-            {aspekTabs.map((tab) => (
+            {aspekTabs.map((tab: string) => (
               <button
                 key={tab}
                 onClick={() => setActiveAspek(tab)}
@@ -305,23 +261,20 @@ export default function PLBAssessmentPage() {
                     : "text-[#36315B]/70 hover:bg-gray-100 border-gray-300"
                 }`}
               >
-                {allQuestions.find((x) => x.key === tab)?.title}
+                {allQuestions.find((x: AspectItem) => x.key === tab)?.title}
               </button>
             ))}
           </div>
 
-          {/* QUESTION LIST */}
+          {/* QUESTIONS */}
           <div className="bg-white rounded-xl p-5 shadow">
-            {currentQuestions.map((q, i) => {
+            {currentQuestions.map((q: QuestionItem, i: number) => {
               const current = answers[activeAspek]?.[i];
 
-              // Jika pertanyaan tipe text (kesimpulan), render input biasa tanpa dropdown
               if (q.answer_type === "text") {
                 return (
                   <div key={i} className="mb-6 p-4 rounded-lg shadow-md">
-                    <p className="font-semibold mb-3">
-                      {i + 1}. {q.label}
-                    </p>
+                    <p className="font-semibold mb-3">{i + 1}. {q.label}</p>
                     <input
                       className="w-full border rounded-md p-2"
                       placeholder="Tulis kesimpulan..."
@@ -332,12 +285,9 @@ export default function PLBAssessmentPage() {
                 );
               }
 
-              // Untuk pertanyaan biasa dengan score
               return (
                 <div key={i} className="mb-6 p-4 rounded-lg shadow-md">
-                  <p className="font-semibold mb-3">
-                    {i + 1}. {q.label}
-                  </p>
+                  <p className="font-semibold mb-3">{i + 1}. {q.label}</p>
                   <div className="flex items-center gap-4">
                     <input
                       className="flex-1 border rounded-md p-2"
@@ -364,7 +314,7 @@ export default function PLBAssessmentPage() {
                             exit={{ opacity: 0, y: -5 }}
                             className="absolute mt-1 w-full bg-white border rounded-md shadow-md z-50"
                           >
-                            {q.options.map((opt) => (
+                            {q.options.map((opt: number) => (
                               <button
                                 key={opt}
                                 onClick={() => handleScoreSelect(i, opt)}
@@ -393,7 +343,7 @@ export default function PLBAssessmentPage() {
             )}
           </div>
 
-          {/* NAVIGATION BUTTONS */}
+          {/* NAVIGATION */}
           <div className="flex justify-between mt-6">
             <button
               disabled={isFirst}
