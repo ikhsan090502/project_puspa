@@ -13,9 +13,10 @@ import api from "@/lib/axios";
 import { addAdmin } from "@/lib/api/data_admin";
 import { addTerapis } from "@/lib/api/data_terapis";
 
-// =======================
-// Dashboard Interfaces
-// =======================
+/* =======================
+   Interfaces
+======================= */
+
 interface DashboardStats {
   assessment_today: number;
   observation_today: number;
@@ -41,40 +42,45 @@ interface TodaySchedule {
   waktu: string;
 }
 
-// =======================
-// API Functions
-// =======================
-export async function getDashboardStats(): Promise<DashboardStats | null> {
+/* =======================
+   API Helpers (❌ TIDAK EXPORT)
+======================= */
+
+async function getDashboardStats(): Promise<DashboardStats | null> {
   try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (typeof window === "undefined") return null;
+
+    const token = localStorage.getItem("token");
     if (!token) return null;
 
     const res = await api.get("/admins/dashboard/stats", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    return res.data?.data || null;
+    return res.data?.data ?? null;
   } catch (error) {
     console.error("❌ Dashboard stats error:", error);
     return null;
   }
 }
 
-export async function getTodaySchedule(): Promise<TodaySchedule[]> {
+async function getTodaySchedule(): Promise<TodaySchedule[]> {
   try {
-    const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
+    if (typeof window === "undefined") return [];
+
+    const token = localStorage.getItem("token");
     if (!token) return [];
 
     const res = await api.get("/admins/dashboard/today-schedule", {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    const list = res.data?.data || [];
+    const list = res.data?.data ?? [];
 
     return list.map((item: any) => ({
       assessment_id: item.assessment_id,
       nama_pasien: item.child_name,
-      jenis_terapi: item.types.join(", "),
+      jenis_terapi: Array.isArray(item.types) ? item.types.join(", ") : "",
       waktu: item.time,
     }));
   } catch (error) {
@@ -83,9 +89,10 @@ export async function getTodaySchedule(): Promise<TodaySchedule[]> {
   }
 }
 
-// =======================
-// Main Dashboard Component
-// =======================
+/* =======================
+   PAGE COMPONENT
+======================= */
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [todaySchedule, setTodaySchedule] = useState<TodaySchedule[]>([]);
@@ -96,51 +103,22 @@ export default function AdminDashboard() {
   const [openTambahTerapis, setOpenTambahTerapis] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleTambahAdmin = async (data: {
-    admin_name: string;
-    username: string;
-    email: string;
-    admin_phone: string;
-    password?: string;
-  }) => {
-    try {
-      await addAdmin(data);
-      setOpenTambahAdmin(false);
-      fetchDashboardData();
-    } catch (error) {
-      console.error("❌ Gagal menambah admin dari dashboard:", error);
-    }
-  };
-
-  const handleTambahTerapis = async (data: {
-    nama: string;
-    bidang: string;
-    username: string;
-    email: string;
-    telepon: string;
-    password: string;
-  }) => {
-    try {
-      await addTerapis(data);
-      setOpenTambahTerapis(false);
-      fetchDashboardData(); // refresh data dashboard
-      alert("Terapis berhasil ditambahkan!");
-    } catch (err) {
-      console.error("❌ Gagal menambah terapis dari dashboard:", err);
-      alert("Gagal menambah terapis");
-    }
-  };
-
   const fetchDashboardData = async () => {
     setLoading(true);
     try {
-      const [statsData, scheduleData] = await Promise.all([getDashboardStats(), getTodaySchedule()]);
+      const [statsData, scheduleData] = await Promise.all([
+        getDashboardStats(),
+        getTodaySchedule(),
+      ]);
+
       setTodaySchedule(scheduleData);
+
       if (statsData) {
         setStats(statsData);
-        setPatientCategories(statsData.patient_categories || []);
+        setPatientCategories(statsData.patient_categories ?? []);
       } else {
         setStats(null);
+        setPatientCategories([]);
       }
     } catch (error) {
       console.error("❌ Failed to fetch dashboard data:", error);
@@ -155,78 +133,90 @@ export default function AdminDashboard() {
     return () => clearInterval(interval);
   }, []);
 
+  const handleTambahAdmin = async (data: {
+    admin_name: string;
+    username: string;
+    email: string;
+    admin_phone: string;
+    password?: string;
+  }) => {
+    try {
+      await addAdmin(data);
+      setOpenTambahAdmin(false);
+      fetchDashboardData();
+    } catch (error) {
+      console.error("❌ Gagal menambah admin:", error);
+    }
+  };
+
+  const handleTambahTerapis = async (data: {
+    nama: string;
+    bidang: string;
+    username: string;
+    email: string;
+    telepon: string;
+    password: string;
+  }) => {
+    try {
+      await addTerapis(data);
+      setOpenTambahTerapis(false);
+      fetchDashboardData();
+      alert("Terapis berhasil ditambahkan!");
+    } catch (error) {
+      console.error("❌ Gagal menambah terapis:", error);
+      alert("Gagal menambah terapis");
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-gray-100">
       {/* Sidebar */}
       <aside
-        className={`
-          fixed md:static z-20 inset-y-0 left-0 w-64 max-w-full bg-white shadow-md
-          transform transition-transform duration-300 ease-in-out
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-        `}
+        className={`fixed md:static z-20 inset-y-0 left-0 w-64 bg-white shadow-md
+        transform transition-transform duration-300
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}`}
       >
         <Sidebar />
       </aside>
 
-      {/* Overlay untuk mobile */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 bg-transparent bg-opacity-30 z-10 md:hidden"
+          className="fixed inset-0 z-10 md:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
-      {/* Toggle sidebar button */}
       <button
-        className="fixed top-4 left-4 z-30 p-2 rounded-md bg-gray-200 hover:bg-gray-300 md:hidden shadow-lg"
+        className="fixed top-4 left-4 z-30 p-2 rounded-md bg-gray-200 md:hidden"
         onClick={() => setSidebarOpen(!sidebarOpen)}
       >
-        {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        {sidebarOpen ? <X /> : <Menu />}
       </button>
 
-      <main className="flex-1 flex flex-col overflow-x-hidden">
+      <main className="flex-1 flex flex-col">
         <Header />
 
-        <div className="p-6 flex flex-col gap-6">
-          {/* Card Info + Buttons */}
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
-            <div className="flex-1 w-full">
-              <CardInfo stats={stats} loading={loading} date={stats?.date?.formatted || ""} />
-            </div>
+        <div className="p-6 space-y-6">
+          <CardInfo
+            stats={stats}
+            loading={loading}
+            date={stats?.date?.formatted ?? ""}
+          />
 
-            <div className="flex flex-col gap-4 w-full md:w-auto">
-              <button
-                onClick={() => setOpenTambahAdmin(true)}
-                className="px-4 py-2 rounded-lg bg-[#81B7A9] text-white shadow hover:bg-[#6356C1] transition-colors w-full md:w-auto"
-                disabled={loading}
-              >
-                + Tambah Admin
-              </button>
-
-              <button
-                onClick={() => setOpenTambahTerapis(true)}
-                className="px-4 py-2 rounded-lg bg-[#81B7A9] text-white shadow hover:bg-[#6356C1] transition-colors w-full md:w-auto"
-                disabled={loading}
-              >
-                + Tambah Terapis
-              </button>
-            </div>
-          </div>
-
-          {/* Jadwal + Chart */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            <div className="overflow-x-auto">
-              <JadwalTable jadwal={todaySchedule} loading={loading} emptyMessage="Tidak ada jadwal hari ini" />
-            </div>
-
-            <div className="overflow-x-auto">
-              <PasienChartAdmin data={patientCategories} loading={loading} />
-            </div>
+          <div className="grid md:grid-cols-2 gap-6">
+            <JadwalTable
+              jadwal={todaySchedule}
+              loading={loading}
+              emptyMessage="Tidak ada jadwal hari ini"
+            />
+            <PasienChartAdmin
+              data={patientCategories}
+              loading={loading}
+            />
           </div>
         </div>
       </main>
 
-      {/* Forms */}
       <FormTambahAdmin
         open={openTambahAdmin}
         onClose={() => setOpenTambahAdmin(false)}
