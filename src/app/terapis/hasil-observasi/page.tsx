@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
 import {
@@ -10,11 +10,47 @@ import {
   CompletedObservationDetail,
 } from "@/lib/api/observasiSubmit";
 
-export default function HasilObservasiFrame() {
-  const searchParams = useSearchParams();
-  const observationId = searchParams.get("id");
+// ================= Helpers =================
+function asString(v: unknown, fallback = "-"): string {
+  if (typeof v === "string") {
+    const s = v.trim();
+    return s ? s : fallback;
+  }
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return fallback;
+}
 
-  const [data, setData] = useState<CompletedObservationDetail | null>(null);
+function asNumber(v: unknown, fallback = 0): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+  return fallback;
+}
+
+// Tipe aman untuk state (semua field yang dipakai UI dipastikan string/number)
+type CompletedObservationDetailSafe = CompletedObservationDetail & {
+  scheduled_date: string;
+  child_name: string;
+  child_birth_place_date: string;
+  child_age: string;
+  child_gender: string;
+  child_school: string;
+  child_address: string;
+  parent_name: string;
+  parent_type: string;
+  total_score: number;
+  recommendation: string;
+  conclusion: string;
+};
+
+export default function HasilObservasiFrame() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const observationId = searchParams.get("id") || searchParams.get("observation_id") || "";
+
+  const [data, setData] = useState<CompletedObservationDetailSafe | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,6 +60,8 @@ export default function HasilObservasiFrame() {
       setLoading(false);
       return;
     }
+
+    let cancelled = false;
 
     const fetchData = async () => {
       try {
@@ -36,34 +74,63 @@ export default function HasilObservasiFrame() {
         const detail = await getObservationDetail(observationId, "completed");
 
         // Cari tanggal scheduled terkait
-        const scheduleItem = list.find(
-          (item) => item.observation_id?.toString() === observationId
-        );
+        const scheduleItem = Array.isArray(list)
+          ? list.find((item: any) => asString(item?.observation_id, "") === observationId)
+          : undefined;
+
+        const scheduledDate = asString((scheduleItem as any)?.scheduled_date, "-");
 
         if (!detail) {
-          setError("Data hasil observasi tidak ditemukan.");
-          setData(null);
-        } else {
-          setData({
-            ...detail,
-            scheduled_date: scheduleItem?.scheduled_date || "-",
-          });
+          if (!cancelled) {
+            setError("Data hasil observasi tidak ditemukan.");
+            setData(null);
+          }
+          return;
+        }
+
+        const safe: CompletedObservationDetailSafe = {
+          ...(detail as any),
+          scheduled_date: scheduledDate,
+
+          // pastikan semua yang dipakai UI aman
+          child_name: asString((detail as any)?.child_name, "-"),
+          child_birth_place_date: asString((detail as any)?.child_birth_place_date, "-"),
+          child_age: asString((detail as any)?.child_age, "-"),
+          child_gender: asString((detail as any)?.child_gender, "-"),
+          child_school: asString((detail as any)?.child_school, "-"),
+          child_address: asString((detail as any)?.child_address, "-"),
+          parent_name: asString((detail as any)?.parent_name, "-"),
+          parent_type: asString((detail as any)?.parent_type, "-"),
+
+          total_score: asNumber((detail as any)?.total_score, 0),
+          recommendation: asString((detail as any)?.recommendation, "-"),
+          conclusion: asString((detail as any)?.conclusion, "-"),
+        };
+
+        if (!cancelled) {
+          setData(safe);
           setError(null);
         }
       } catch (err: any) {
         console.error("❌ Error fetch observation detail:", err);
-        if (err?.response?.status === 429) {
-          setError("Terlalu banyak permintaan. Coba lagi beberapa saat.");
-        } else {
-          setError("Terjadi kesalahan saat mengambil data observasi.");
+        if (!cancelled) {
+          if (err?.response?.status === 429) {
+            setError("Terlalu banyak permintaan. Coba lagi beberapa saat.");
+          } else {
+            setError("Terjadi kesalahan saat mengambil data observasi.");
+          }
+          setData(null);
         }
-        setData(null);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [observationId]);
 
   return (
@@ -73,14 +140,18 @@ export default function HasilObservasiFrame() {
         <HeaderTerapis />
 
         <main className="p-10 bg-white m-4 rounded-xl shadow-md overflow-auto">
+          {/* Tombol Close */}
           <div className="flex justify-end mb-4">
-  <button
-    onClick={() => (window.location.href = "/terapis/observasi/riwayat")}
-    className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
-  >
-    ✕
-  </button>
-</div>
+            <button
+              type="button"
+              onClick={() => router.replace("/terapis/observasi/riwayat")}
+              className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+              aria-label="Tutup"
+            >
+              ✕
+            </button>
+          </div>
+
           {loading ? (
             <div className="flex items-center justify-center h-96 text-gray-500 animate-pulse">
               Memuat hasil observasi...
@@ -95,7 +166,6 @@ export default function HasilObservasiFrame() {
             </div>
           ) : (
             <>
-              {/* Judul Halaman */}
               <h1 className="text-center text-2xl font-extrabold text-[#2E2E4D] mb-10">
                 HASIL OBSERVASI
               </h1>
@@ -106,6 +176,7 @@ export default function HasilObservasiFrame() {
                   Informasi Anak
                 </h2>
                 <hr className="border-gray-300 mb-6" />
+
                 <div className="grid grid-cols-2 md:grid-cols-2 gap-y-4 text-sm">
                   <InfoItem label="Nama" value={data.child_name} />
                   <InfoItem
@@ -118,10 +189,7 @@ export default function HasilObservasiFrame() {
                   <InfoItem label="Alamat" value={data.child_address} />
                   <InfoItem label="Nama Orang Tua" value={data.parent_name} />
                   <InfoItem label="Hubungan (Ayah/Ibu)" value={data.parent_type} />
-                  <InfoItem
-                    label="Tanggal Observasi"
-                    value={data.scheduled_date}
-                  />
+                  <InfoItem label="Tanggal Observasi" value={data.scheduled_date} />
                 </div>
               </section>
 
@@ -133,11 +201,9 @@ export default function HasilObservasiFrame() {
                 <hr className="border-gray-300 mb-6" />
 
                 <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex justify-between items-center mb-5">
-                  <span className="font-semibold text-[#36315B]">
-                    Total Skor
-                  </span>
+                  <span className="font-semibold text-[#36315B]">Total Skor</span>
                   <span className="text-[#36315B] font-bold text-lg">
-                    {data.total_score ?? 0}
+                    {data.total_score}
                   </span>
                 </div>
 
@@ -146,7 +212,7 @@ export default function HasilObservasiFrame() {
                     Rekomendasi
                   </p>
                   <p className="text-[#36315B] font-medium">
-                    {data.recommendation || "-"}
+                    {data.recommendation}
                   </p>
                 </div>
 
@@ -154,16 +220,14 @@ export default function HasilObservasiFrame() {
                   <p className="text-sm text-[#36315B] mb-1 font-semibold">
                     Kesimpulan Observasi
                   </p>
-                  <p className="text-[#36315B] font-medium">
-                    {data.conclusion || "-"}
-                  </p>
+                  <p className="text-[#36315B] font-medium">{data.conclusion}</p>
                 </div>
               </section>
 
-              {/* Tombol Kembali */}
               <div className="mt-10 flex justify-end">
                 <button
-                  onClick={() => history.back()}
+                  type="button"
+                  onClick={() => router.back()}
                   className="px-6 py-2 bg-[#81B7A9] hover:bg-[#36315B] text-white font-semibold rounded-lg transition"
                 >
                   Kembali

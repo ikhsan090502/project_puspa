@@ -1,26 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import {
-  Search as SearchIcon,
-  Settings,
-  ChevronDown,
-  Eye,
-  Clock3,
-} from "lucide-react";
+import { Search as SearchIcon, Settings, ChevronDown, Eye } from "lucide-react";
 import Calendar from "react-calendar";
 import "react-calendar/dist/Calendar.css";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { useRouter } from "next/navigation";
+
 import FormEditAsesment from "@/components/form/FormEditAsesment";
-import { getAssessmentsAdmin } from "@/lib/api/jadwal_asessment";
-import { updateAsessmentSchedule } from "@/lib/api/jadwal_asessment";
-import { getAssessmentDetail } from "@/lib/api/jadwal_asessment";
 import FormDetailAsesment from "@/components/form/FormDetailAsesment";
 
+import {
+  getAssessmentsAdmin,
+  updateAsessmentSchedule,
+  getAssessmentDetail,
+} from "@/lib/api/jadwal_asessment";
 
 // =======================
 // Interface Jadwal
@@ -36,6 +33,8 @@ export interface Jadwal {
   asessor?: string;
   administrator?: string;
   tipe?: string;
+
+  // penting: backend kadang null
   tanggalObservasi?: string | null;
   waktu?: string | null;
   observer?: string | null;
@@ -58,30 +57,45 @@ const ASESSOR_ACTIONS = [
   { key: "paedagog", label: "Data Paedagog" },
 ];
 
-
-
-
 // =======================
-// Page Component (tidak berubah)
+// Helper sanitasi type
 // =======================
+function toOptionalString(v: string | null | undefined): string | undefined {
+  if (v === null || v === undefined) return undefined;
+  const s = String(v).trim();
+  if (!s) return undefined;
+  if (s === "-") return undefined;
+  return s;
+}
+
 export default function JadwalAsesmenPage() {
   const router = useRouter();
+
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<"terjadwal" | "selesai">("terjadwal");
+
   const [jadwalList, setJadwalList] = useState<Jadwal[]>([]);
   const [selectedPasien, setSelectedPasien] = useState<Jadwal | null>(null);
+
+  // untuk filter kalender (terjadwal)
   const [selectedDate, setSelectedDate] = useState<string | null>(null);
+
+  // untuk filter tanggal (selesai)
   const [filterDate, setFilterDate] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   const [openDetail, setOpenDetail] = useState(false);
+  const [detailPasien, setDetailPasien] = useState<any | null>(null);
+
+  const [openAsesmen, setOpenAsesmen] = useState(false);
+
   const [openDropdown, setOpenDropdown] = useState<{
     assessment_id: number;
     role: "ortu" | "asessor";
   } | null>(null);
-  const [detailPasien, setDetailPasien] = useState<any | null>(null);
 
-  const [openAsesmen, setOpenAsesmen] = useState(false);
   const fetchJadwal = async () => {
     setLoading(true);
     setError(null);
@@ -95,10 +109,11 @@ export default function JadwalAsesmenPage() {
         tab === "terjadwal" ? selectedDate ?? undefined : undefined
       );
 
-      setJadwalList(data);
+      setJadwalList(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error(err);
       setError("Gagal memuat data jadwal");
+      setJadwalList([]);
     } finally {
       setLoading(false);
     }
@@ -106,30 +121,36 @@ export default function JadwalAsesmenPage() {
 
   useEffect(() => {
     fetchJadwal();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tab, selectedDate]);
 
-  const filtered = jadwalList.filter((j) => {
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdown(null);
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  const filtered = useMemo(() => {
     const q = search.toLowerCase();
 
-    const matchSearch =
-      j.nama?.toLowerCase().includes(q) ||
-      j.orangtua?.toLowerCase().includes(q);
+    return jadwalList.filter((j) => {
+      const matchSearch =
+        (j.nama ?? "").toLowerCase().includes(q) ||
+        (j.orangtua ?? "").toLowerCase().includes(q);
 
-    const matchDateSelesai =
-      tab === "selesai" && filterDate
-        ? j.tanggalObservasi === format(new Date(filterDate), "dd/MM/yyyy")
-        : true;
+      const matchDateSelesai =
+        tab === "selesai" && filterDate
+          ? j.tanggalObservasi === format(new Date(filterDate), "dd/MM/yyyy")
+          : true;
 
-    return matchSearch && matchDateSelesai;
-  });
+      return matchSearch && matchDateSelesai;
+    });
+  }, [jadwalList, search, tab, filterDate]);
 
-
-  const handleDateSelect = async (date: Date) => {
+  const handleDateSelect = (date: Date) => {
     const formatted = format(date, "yyyy-MM-dd");
     setSelectedDate(formatted);
   };
-
-
 
   const handleOrtuRoute = (action: string, assessment_id: number) => {
     const base = "/admin/ortu";
@@ -160,14 +181,6 @@ export default function JadwalAsesmenPage() {
     router.push(`${routes[action]}?assessment_id=${assessment_id}`);
   };
 
-
-
-  useEffect(() => {
-    const handleClickOutside = () => setOpenDropdown(null);
-    window.addEventListener("click", handleClickOutside);
-    return () => window.removeEventListener("click", handleClickOutside);
-  }, []);
-
   const DualCalendar = () => {
     const today = selectedDate ? new Date(selectedDate) : new Date();
     const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1);
@@ -194,10 +207,21 @@ export default function JadwalAsesmenPage() {
     );
   };
 
+  // =======================
+  // nilai aman untuk form edit
+  // =======================
+  const initialDateForForm = useMemo(() => {
+    return selectedPasien ? toOptionalString(selectedPasien.tanggalObservasi) : undefined;
+  }, [selectedPasien]);
+
+  const initialTimeForForm = useMemo(() => {
+    return selectedPasien ? toOptionalString(selectedPasien.waktu) : undefined;
+  }, [selectedPasien]);
 
   return (
     <div className="flex min-h-screen bg-gray-50">
       <Sidebar />
+
       <div className="flex flex-col flex-1 relative">
         <Header />
 
@@ -210,32 +234,30 @@ export default function JadwalAsesmenPage() {
             <>
               <DualCalendar />
 
-              {tab === "terjadwal" && selectedDate && (
+              {selectedDate && (
                 <button
-                  onClick={() => {
-                    setSelectedDate(null);
-                  }}
+                  type="button"
+                  onClick={() => setSelectedDate(null)}
                   className="px-4 py-2 text-sm border rounded-full"
                 >
                   Reset Filter Tanggal
                 </button>
-
               )}
-
             </>
           )}
 
-
           <div className="flex justify-between items-center mt-2">
             <div className="flex gap-6">
-              {["terjadwal", "selesai"].map((t) => (
+              {(["terjadwal", "selesai"] as const).map((t) => (
                 <button
                   key={t}
-                  onClick={() => setTab(t as any)}
-                  className={`relative pb-2 text-sm font-medium ${tab === t
-                    ? "text-[#36315B] border-b-2 border-[#81B7A9] font-semibold"
-                    : "text-gray-500 hover:text-gray-700"
-                    }`}
+                  type="button"
+                  onClick={() => setTab(t)}
+                  className={`relative pb-2 text-sm font-medium ${
+                    tab === t
+                      ? "text-[#36315B] border-b-2 border-[#81B7A9] font-semibold"
+                      : "text-gray-500 hover:text-gray-700"
+                  }`}
                 >
                   {t === "terjadwal" ? "Terjadwal" : "Selesai"}
                 </button>
@@ -244,7 +266,6 @@ export default function JadwalAsesmenPage() {
 
             {tab === "selesai" ? (
               <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
-                {/* FILTER TANGGAL */}
                 <input
                   type="date"
                   value={filterDate}
@@ -252,14 +273,13 @@ export default function JadwalAsesmenPage() {
                   className="border rounded-full px-3 py-2 text-sm"
                 />
 
-                {/* SEARCH NAMA */}
                 <div className="relative w-full sm:w-64">
                   <input
                     type="text"
                     placeholder="Cari Pasien"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="border rounded-full pl-3 pr-9 py-2 text-sm"
+                    className="border rounded-full pl-3 pr-9 py-2 text-sm w-full"
                   />
                   <SearchIcon
                     size={16}
@@ -282,7 +302,6 @@ export default function JadwalAsesmenPage() {
                 />
               </div>
             )}
-
           </div>
 
           <div className="bg-white rounded-lg shadow-md border border-gray-200 p-4">
@@ -321,86 +340,88 @@ export default function JadwalAsesmenPage() {
                       <td className="p-3">{j.telepon}</td>
                       <td className="p-3">{j.tipe}</td>
                       <td className="p-3">{j.asessor}</td>
-                      <td className="p-3">{j.tanggalObservasi}</td>
-                      <td className="p-3">{j.waktu}</td>
+                      <td className="p-3">{j.tanggalObservasi ?? "-"}</td>
+                      <td className="p-3">{j.waktu ?? "-"}</td>
+
                       <td className="p-3 text-center relative">
                         <div className="flex justify-center gap-2">
-                          {/* BUTTON ORTU */}
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenDropdown(
-                                openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "ortu"
+                                openDropdown?.assessment_id === j.assessment_id &&
+                                  openDropdown?.role === "ortu"
                                   ? null
                                   : { assessment_id: j.assessment_id, role: "ortu" }
                               );
                             }}
                             className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                           >
-                            Ortu
-                            <ChevronDown size={12} className="ml-1" />
+                            Ortu <ChevronDown size={12} className="ml-1" />
                           </button>
 
-                          {/* BUTTON ASESSOR */}
                           <button
+                            type="button"
                             onClick={(e) => {
                               e.stopPropagation();
                               setOpenDropdown(
-                                openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "asessor"
+                                openDropdown?.assessment_id === j.assessment_id &&
+                                  openDropdown?.role === "asessor"
                                   ? null
                                   : { assessment_id: j.assessment_id, role: "asessor" }
                               );
                             }}
                             className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                           >
-                            Asessor
-                            <ChevronDown size={12} className="ml-1" />
+                            Asessor <ChevronDown size={12} className="ml-1" />
                           </button>
                         </div>
 
-                        {/* DROPDOWN ORTU */}
-                        {openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "ortu" && (
-                          <div
-                            className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {ORTU_ACTIONS.map((item) => (
-                              <button
-                                key={item.key}
-                                onClick={() => {
-                                  handleOrtuRoute(item.key, j.assessment_id);
-                                  setOpenDropdown(null);
-                                }}
-                                className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-                              >
-                                {item.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        {openDropdown?.assessment_id === j.assessment_id &&
+                          openDropdown?.role === "ortu" && (
+                            <div
+                              className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {ORTU_ACTIONS.map((item) => (
+                                <button
+                                  key={item.key}
+                                  type="button"
+                                  onClick={() => {
+                                    handleOrtuRoute(item.key, j.assessment_id);
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+                                >
+                                  {item.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
 
-                        {/* DROPDOWN ASESSOR */}
-                        {openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "asessor" && (
-                          <div
-                            className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            {ASESSOR_ACTIONS.map((item) => (
-                              <button
-                                key={item.key}
-                                onClick={() => {
-                                  handleAsessorRoute(item.key, j.assessment_id);
-                                  setOpenDropdown(null);
-                                }}
-                                className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-                              >
-                                {item.label}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        {openDropdown?.assessment_id === j.assessment_id &&
+                          openDropdown?.role === "asessor" && (
+                            <div
+                              className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-64"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {ASESSOR_ACTIONS.map((item) => (
+                                <button
+                                  key={item.key}
+                                  type="button"
+                                  onClick={() => {
+                                    handleAsessorRoute(item.key, j.assessment_id);
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="w-full text-left px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+                                >
+                                  {item.label}
+                                </button>
+                              ))}
+                            </div>
+                          )}
                       </td>
-
                     </tr>
                   ))}
                 </tbody>
@@ -421,14 +442,18 @@ export default function JadwalAsesmenPage() {
                 </thead>
                 <tbody>
                   {filtered.map((j) => (
-                    <tr key={j.assessment_id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr
+                      key={j.assessment_id}
+                      className="border-b border-gray-100 hover:bg-gray-50"
+                    >
                       <td className="p-3">{j.nama}</td>
                       <td className="p-3">{j.orangtua}</td>
                       <td className="p-3">{j.telepon}</td>
                       <td className="p-3">{j.tipe}</td>
                       <td className="p-3">{j.administrator}</td>
-                      <td className="p-3">{j.tanggalObservasi}</td>
-                      <td className="p-3">{j.waktu}</td>
+                      <td className="p-3">{j.tanggalObservasi ?? "-"}</td>
+                      <td className="p-3">{j.waktu ?? "-"}</td>
+
                       <td className="p-3 text-center relative">
                         <button
                           type="button"
@@ -436,7 +461,8 @@ export default function JadwalAsesmenPage() {
                             e.stopPropagation();
                             setSelectedPasien(j);
                             setOpenDropdown(
-                              openDropdown?.assessment_id === j.assessment_id && openDropdown?.role === "ortu"
+                              openDropdown?.assessment_id === j.assessment_id &&
+                                openDropdown?.role === "ortu"
                                 ? null
                                 : { assessment_id: j.assessment_id, role: "ortu" }
                             );
@@ -448,76 +474,69 @@ export default function JadwalAsesmenPage() {
                           <ChevronDown size={12} className="ml-1" />
                         </button>
 
-                        {/* DROPDOWN AKSI */}
-                        {openDropdown?.assessment_id === j.assessment_id && tab === "terjadwal" && (
-                          <div
-                            className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-56 text-[#5F52BF]"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <div className="divide-y divide-gray-200">
-                              {/* ATUR ASESMEN */}
-                              <button
-                                onClick={() => {
-                                  setOpenAsesmen(true);
-                                  setOpenDropdown(null);
-                                }}
-                                className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-                              >
-                                <Settings size={16} className="mr-2" />
-                                Atur Asesmen
-                              </button>
+                        {openDropdown?.assessment_id === j.assessment_id &&
+                          tab === "terjadwal" && (
+                            <div
+                              className="absolute right-0 mt-2 z-50 bg-white border border-[#80C2B0] shadow-xl rounded-lg w-56 text-[#5F52BF]"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="divide-y divide-gray-200">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setOpenAsesmen(true);
+                                    setOpenDropdown(null);
+                                  }}
+                                  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+                                >
+                                  <Settings size={16} className="mr-2" />
+                                  Atur Asesmen
+                                </button>
 
-                              {/* DETAIL */}
-                              <button
-                                onClick={async () => {
-                                  setOpenDropdown(null);
-                                  setOpenDetail(true);
-                                  setDetailPasien(null);
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    setOpenDropdown(null);
+                                    setOpenDetail(true);
+                                    setDetailPasien(null);
 
-                                  try {
-                                    const detail = await getAssessmentDetail(j.assessment_id);
-                                    setDetailPasien(detail);
-                                  } catch (err) {
-                                    console.error("Gagal ambil detail asesmen", err);
-                                  }
-                                }}
-
-                                className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
-                              >
-                                <Eye size={16} className="mr-2" />
-                                Detail
-                              </button>
+                                    try {
+                                      const detail = await getAssessmentDetail(
+                                        j.assessment_id
+                                      );
+                                      setDetailPasien(detail);
+                                    } catch (err) {
+                                      console.error("Gagal ambil detail asesmen", err);
+                                    }
+                                  }}
+                                  className="flex items-center w-full px-4 py-3 text-sm hover:bg-[#E9F4F1]"
+                                >
+                                  <Eye size={16} className="mr-2" />
+                                  Detail
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        )}
+                          )}
                       </td>
-
                     </tr>
                   ))}
                 </tbody>
               </table>
             )}
           </div>
-
-
-
         </main>
       </div>
 
+      {/* =======================
+          MODAL EDIT ASESMEN
+          ======================= */}
       {openAsesmen && selectedPasien && (
         <FormEditAsesment
           title={tab === "terjadwal" ? "Edit Asesmen" : "Atur Asesmen"}
           pasienName={selectedPasien.nama}
-          initialDate={
-            selectedPasien.tanggalObservasi !== "-"
-              ? selectedPasien.tanggalObservasi
-              : ""
-          }
-          initialTime={
-            selectedPasien.waktu !== "-"
-              ? selectedPasien.waktu
-              : ""
-          }
+          // FIX UTAMA: tidak boleh null
+          initialDate={initialDateForForm}
+          initialTime={initialTimeForForm}
           onClose={() => {
             setOpenAsesmen(false);
             setSelectedPasien(null);
@@ -529,12 +548,7 @@ export default function JadwalAsesmenPage() {
             }
 
             try {
-              await updateAsessmentSchedule(
-                selectedPasien.assessment_id,
-                date,
-                time
-              );
-
+              await updateAsessmentSchedule(selectedPasien.assessment_id, date, time);
               await fetchJadwal();
             } catch (err) {
               console.error("Gagal update asesmen:", err);
@@ -543,6 +557,7 @@ export default function JadwalAsesmenPage() {
           }}
         />
       )}
+
       <FormDetailAsesment
         open={openDetail}
         pasien={detailPasien}
@@ -551,7 +566,6 @@ export default function JadwalAsesmenPage() {
           setDetailPasien(null);
         }}
       />
-
     </div>
   );
 }

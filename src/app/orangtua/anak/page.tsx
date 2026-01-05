@@ -1,443 +1,363 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { Menu, X } from "lucide-react";
-
-import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
-import HeaderOrangtua from "@/components/layout/header-orangtua";
-
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
+import Sidebar from "@/components/layout/sidebar";
+import Header from "@/components/layout/header";
 import {
-  getChildren,
-  getChildDetail,
-  updateChild,
-  deleteChild,
-  createChild,
-  ChildItem,
-  ChildDetail,
-} from "@/lib/api/childrenAsesment";
+  getObservationDetail,
+  getObservationQuestions,
+} from "@/lib/api/observasiSubmit";
 
-import FormDetailPasien from "@/components/form/FormDetailPasien";
-import FormUbahPasien from "@/components/form/FormUbahPasien";
-import FormHapusAnak from "@/components/form/FormHapusAnak";
-
-import { FaEye, FaPen, FaTrash } from "react-icons/fa";
-
-export default function ChildList() {
-  const router = useRouter();
-  const params = useParams();
-
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  const [children, setChildren] = useState<ChildItem[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  const [openDetail, setOpenDetail] = useState(false);
-  const [openEdit, setOpenEdit] = useState(false);
-  const [openDelete, setOpenDelete] = useState(false);
-  const [openAdd, setOpenAdd] = useState(false);
-
-  const [selectedChild, setSelectedChild] = useState<ChildDetail | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-
-  // Inisialisasi formAdd
-const [formAdd, setFormAdd] = useState({
-  child_name: "",
-  child_gender: "",
-  child_birth_place: "",
-  child_birth_date: "",
-  child_school: "",
-  child_address: "",
-  child_complaint: "",
-  child_service_choice: [] as string[], // array
-});
-
-const handleAddChange = (
-  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-) => {
-  const { name, value } = e.target;
-
-  // Jika checkbox layanan
-  if (
-    name === "child_service_choice" &&
-    e.target instanceof HTMLInputElement &&
-    e.target.type === "checkbox"
-  ) {
-    const checked = e.target.checked;
-    setFormAdd((prev) => {
-      let newArray = [...prev.child_service_choice];
-      if (checked) {
-        newArray.push(value);
-      } else {
-        newArray = newArray.filter((v) => v !== value);
-      }
-      return { ...prev, child_service_choice: newArray };
-    });
-  } else {
-    // input / textarea biasa
-    setFormAdd((prev) => ({ ...prev, [name]: value }));
-  }
+// ==================== TypeScript ====================
+type Question = {
+  id: number;
+  question_code?: string;
+  age_category?: string;
+  question_number: number;
+  question_text: string;
 };
 
-// Saat submit, konversi array menjadi string agar sesuai tipe API
+type AnswerDetail = {
+  question_number: number;
+  question_text: string;
+  answer: number; // 0 | 1
+  score_earned: number;
+  note: string | null;
+  question_code: string;
+};
 
+type RawAnswerItem = {
+  question_number?: unknown;
+  answer?: unknown;
+  score_earned?: unknown;
+  note?: unknown;
+};
 
-  /* ================= LOAD DATA ================= */
+type AnswerApiResponse = {
+  answer_details?: unknown;
+  total_score?: unknown;
+};
+
+// Mapping kategori lengkap
+const kategoriFullMap: Record<string, string> = {
+  BPE: "Perilaku & Emosi",
+  BFM: "Fungsi Motorik",
+  BBB: "Bahasa & Bicara",
+  BKA: "Kognitif & Atensi",
+  BS: "Sosial & Emosi",
+
+  APE: "Perilaku & Emosi",
+  AFM: "Fungsi Motorik",
+  ABB: "Bahasa & Bicara",
+  AKA: "Kognitif & Atensi",
+  AS: "Sosial & Emosi",
+
+  RPE: "Perilaku & Emosi",
+  RFM: "Fungsi Motorik",
+  RBB: "Bahasa & Bicara",
+  RKA: "Kognitif & Atensi",
+  RS: "Sosial & Emosi",
+  RK: "Kemandirian",
+};
+
+// ==================== Helpers ====================
+function asNumber(v: unknown, fallback = 0): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+  return fallback;
+}
+
+function asString(v: unknown, fallback = ""): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return fallback;
+}
+
+function toQuestionArray(input: unknown): Question[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .map((row: any) => {
+      const id = asNumber(row?.id, 0);
+      const question_number = asNumber(row?.question_number, NaN);
+      const question_text = asString(row?.question_text, "").trim();
+
+      if (!id || !Number.isFinite(question_number) || !question_text) return null;
+
+      const question_code = asString(row?.question_code, "");
+      const age_category = asString(row?.age_category, "");
+
+      const q: Question = {
+        id,
+        question_number,
+        question_text,
+        ...(question_code ? { question_code } : {}),
+        ...(age_category ? { age_category } : {}),
+      };
+
+      return q;
+    })
+    .filter(Boolean) as Question[];
+}
+
+function toAnswerDetailsArray(input: unknown): RawAnswerItem[] {
+  if (!Array.isArray(input)) return [];
+  return input as RawAnswerItem[];
+}
+
+// ==================== Page ====================
+export default function RiwayatJawabanPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const observation_id =
+    searchParams.get("observation_id") || searchParams.get("id") || "";
+
+  const [questions, setQuestions] = useState<Question[]>([]);
+  const [answers, setAnswers] = useState<AnswerDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<string>("");
+  const [totalScore, setTotalScore] = useState<number>(0);
+
   useEffect(() => {
-    async function fetchData() {
+    let cancelled = false;
+
+    const fetchData = async () => {
+      if (!observation_id) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        const res = await getChildren();
-        setChildren(res.data || []);
+
+        // 1) total skor (completed)
+        const detailCompleted = (await getObservationDetail(
+          observation_id,
+          "completed"
+        )) as AnswerApiResponse | null;
+
+        if (cancelled) return;
+        setTotalScore(asNumber(detailCompleted?.total_score, 0));
+
+        // 2) pertanyaan
+        const questionRaw = await getObservationQuestions(observation_id);
+        const questionData = toQuestionArray(questionRaw);
+
+        if (cancelled) return;
+        setQuestions(questionData);
+
+        // 3) jawaban (type=answer)
+        const answerRes = (await getObservationDetail(
+          observation_id,
+          "answer"
+        )) as AnswerApiResponse | null;
+
+        const answerDetails = toAnswerDetailsArray(answerRes?.answer_details);
+
+        // 4) merge
+        const merged: AnswerDetail[] = questionData.map((q) => {
+          const jawaban = answerDetails.find(
+            (a) =>
+              asNumber(a?.question_number, -1) === asNumber(q.question_number, -2)
+          );
+
+          return {
+            question_number: asNumber(q.question_number, 0),
+            question_text: q.question_text,
+            score_earned: asNumber(jawaban?.score_earned, 0),
+            answer: asNumber(jawaban?.answer, 0),
+            note:
+              jawaban?.note === null || jawaban?.note === undefined
+                ? null
+                : asString(jawaban?.note, ""),
+            question_code: asString(q.question_code, "UNK-0") || "UNK-0",
+          };
+        });
+
+        if (cancelled) return;
+
+        setAnswers(merged);
+
+        if (merged.length > 0) {
+          const firstPrefix = (merged[0].question_code || "UNK-0").split("-")[0];
+          setActiveTab(kategoriFullMap[firstPrefix] || firstPrefix);
+        } else {
+          setActiveTab("");
+        }
+      } catch (err) {
+        console.error("Gagal ambil data observasi:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    }
+    };
+
     fetchData();
-  }, []);
+    return () => {
+      cancelled = true;
+    };
+  }, [observation_id]);
 
-  async function handleOpenDetail(id: string) {
-    const data = await getChildDetail(id);
-    setSelectedChild(data);
-    setOpenDetail(true);
-  }
+  const groupedQuestions = useMemo(() => {
+    return answers.reduce((acc: Record<string, AnswerDetail[]>, q) => {
+      const prefix = (q.question_code || "UNK-0").split("-")[0];
+      const kategori = kategoriFullMap[prefix] || prefix;
+      if (!acc[kategori]) acc[kategori] = [];
+      acc[kategori].push(q);
+      return acc;
+    }, {});
+  }, [answers]);
 
-  async function handleOpenEdit(id: string) {
-    const data = await getChildDetail(id);
-    setSelectedChild({ ...data, child_id: id });
-    setOpenEdit(true);
-  }
+  const kategoriList = Object.keys(groupedQuestions);
 
-  const handleOpenDelete = (id: string) => {
-    setDeleteId(id);
-    setOpenDelete(true);
-  };
+  const isKategoriComplete = (k: string) =>
+    groupedQuestions[k]?.every((q) => q.answer !== null && q.answer !== undefined);
 
-  const handleHapus = async (id: string) => {
-    await deleteChild(id);
-    const refreshed = await getChildren();
-    setChildren(refreshed.data || []);
-    setOpenDelete(false);
-  };
-
-  const handleUbah = async (payload: Partial<ChildDetail>) => {
-    if (!selectedChild?.child_id) return;
-    await updateChild(selectedChild.child_id, payload);
-    const refreshed = await getChildren();
-    setChildren(refreshed.data || []);
-    setOpenEdit(false);
-  };
-
- async function handleTambah() {
-  const payload = {
-    ...formAdd,
-    child_service_choice: formAdd.child_service_choice.join(", "), // gabungkan array jadi string
-  };
-  await createChild(payload);
-  const refreshed = await getChildren();
-  setChildren(refreshed.data || []);
-  setOpenAdd(false);
-}
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* ================= SIDEBAR ================= */}
-      <aside
-        className={`
-          fixed md:static inset-y-0 left-0 z-20
-          w-64 bg-white shadow-md
-          transform transition-transform duration-300
-          ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
-        `}
-      >
-        <SidebarOrangtua />
-      </aside>
+    <div className="flex h-screen text-[#36315B] font-playpen">
+      <Sidebar />
+      <div className="flex flex-col flex-1 bg-gray-50">
+        <Header />
 
-      {/* overlay mobile */}
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/30 z-10 md:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      {/* hamburger (mobile only) */}
-      <button
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-        className="fixed top-4 left-4 z-30 md:hidden bg-white p-2 rounded-md shadow"
-      >
-        {sidebarOpen ? <X /> : <Menu />}
-      </button>
-
-      {/* ================= CONTENT ================= */}
-<div className="flex-1 flex flex-col">
-        <HeaderOrangtua />
-
-       <div className="p-6 text-[#36315B]">
-
-          <h1 className="text-xl font-semibold mb-4">Data Anak</h1>
+        <main className="p-6 overflow-y-auto">
+          <div className="flex justify-end mb-4">
+            <button
+              type="button"
+              onClick={() => router.replace("/admin/jadwal_observasi?tab=selesai")}
+              className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+              aria-label="Tutup"
+            >
+              ✕
+            </button>
+          </div>
 
           {loading ? (
-            <p className="text-gray-600">Memuat data...</p>
+            <div className="flex flex-col items-center justify-center mt-20 text-gray-500">
+              <div className="w-10 h-10 border-4 border-[#81B7A9] border-t-transparent rounded-full animate-spin mb-3"></div>
+              <p className="text-sm">Memuat jawaban...</p>
+            </div>
+          ) : answers.length === 0 ? (
+            <p className="text-center mt-20 text-gray-500">
+              Tidak ada jawaban untuk observasi ini.
+            </p>
           ) : (
-            <div className="flex gap-4 flex-wrap">
-              {children.map((child) => (
-                <div
-                  key={child.child_id}
-                  className="border rounded-lg p-4 w-60 shadow-sm flex flex-col gap-2 bg-white"
-                >
-                  <div className="flex items-center gap-2">
-                    <div className="bg-green-200 text-green-800 rounded-full w-10 h-10 flex items-center justify-center">
-                      👶
-                    </div>
+            <>
+              <div className="flex justify-between items-center mb-8">
+                <div className="flex justify-start items-center gap-12 overflow-x-auto">
+                  {kategoriList.map((k, i) => {
+                    const isActive = activeTab === k;
+                    const sudahDiisi = isKategoriComplete(k);
 
-                    <div className="flex-1">
-                      <h2 className="font-semibold">{child.child_name}</h2>
-                      <p className="text-sm text-gray-500">
-                        {child.child_birth_info}
-                      </p>
-                      <p className="text-sm text-gray-500 capitalize">
-                        {child.child_gender}
-                      </p>
-                    </div>
+                    return (
+                      <div
+                        key={k}
+                        className="relative flex flex-col items-center flex-shrink-0"
+                      >
+                        <div
+                          onClick={() => setActiveTab(k)}
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${
+                            isActive
+                              ? "bg-[#5F52BF] text-white"
+                              : sudahDiisi
+                              ? "bg-[#81B7A9] text-white"
+                              : "bg-gray-300 text-black"
+                          }`}
+                        >
+                          {i + 1}
+                        </div>
 
-                    <span className="text-xs font-semibold px-2 py-1 rounded-full bg-green-100 text-green-800">
-                      Aktif
-                    </span>
-                  </div>
+                        {i < kategoriList.length - 1 && (
+                          <div
+                            className="absolute top-5 h-1"
+                            style={{
+                              width: "80px",
+                              left: "85px",
+                              backgroundColor: sudahDiisi ? "#81B7A9" : "#E0E0E0",
+                            }}
+                          />
+                        )}
 
-                 <div className="flex justify-end gap-3 mt-2">
-  <button
-    onClick={() => handleOpenDetail(child.child_id)}
-    className="text-[#36315B] hover:text-[#36315B]"
-  >
-    <FaEye size={16} />
-  </button>
-
-  <button
-    onClick={() => handleOpenEdit(child.child_id)}
-    className="text-[#36315B] hover:text-[#36315B]"
-  >
-    <FaPen size={16} />
-  </button>
-
-  <button
-    onClick={() => handleOpenDelete(child.child_id)}
-    className="text-red-500 hover:text-red-700"
-  >
-    <FaTrash size={16} />
-  </button>
-</div>
-
+                        <span className="mt-3 text-sm font-medium text-center w-28 whitespace-nowrap">
+                          {k}
+                        </span>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
 
-              <button
-                onClick={() => setOpenAdd(true)}
-                className="border-dashed border-2 border-gray-300 rounded-lg w-60 h-32 flex items-center justify-center text-gray-500 bg-white"
-              >
-                + Tambah Anak
-              </button>
-            </div>
+                <div className="text-sl font-bold text-[#36315B] bg-[#E7E4FF] px-3 py-1 rounded-full shadow-sm">
+                  Total Skor: {totalScore}
+                </div>
+              </div>
+
+              <div className="space-y-6">
+                {groupedQuestions[activeTab]?.map((q) => (
+                  <div key={q.question_number}>
+                    <p className="font-medium">
+                      {q.question_number}. {q.question_text}{" "}
+                      <span className="text-sm text-[#36315B]">
+                        (Score {q.score_earned})
+                      </span>
+                    </p>
+
+                    <div className="flex gap-4 mt-2 items-center">
+                      <input
+                        type="text"
+                        placeholder="Keterangan"
+                        className="border rounded-md p-2 flex-1 bg-gray-100"
+                        value={q.note || ""}
+                        readOnly
+                      />
+
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1">
+                          <input type="radio" checked={Number(q.answer) === 1} readOnly />
+                          Ya
+                        </label>
+
+                        <label className="flex items-center gap-1">
+                          <input type="radio" checked={Number(q.answer) === 0} readOnly />
+                          Tidak
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end items-center mt-8 gap-4">
+                {kategoriList.indexOf(activeTab) > 0 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveTab(kategoriList[kategoriList.indexOf(activeTab) - 1])
+                    }
+                    className="bg-white text-[#81B7A9] px-4 py-2 rounded-md border-2 border-[#81B7A9] hover:bg-[#81B7A9] hover:text-white transition"
+                  >
+                    Sebelumnya
+                  </button>
+                )}
+
+                {kategoriList.indexOf(activeTab) < kategoriList.length - 1 && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setActiveTab(kategoriList[kategoriList.indexOf(activeTab) + 1])
+                    }
+                    className="bg-[#81B7A9] text-white px-4 py-2 rounded-md"
+                  >
+                    Lanjutkan
+                  </button>
+                )}
+              </div>
+            </>
           )}
-        </div>
+        </main>
       </div>
-
-      {/* ================= MODALS (UNCHANGED) ================= */}
-      <FormDetailPasien
-        open={openDetail}
-        onClose={() => setOpenDetail(false)}
-        pasien={selectedChild}
-      />
-
-      <FormUbahPasien
-        open={openEdit}
-        onClose={() => setOpenEdit(false)}
-        initialData={selectedChild || undefined}
-        onUpdate={handleUbah}
-      />
-
-      <FormHapusAnak
-        open={openDelete}
-        onClose={() => setOpenDelete(false)}
-        childId={deleteId ?? undefined}
-        onConfirm={(id) => handleHapus(id)}
-      />
-
-      {/* ================= TAMBAH ANAK ================= */}
-      {openAdd && (
-  <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center">
-    <div className="bg-white w-full max-w-2xl mx-4 rounded-xl p-6 text-[#36315B] max-h-[90vh] overflow-y-auto">
-      <h2 className="text-xl font-semibold mb-6">Tambah Data Anak</h2>
-
-      <div className="space-y-4">
-        {/* Nama Lengkap */}
-        <div>
-          <label className="text-sm font-medium">
-            Nama Lengkap <span className="text-red-500">*</span>
-          </label>
-          <input
-            name="child_name"
-            value={formAdd.child_name}
-            onChange={handleAddChange}
-            className="w-full border rounded-lg px-3 py-2 mt-1"
-          />
-        </div>
-
-        {/* Tempat & Tanggal Lahir */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-medium">
-              Tempat Lahir <span className="text-red-500">*</span>
-            </label>
-            <input
-              name="child_birth_place"
-              value={formAdd.child_birth_place}
-              onChange={handleAddChange}
-              className="w-full border rounded-lg px-3 py-2 mt-1"
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium">
-              Tanggal Lahir <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="date"
-              name="child_birth_date"
-              value={formAdd.child_birth_date}
-              onChange={handleAddChange}
-              className="w-full border rounded-lg px-3 py-2 mt-1"
-            />
-          </div>
-        </div>
-
-        {/* Jenis Kelamin */}
-        <div>
-          <label className="text-sm font-medium">
-            Jenis Kelamin <span className="text-red-500">*</span>
-          </label>
-          <div className="flex gap-6 mt-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="child_gender"
-                value="laki-laki"
-                checked={formAdd.child_gender === "laki-laki"}
-                onChange={handleAddChange}
-                className="accent-[#409E86] "
-              />
-              Laki - laki
-            </label>
-
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="radio"
-                name="child_gender"
-                value="perempuan"
-                checked={formAdd.child_gender === "perempuan"}
-                onChange={handleAddChange}
-                className="accent-[#409E86] "
-              />
-              Perempuan
-            </label>
-          </div>
-        </div>
-
-        {/* Sekolah */}
-        <div>
-          <label className="text-sm font-medium">Sekolah</label>
-          <input
-            name="child_school"
-            value={formAdd.child_school}
-            onChange={handleAddChange}
-            className="w-full border rounded-lg px-3 py-2 mt-1"
-          />
-        </div>
-
-        {/* Alamat */}
-        <div>
-          <label className="text-sm font-medium">
-            Alamat <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            name="child_address"
-            value={formAdd.child_address}
-            onChange={handleAddChange}
-            rows={3}
-            className="w-full border rounded-lg px-3 py-2 mt-1"
-          />
-        </div>
-
-        {/* Keluhan */}
-        <div>
-          <label className="text-sm font-medium">
-            Keluhan <span className="text-red-500">*</span>
-          </label>
-          <textarea
-            name="child_complaint"
-            value={formAdd.child_complaint}
-            onChange={handleAddChange}
-            rows={3}
-            placeholder="Isi Keluhan"
-            className="w-full border rounded-lg px-3 py-2 mt-1"
-          />
-        </div>
-
-        {/* Pilih Layanan */}
-        <div>
-          <label className="text-sm font-medium">
-            Pilih Layanan <span className="text-red-500">*</span>
-          </label>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2 text-sm">
-  {[
-    "Asesmen Tumbuh Kembang",
-    "Asesmen Terpadu",
-    "Konsultasi Dokter",
-    "Konsultasi Psikolog",
-    "Konsultasi Keluarga",
-    "Test Psikolog",
-    "Layanan Minat Bakat",
-    "Daycare",
-    "Home Care",
-    "Hydrotherapy",
-    "Baby Spa",
-    "Lainnya",
-  ].map((item) => (
-    <label key={item} className="flex items-center gap-2">
-      <input
-        type="checkbox"
-        value={item}
-        onChange={handleAddChange}
-        name="child_service_choice"
-        checked={formAdd.child_service_choice.includes(item)}
-        className="accent-[#409E86] "
-      />
-      {item}
-    </label>
-  ))}
-</div>
-
-        </div>
-      </div>
-
-            <div className="flex justify-end gap-3 mt-6">
-              <button
-                onClick={() => setOpenAdd(false)}
-                className="px-4 py-2 border rounded-lg"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleTambah}
-                className="px-4 py-2 bg-[#409E86] text-white rounded-lg"
-              >
-                Simpan
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,15 +1,12 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
-import {
-  getObservationDetail,
-  getObservationQuestions,
-} from "@/lib/api/observasiSubmit";
+import { getObservationDetail, getObservationQuestions } from "@/lib/api/observasiSubmit";
 
-// ==================== TypeScript ====================
+// ==================== Types ====================
 type Question = {
   id: number;
   question_code?: string;
@@ -25,6 +22,18 @@ type AnswerDetail = {
   score_earned: number;
   note: string | null;
   question_code: string;
+};
+
+type RawAnswerItem = {
+  question_number?: unknown;
+  answer?: unknown;
+  score_earned?: unknown;
+  note?: unknown;
+};
+
+type ObservationDetailApi = {
+  total_score?: unknown;
+  answer_details?: unknown;
 };
 
 // Mapping kategori lengkap
@@ -49,9 +58,59 @@ const kategoriFullMap: Record<string, string> = {
   RK: "Kemandirian",
 };
 
+// ==================== Helpers ====================
+function asNumber(v: unknown, fallback = 0): number {
+  if (typeof v === "number" && Number.isFinite(v)) return v;
+  if (typeof v === "string") {
+    const n = Number(v);
+    return Number.isFinite(n) ? n : fallback;
+  }
+  return fallback;
+}
+
+function asString(v: unknown, fallback = ""): string {
+  if (typeof v === "string") return v;
+  if (typeof v === "number" || typeof v === "boolean") return String(v);
+  return fallback;
+}
+
+function toQuestionArray(input: unknown): Question[] {
+  if (!Array.isArray(input)) return [];
+
+  return input
+    .map((row: any) => {
+      const id = asNumber(row?.id, 0);
+      const question_number = asNumber(row?.question_number, NaN);
+      const question_text = asString(row?.question_text, "").trim();
+
+      if (!id || !Number.isFinite(question_number) || !question_text) return null;
+
+      const question_code = asString(row?.question_code, "").trim();
+      const age_category = asString(row?.age_category, "").trim();
+
+      const q: Question = {
+        id,
+        question_number,
+        question_text,
+        ...(question_code ? { question_code } : {}),
+        ...(age_category ? { age_category } : {}),
+      };
+
+      return q;
+    })
+    .filter(Boolean) as Question[];
+}
+
+function toRawAnswerArray(input: unknown): RawAnswerItem[] {
+  if (!Array.isArray(input)) return [];
+  return input as RawAnswerItem[];
+}
+
 // ==================== Page ====================
 export default function RiwayatJawabanPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+
   const observation_id =
     searchParams.get("observation_id") || searchParams.get("id") || "";
 
@@ -59,47 +118,66 @@ export default function RiwayatJawabanPage() {
   const [answers, setAnswers] = useState<AnswerDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("");
-
   const [totalScore, setTotalScore] = useState<number>(0);
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchData = async () => {
-      if (!observation_id) return setLoading(false);
+      if (!observation_id) {
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
 
-        // Ambil total skor dari detail completed
-        const detailCompleted = await getObservationDetail(
+        // total skor (completed)
+        const detailCompleted = (await getObservationDetail(
           observation_id,
           "completed"
-        );
-        setTotalScore(Number(detailCompleted?.total_score || 0));
+        )) as ObservationDetailApi | null;
 
-        // Ambil pertanyaan
-        const questionData = await getObservationQuestions(observation_id);
-        setQuestions(questionData || []);
+        if (cancelled) return;
 
-        // Ambil jawaban dari API type=answer
-        const answerRes = await getObservationDetail(observation_id, "answer");
-        const answerDetails = answerRes?.answer_details || [];
+        setTotalScore(asNumber(detailCompleted?.total_score, 0));
+
+        // pertanyaan
+        const questionRaw = await getObservationQuestions(observation_id);
+        const questionData = toQuestionArray(questionRaw);
+
+        if (cancelled) return;
+
+        setQuestions(questionData);
+
+        // jawaban (type=answer)
+        const answerRes = (await getObservationDetail(
+          observation_id,
+          "answer"
+        )) as ObservationDetailApi | null;
+
+        const answerDetails = toRawAnswerArray(answerRes?.answer_details);
 
         // Merge pertanyaan + jawabannya
-        const merged: AnswerDetail[] = (questionData || []).map((q: any) => {
+        const merged: AnswerDetail[] = questionData.map((q) => {
           const jawaban = answerDetails.find(
-            (a: any) =>
-              Number(a.question_number) === Number(q.question_number)
+            (a) => asNumber(a?.question_number, -1) === asNumber(q.question_number, -2)
           );
 
           return {
-            question_number: Number(q.question_number),
+            question_number: asNumber(q.question_number, 0),
             question_text: q.question_text,
-            score_earned: Number(jawaban?.score_earned ?? 0),
-            answer: Number(jawaban?.answer ?? 0),
-            note: jawaban?.note ?? null,
-            question_code: q.question_code ?? "UNK-0",
+            score_earned: asNumber(jawaban?.score_earned, 0),
+            answer: asNumber(jawaban?.answer, 0),
+            note:
+              jawaban?.note === null || jawaban?.note === undefined
+                ? null
+                : asString(jawaban?.note, ""),
+            question_code: asString(q.question_code, "UNK-0") || "UNK-0",
           };
         });
+
+        if (cancelled) return;
 
         setAnswers(merged);
 
@@ -107,15 +185,21 @@ export default function RiwayatJawabanPage() {
         if (merged.length > 0) {
           const firstPrefix = (merged[0].question_code || "UNK-0").split("-")[0];
           setActiveTab(kategoriFullMap[firstPrefix] || firstPrefix);
+        } else {
+          setActiveTab("");
         }
       } catch (err) {
         console.error("Gagal ambil data observasi:", err);
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
     fetchData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [observation_id]);
 
   // ==================== Grouping pertanyaan per kategori ====================
@@ -132,9 +216,7 @@ export default function RiwayatJawabanPage() {
   const kategoriList = Object.keys(groupedQuestions);
 
   const isKategoriComplete = (k: string) =>
-    groupedQuestions[k]?.every(
-      (q) => q.answer !== null && q.answer !== undefined
-    );
+    groupedQuestions[k]?.every((q) => q.answer !== null && q.answer !== undefined);
 
   return (
     <div className="flex h-screen text-[#36315B] font-playpen">
@@ -144,10 +226,10 @@ export default function RiwayatJawabanPage() {
         <main className="p-6 overflow-y-auto">
           <div className="flex justify-end mb-4">
             <button
-              onClick={() =>
-                (window.location.href = "/terapis/observasi/riwayat")
-              }
+              type="button"
+              onClick={() => router.replace("/terapis/observasi/riwayat")}
               className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
+              aria-label="Tutup"
             >
               ✕
             </button>
@@ -195,9 +277,7 @@ export default function RiwayatJawabanPage() {
                             style={{
                               width: "80px",
                               left: "85px",
-                              backgroundColor: sudahDiisi
-                                ? "#81B7A9"
-                                : "#E0E0E0",
+                              backgroundColor: sudahDiisi ? "#81B7A9" : "#E0E0E0",
                             }}
                           />
                         )}
@@ -217,7 +297,7 @@ export default function RiwayatJawabanPage() {
 
               {/* Pertanyaan */}
               <div className="space-y-6">
-                {groupedQuestions[activeTab]?.map((q: AnswerDetail) => (
+                {(groupedQuestions[activeTab] || []).map((q) => (
                   <div key={q.question_number}>
                     <p className="font-medium">
                       {q.question_number}. {q.question_text}{" "}
@@ -235,28 +315,27 @@ export default function RiwayatJawabanPage() {
                         readOnly
                       />
 
-                     <div className="flex items-center gap-2">
-  <label className="flex items-center gap-1">
-    <input
-      type="radio"
-      checked={Number(q.answer) === 1}
-      readOnly
-      className="w-4 h-4 accent-[#81B7A9]"
-    />
-    Ya
-  </label>
+                      <div className="flex items-center gap-2">
+                        <label className="flex items-center gap-1">
+                          <input
+                            type="radio"
+                            checked={Number(q.answer) === 1}
+                            readOnly
+                            className="w-4 h-4 accent-[#81B7A9]"
+                          />
+                          Ya
+                        </label>
 
-  <label className="flex items-center gap-1">
-    <input
-      type="radio"
-      checked={Number(q.answer) === 0}
-      readOnly
-      className="w-4 h-4 accent-[#81B7A9]"
-    />
-    Tidak
-  </label>
-</div>
-
+                        <label className="flex items-center gap-1">
+                          <input
+                            type="radio"
+                            checked={Number(q.answer) === 0}
+                            readOnly
+                            className="w-4 h-4 accent-[#81B7A9]"
+                          />
+                          Tidak
+                        </label>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -266,12 +345,9 @@ export default function RiwayatJawabanPage() {
               <div className="flex justify-end items-center mt-8 gap-4">
                 {kategoriList.indexOf(activeTab) > 0 && (
                   <button
+                    type="button"
                     onClick={() =>
-                      setActiveTab(
-                        kategoriList[
-                          kategoriList.indexOf(activeTab) - 1
-                        ]
-                      )
+                      setActiveTab(kategoriList[kategoriList.indexOf(activeTab) - 1])
                     }
                     className="bg-white text-[#81B7A9] px-4 py-2 rounded-md border-2 border-[#81B7A9] hover:bg-[#81B7A9] hover:text-white transition"
                   >
@@ -279,15 +355,11 @@ export default function RiwayatJawabanPage() {
                   </button>
                 )}
 
-                {kategoriList.indexOf(activeTab) <
-                  kategoriList.length - 1 && (
+                {kategoriList.indexOf(activeTab) < kategoriList.length - 1 && (
                   <button
+                    type="button"
                     onClick={() =>
-                      setActiveTab(
-                        kategoriList[
-                          kategoriList.indexOf(activeTab) + 1
-                        ]
-                      )
+                      setActiveTab(kategoriList[kategoriList.indexOf(activeTab) + 1])
                     }
                     className="bg-[#81B7A9] text-white px-4 py-2 rounded-md"
                   >
