@@ -17,12 +17,16 @@ type AnswerItem = {
   question_text: string;
   answer_value: string | null;
   note: string | null;
-  section_key: string;
   aspect_key: string;
+  section_key: string;
 };
 
-type Aspect = { key: string; label: string; };
+type Aspect = {
+  key: string;
+  label: string;
+};
 
+/* ===================== PAGE ===================== */
 export default function PaedagogFormPageReadOnlyClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -31,11 +35,13 @@ export default function PaedagogFormPageReadOnlyClient() {
   const submitType: ParentSubmitType = "paedagog_parent";
   const questionType: ParentAssessmentType = "parent_paedagog";
 
+  /* ===== STATE ===== */
   const [loading, setLoading] = useState(true);
   const [answers, setAnswers] = useState<AnswerItem[]>([]);
   const [aspects, setAspects] = useState<Aspect[]>([]);
-  const [activeAspectKey, setActiveAspectKey] = useState("");
+  const [activeIdx, setActiveIdx] = useState(0);
 
+  /* ===== STEPPER GLOBAL ===== */
   const steps = [
     "Data Umum",
     "Data Fisioterapi",
@@ -45,33 +51,39 @@ export default function PaedagogFormPageReadOnlyClient() {
   ];
   const activeStep = 4;
 
+  /* ===================== FETCH DATA ===================== */
   useEffect(() => {
     if (!assessmentId) return;
 
     const fetchData = async () => {
       try {
         setLoading(true);
-        const questionRes = await getParentAssessmentQuestions(questionType);
-        const groups = questionRes?.data?.groups || [];
+
+        /* Ambil struktur pertanyaan */
+        const qRes = await getParentAssessmentQuestions(questionType);
+        const groups = qRes?.data?.groups || [];
+
         const aspectList: Aspect[] = groups.map((g: any) => ({
           key: g.group_key,
           label: g.title,
         }));
 
-        const answerRes = await getParentAssessmentAnswers(assessmentId, submitType);
-        const apiAnswers = answerRes?.data || [];
+        /* Ambil jawaban */
+        const aRes = await getParentAssessmentAnswers(assessmentId, submitType);
+        const apiAnswers = aRes?.data || [];
 
-        const mergedAnswers: AnswerItem[] = apiAnswers.map((item: any) => {
+        /* Merge jawaban + aspek */
+        const merged: AnswerItem[] = apiAnswers.map((item: any) => {
           let aspect_key = "default";
           let section_key = "Lainnya";
 
-          for (const group of groups) {
-            const found = group.questions.find(
+          for (const g of groups) {
+            const found = g.questions.find(
               (q: any) => String(q.id) === String(item.question_id)
             );
             if (found) {
-              aspect_key = group.group_key;
-              section_key = group.title;
+              aspect_key = g.group_key;
+              section_key = g.title;
               break;
             }
           }
@@ -87,10 +99,10 @@ export default function PaedagogFormPageReadOnlyClient() {
         });
 
         setAspects(aspectList);
-        setAnswers(mergedAnswers);
-        setActiveAspectKey(aspectList[0]?.key || "default");
-      } catch (error) {
-        console.error("❌ Gagal load riwayat paedagog parent", error);
+        setAnswers(merged);
+        setActiveIdx(0);
+      } catch (err) {
+        console.error("❌ Gagal load riwayat paedagog", err);
       } finally {
         setLoading(false);
       }
@@ -99,88 +111,144 @@ export default function PaedagogFormPageReadOnlyClient() {
     fetchData();
   }, [assessmentId]);
 
-  const activeQuestions = answers.filter((q) => q.aspect_key === activeAspectKey);
+  /* ===================== DATA AKTIF ===================== */
+  const activeAspect = aspects[activeIdx];
+  const activeQuestions = answers.filter(
+    (q) => q.aspect_key === activeAspect?.key
+  );
 
-  const sectionGroups: Record<string, AnswerItem[]> = {};
+  const groupedBySection: Record<string, AnswerItem[]> = {};
   activeQuestions.forEach((q) => {
-    if (!sectionGroups[q.section_key]) sectionGroups[q.section_key] = [];
-    sectionGroups[q.section_key].push(q);
+    if (!groupedBySection[q.section_key]) {
+      groupedBySection[q.section_key] = [];
+    }
+    groupedBySection[q.section_key].push(q);
   });
 
-  const currentIndex = aspects.findIndex((a) => a.key === activeAspectKey);
-  const handlePrevAspect = () => {
-    if (currentIndex > 0) {
-      setActiveAspectKey(aspects[currentIndex - 1].key);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
-  const handleNextAspect = () => {
-    if (currentIndex < aspects.length - 1) {
-      setActiveAspectKey(aspects[currentIndex + 1].key);
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    }
-  };
+  /* ===================== RENDER ===================== */
+  if (loading) {
+    return (
+      <ResponsiveOrangtuaLayout>
+        <div className="p-10 text-center text-lg font-medium text-[#36315B]">
+          Memuat riwayat Paedagog...
+        </div>
+      </ResponsiveOrangtuaLayout>
+    );
+  }
 
-  if (loading) return <div className="p-10 text-center text-lg font-medium text-[#36315B]">Memuat jawaban...</div>;
+  if (!activeAspect) {
+    return (
+      <ResponsiveOrangtuaLayout>
+        <div className="p-10 text-center text-gray-500">
+          Tidak ada data Paedagog.
+        </div>
+      </ResponsiveOrangtuaLayout>
+    );
+  }
 
   return (
     <ResponsiveOrangtuaLayout>
       <div className="p-4 md:p-8 max-w-5xl mx-auto">
+
         {/* CLOSE */}
         <div className="flex justify-end mb-4">
           <button
-  onClick={() =>
-    router.push(
-      `/orangtua/assessment/kategori?assessment_id=${assessmentId}`
-    )
-  }
-  className="font-bold text-2xl hover:text-red-500"
->
-  ✕
-</button>
-
-        </div>
-
-        {/* STEP PROGRESS */}
-        <div className="flex flex-wrap justify-center mb-6 gap-4">
-          {steps.map((step, i) => {
-            const isActive = i === activeStep;
-            return (
-              <div key={i} className="flex items-start flex-wrap gap-2">
-                <div className="flex flex-col items-center min-w-[70px]">
-                  <div className={`w-8 h-8 flex items-center justify-center rounded-full border-2 text-sm font-semibold ${isActive ? "bg-[#6BB1A0] border-[#6BB1A0] text-white" : "bg-white border-gray-300 text-gray-400"}`}>
-                    {i + 1}
-                  </div>
-                  <span className={`mt-2 text-sm text-center ${isActive ? "font-semibold text-[#36315B]" : "text-gray-400"}`}>{step}</span>
-                </div>
-                {i < steps.length - 1 && <div className="w-6 md:w-14 h-px bg-gray-300 mt-4" />}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* ASPEK DROPDOWN */}
-        <div className="mb-6 flex justify-end">
-          <select
-            value={activeAspectKey}
-            onChange={(e) => setActiveAspectKey(e.target.value)}
-            className="border rounded-lg px-3 py-2 w-full md:w-64"
+            onClick={() =>
+              router.push(
+                `/orangtua/assessment/kategori?assessment_id=${assessmentId}`
+              )
+            }
+            className="font-bold text-2xl hover:text-red-500"
           >
-            {aspects.map((asp) => <option key={asp.key} value={asp.key}>{asp.label}</option>)}
-          </select>
+            ✕
+          </button>
         </div>
 
-        {/* CARD */}
+        {/* ===== STEPPER GLOBAL ===== */}
+        <div className="flex flex-wrap justify-center mb-8 gap-4">
+          {steps.map((step, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div
+                className={`w-8 h-8 flex items-center justify-center rounded-full border-2 text-sm font-semibold ${
+                  i === activeStep
+                    ? "bg-[#6BB1A0] border-[#6BB1A0] text-white"
+                    : "bg-gray-100 border-gray-300 text-gray-400"
+                }`}
+              >
+                {i + 1}
+              </div>
+              <span
+                className={`text-sm ${
+                  i === activeStep
+                    ? "font-semibold text-[#36315B]"
+                    : "text-gray-400"
+                }`}
+              >
+                {step}
+              </span>
+              {i < steps.length - 1 && (
+                <div className="w-6 md:w-12 h-px bg-gray-300 hidden md:block translate-y-[-10px]" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* ===== STEPPER ASPEK ===== */}
+        <div className="flex flex-wrap justify-center mb-6 gap-4">
+          {aspects.map((asp, i) => (
+            <div key={asp.key} className="flex items-center gap-2">
+              <div
+                className={`w-9 h-9 flex items-center justify-center rounded-full border-2 text-sm font-semibold ${
+                  i === activeIdx
+                    ? "bg-[#6BB1A0] border-[#6BB1A0] text-white"
+                    : "bg-gray-100 border-gray-300 text-gray-500"
+                }`}
+              >
+                {i + 1}
+              </div>
+              <span
+                className={`text-sm ${
+                  i === activeIdx
+                    ? "font-semibold text-[#36315B]"
+                    : "text-gray-500"
+                }`}
+              >
+                {asp.label}
+              </span>
+              {i < aspects.length - 1 && (
+                <div className="w-6 md:w-12 h-px bg-gray-300 hidden md:block translate-y-[-10px]" />
+              )}
+            </div>
+          ))}
+        </div>
+
+        {/* ===== CARD ===== */}
         <div className="bg-white rounded-xl p-4 md:p-6 shadow space-y-6">
-          {Object.keys(sectionGroups).map((section) => (
+          {Object.keys(groupedBySection).map((section) => (
             <div key={section}>
               <h3 className="font-semibold mb-3">{section}</h3>
+
               <div className="space-y-3">
-                {sectionGroups[section].map((q, i) => (
-                  <div key={q.question_id} className="bg-gray-50 p-3 rounded-lg">
-                    <p className="font-medium mb-1">{i + 1}. {q.question_text}</p>
-                    <input type="text" value={q.answer_value ?? "-"} readOnly disabled className="w-full border rounded px-3 py-2 bg-white" />
-                    {q.note && <p className="mt-1 text-sm text-gray-500">Catatan: {q.note}</p>}
+                {groupedBySection[section].map((q, i) => (
+                  <div
+                    key={q.question_id}
+                    className="bg-gray-50 p-3 rounded-lg"
+                  >
+                    <p className="font-medium mb-1">
+                      {i + 1}. {q.question_text}
+                    </p>
+                    <input
+                      type="text"
+                      readOnly
+                      disabled
+                      value={q.answer_value ?? "-"}
+                      className="w-full border rounded px-3 py-2 bg-white"
+                    />
+                    {q.note && (
+                      <p className="mt-1 text-sm text-gray-500">
+                        Catatan: {q.note}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -188,10 +256,33 @@ export default function PaedagogFormPageReadOnlyClient() {
           ))}
         </div>
 
-        {/* NAVIGASI ASPEK */}
+        {/* ===== NAVIGASI ASPEK ===== */}
         <div className="mt-8 flex flex-col md:flex-row justify-between gap-3">
-          <button onClick={handlePrevAspect} disabled={currentIndex === 0} className={`px-5 py-2 rounded-lg font-medium border w-full md:w-auto ${currentIndex === 0 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white text-[#36315B] hover:bg-gray-100"}`}>← Sebelumnya</button>
-          <button onClick={handleNextAspect} disabled={currentIndex === aspects.length - 1} className={`px-5 py-2 rounded-lg font-medium w-full md:w-auto ${currentIndex === aspects.length - 1 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-[#6BB1A0] text-white hover:opacity-90"}`}>Selanjutnya →</button>
+          <button
+            onClick={() => setActiveIdx((i) => Math.max(i - 1, 0))}
+            disabled={activeIdx === 0}
+            className={`px-5 py-2 rounded-lg font-medium border ${
+              activeIdx === 0
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-white text-[#36315B] hover:bg-gray-100"
+            }`}
+          >
+            ← Sebelumnya
+          </button>
+
+          <button
+            onClick={() =>
+              setActiveIdx((i) => Math.min(i + 1, aspects.length - 1))
+            }
+            disabled={activeIdx === aspects.length - 1}
+            className={`px-5 py-2 rounded-lg font-medium ${
+              activeIdx === aspects.length - 1
+                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                : "bg-[#6BB1A0] text-white hover:opacity-90"
+            }`}
+          >
+            Selanjutnya →
+          </button>
         </div>
       </div>
     </ResponsiveOrangtuaLayout>
