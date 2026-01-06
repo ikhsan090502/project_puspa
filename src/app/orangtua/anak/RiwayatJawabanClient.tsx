@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import Sidebar from "@/components/layout/sidebar";
+import Sidebar from "@/components/layout/sidebar-orangtua";
 import Header from "@/components/layout/header-orangtua";
 import {
   getObservationDetail,
