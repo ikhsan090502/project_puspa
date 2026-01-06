@@ -1,63 +1,53 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@400;600;800&display=swap');
 
-
-
+/* Kalau sudah pakai next/font di layout.tsx, ini sebenarnya tidak wajib.
+   Tapi tidak masalah kalau dibiarkan. */
+@import url("https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@400;600;800&display=swap");
 
 :root {
-  --foreground-rgb: 0, 0, 0;
-  --background-start-rgb: 214, 219, 220;
-  --background-end-rgb: 255, 255, 255;
+  /* Kunci warna teks agar tidak berubah jadi putih saat dark mode */
+  --foreground-rgb: 54, 49, 91; /* #36315B */
+  --background-start-rgb: 184, 232, 219; /* #B8E8DB */
+  --background-end-rgb: 184, 232, 219;   /* #B8E8DB */
 }
 
+/* OPTIONAL:
+   Kalau Anda mau tetap dukung dark mode, jangan ubah foreground jadi putih
+   karena banyak card background putih.
+   Kalau butuh dark mode beneran, nanti kita styling khusus. */
 @media (prefers-color-scheme: dark) {
   :root {
-    --foreground-rgb: 255, 255, 255;
-    --background-start-rgb: 0, 0, 0;
-    --background-end-rgb: 0, 0, 0;
+    --foreground-rgb: 54, 49, 91;
+    --background-start-rgb: 184, 232, 219;
+    --background-end-rgb: 184, 232, 219;
   }
 }
 
+html,
 body {
-  color: rgb(var(--foreground-rgb));
-  background: linear-gradient(
-      to bottom,
-      transparent,
-      rgb(var(--background-end-rgb))
-    )
-    rgb(var(--background-start-rgb));
-  font-family: 'Playpen Sans', cursive; 
-}
-
-
-.rounded-lg {
-  border-radius: 0.5rem; 
-}
-
-.shadow-xl {
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.focus\:border-\[\#26a69a\]:focus {
-  border-color: #26a69a;
-}
-
-.focus\:ring-\[\#26a69a\]:focus {
-  --tw-ring-color: #26a69a;
-}
-
-html, body {
   margin: 0;
   padding: 0;
   height: 100%;
   width: 100%;
 }
 
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-start-rgb));
+  font-family: "Playpen Sans", cursive;
+}
+
+/* Jangan override class tailwind umum seperti .rounded-lg / .shadow-xl
+   karena itu bisa bikin efek aneh di tempat lain.
+   Jadi saya hapus override ini. */
+
+/* ====== Layout custom yang Anda pakai di halaman auth/timer dll ====== */
 .layout-main {
   min-height: 100vh;
   width: 100%;
-  background-color: #B8E8DB;
+  background-color: #b8e8db;
   position: relative;
+  color: #36315b;
 }
 
 .header {
@@ -69,39 +59,41 @@ html, body {
 }
 
 .form-wrapper {
-  min-height: 100vh;       
+  min-height: 100vh;
   display: flex;
-  align-items: center;     
-  justify-content: center; 
+  align-items: center;
+  justify-content: center;
 }
 
 .layout-form {
-  background-color: #FFFFFF;
+  background-color: #ffffff;
   border-radius: 16px;
   padding: 2rem;
   width: 500px;
   height: 550px;
-  box-shadow: 0px 4px 15px #ADADAD;
+  box-shadow: 0px 4px 15px #adadad;
   display: flex;
   flex-direction: column;
   justify-content: center;
+  color: #36315b; /* penting: teks di card putih tetap terlihat */
 }
 
+/* ====== React Calendar styling ====== */
 .react-calendar {
   border: none !important;
   background: white;
   border-radius: 12px;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  font-family: 'Poppins', sans-serif;
+  font-family: "Poppins", sans-serif;
 }
 
 .react-calendar__tile--active {
-  background: #81B7A9 !important;
+  background: #81b7a9 !important;
   color: white !important;
 }
 
 .react-calendar__tile--now {
-  background: #E7F3F0 !important;
+  background: #e7f3f0 !important;
 }
 
 /* MATIKAN ICON PASSWORD BAWAAN BROWSER */

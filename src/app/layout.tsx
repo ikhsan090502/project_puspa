@@ -5,6 +5,7 @@ import Providers from "./providers";
 const playpen = Playpen_Sans({
   subsets: ["latin"],
   weight: ["400", "700", "800"],
+  display: "swap",
 });
 
 export const metadata = {
