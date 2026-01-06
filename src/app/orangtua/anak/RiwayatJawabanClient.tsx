@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+import Header from "@/components/layout/header-orangtua";
 import {
   getObservationDetail,
   getObservationQuestions,
