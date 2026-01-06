@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
-import { submitObservation, getObservationQuestions } from "@/lib/api/observasiSubmit";
+import {
+  submitObservation,
+  getObservationQuestions,
+} from "@/lib/api/observasiSubmit";
 
 type Question = {
   question_id: number;
-  observation_id: number;
+  observation_id?: number; // ✅ optional (API sering tidak kirim)
   question_text: string;
   score: number;
   question_code: string;
@@ -62,18 +65,18 @@ function toQuestionArray(input: unknown): Question[] {
   return input
     .map((row: any) => {
       const question_id = asNumber(row?.question_id, 0);
-      const observation_id = asNumber(row?.observation_id, 0);
       const question_text = asString(row?.question_text, "").trim();
       const score = asNumber(row?.score, 0);
       const question_code = asString(row?.question_code, "").trim();
       const age_category = asString(row?.age_category, "").trim();
-      const question_number_raw = row?.question_number;
+      const observation_id = row?.observation_id ? asNumber(row?.observation_id, 0) : undefined;
 
-      // minimal field wajib ada
-      if (!question_id || !observation_id || !question_text || !question_code || !age_category) {
+      // ✅ minimal field wajib ada (tanpa observation_id)
+      if (!question_id || !question_text || !question_code || !age_category) {
         return null;
       }
 
+      const question_number_raw = row?.question_number;
       const question_number =
         question_number_raw === undefined || question_number_raw === null
           ? undefined
@@ -81,11 +84,11 @@ function toQuestionArray(input: unknown): Question[] {
 
       const q: Question = {
         question_id,
-        observation_id,
         question_text,
         score,
         question_code,
         age_category,
+        ...(observation_id ? { observation_id } : {}),
         ...(Number.isFinite(question_number as any) ? { question_number } : {}),
       };
 
@@ -104,7 +107,10 @@ export default function FormObservasiPageClient() {
       usia: searchParams.get("usia") || "",
       kategori: searchParams.get("kategori") || "",
       tglObservasi: searchParams.get("tglObservasi") || "",
-      observation_id: searchParams.get("observation_id") || searchParams.get("id") || "",
+      observation_id:
+        searchParams.get("observation_id") ||
+        searchParams.get("id") ||
+        "",
     }),
     [searchParams]
   );
@@ -125,32 +131,35 @@ export default function FormObservasiPageClient() {
 
     const fetchData = async () => {
       if (!pasien.observation_id) {
-        alert("Observation ID tidak ditemukan di URL.");
         setLoading(false);
+        alert("Observation ID tidak ditemukan di URL.");
         return;
       }
 
       try {
         setLoading(true);
 
+        // ✅ karena getObservationQuestions sudah return array
         const raw = await getObservationQuestions(pasien.observation_id);
         const data = toQuestionArray(raw);
 
         if (cancelled) return;
 
-        if (data.length > 0) {
-          setQuestionsData(data);
+        setQuestionsData(data);
 
+        if (data.length > 0) {
+          // set tab pertama yang valid
           const firstCode = data[0]?.question_code || "UNK-0";
           const firstPrefix = firstCode.split("-")[0];
-          setActiveTab(kategoriMap[firstPrefix] || firstPrefix);
+          const firstTab = kategoriMap[firstPrefix] || firstPrefix;
+          setActiveTab(firstTab);
         } else {
-          setQuestionsData([]);
           setActiveTab("");
-          alert("Tidak ada pertanyaan untuk observasi ini.");
         }
       } catch (err) {
-        console.error("Gagal mengambil data observasi:", err);
+        console.error("❌ Gagal mengambil data observasi:", err);
+        setQuestionsData([]);
+        setActiveTab("");
         alert("Terjadi kesalahan saat memuat data observasi.");
       } finally {
         if (!cancelled) setLoading(false);
@@ -158,7 +167,6 @@ export default function FormObservasiPageClient() {
     };
 
     fetchData();
-
     return () => {
       cancelled = true;
     };
@@ -175,7 +183,16 @@ export default function FormObservasiPageClient() {
     }, {});
   }, [questionsData]);
 
-  const kategoriList = Object.keys(groupedQuestions);
+  // ✅ kategoriList stabil mengikuti urutan kemunculan
+  const kategoriList = useMemo(() => Object.keys(groupedQuestions), [groupedQuestions]);
+
+  // ✅ jika activeTab kosong / tidak ada di list, set ke kategori pertama
+  useEffect(() => {
+    if (!kategoriList.length) return;
+    if (!activeTab || !kategoriList.includes(activeTab)) {
+      setActiveTab(kategoriList[0]);
+    }
+  }, [kategoriList, activeTab]);
 
   const totalScore = useMemo(() => {
     return questionsData.reduce((acc, q) => {
@@ -193,6 +210,8 @@ export default function FormObservasiPageClient() {
   };
 
   const handleNext = () => {
+    if (!kategoriList.length) return;
+
     const pertanyaanKategori = groupedQuestions[activeTab] || [];
     const belumDiisi = pertanyaanKategori.some(
       (q) => answers[q.question_id]?.jawaban === undefined
@@ -200,12 +219,20 @@ export default function FormObservasiPageClient() {
     if (belumDiisi) return alert("Harap isi semua jawaban sebelum lanjut.");
 
     const idx = kategoriList.indexOf(activeTab);
-    if (idx < kategoriList.length - 1) setActiveTab(kategoriList[idx + 1]);
+    if (idx < kategoriList.length - 1) {
+      setActiveTab(kategoriList[idx + 1]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handlePrev = () => {
+    if (!kategoriList.length) return;
+
     const idx = kategoriList.indexOf(activeTab);
-    if (idx > 0) setActiveTab(kategoriList[idx - 1]);
+    if (idx > 0) {
+      setActiveTab(kategoriList[idx - 1]);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
   };
 
   const handleAssessmentChange = (value: string, checked: boolean) => {
@@ -216,12 +243,17 @@ export default function FormObservasiPageClient() {
   };
 
   const handleSimpan = async () => {
+    if (!pasien.observation_id) {
+      alert("Observation ID tidak valid.");
+      return;
+    }
+
     setSubmitting(true);
 
     const payload = {
       answers: Object.entries(answers).map(([id, ans]) => ({
         question_id: parseInt(id, 10),
-        answer: ans.jawaban || false,
+        answer: ans.jawaban === true, // ✅ lebih tegas
         note: ans.keterangan || "",
       })),
       conclusion: kesimpulan,
@@ -235,6 +267,7 @@ export default function FormObservasiPageClient() {
 
     try {
       const res = await submitObservation(pasien.observation_id, payload);
+
       if ((res as any)?.success) {
         alert("✅ Observasi berhasil disimpan!");
         router.replace("/terapis/observasi/riwayat");
@@ -242,7 +275,7 @@ export default function FormObservasiPageClient() {
         alert(`❌ Gagal menyimpan: ${(res as any)?.message || "Unknown error"}`);
       }
     } catch (err) {
-      console.error("Error saat menyimpan:", err);
+      console.error("❌ Error saat menyimpan:", err);
       alert("Terjadi kesalahan saat menyimpan data.");
     } finally {
       setSubmitting(false);
@@ -250,10 +283,11 @@ export default function FormObservasiPageClient() {
   };
 
   return (
-    <div className="flex h-screen text-[#36315B] font-playpen">
+    <div className="flex h-screen text-[#36315B]">
       <SidebarTerapis />
       <div className="flex flex-col flex-1 bg-gray-50">
         <HeaderTerapis />
+
         <main className="p-6 overflow-y-auto">
           <div className="flex justify-end mb-4">
             <button
@@ -265,6 +299,7 @@ export default function FormObservasiPageClient() {
             </button>
           </div>
 
+          {/* LOADING */}
           {loading ? (
             <div className="flex flex-col items-center justify-center mt-20 text-gray-500">
               <div className="w-10 h-10 border-4 border-[#81B7A9] border-t-transparent rounded-full animate-spin mb-3"></div>
@@ -272,6 +307,19 @@ export default function FormObservasiPageClient() {
             </div>
           ) : (
             <>
+              {/* ✅ EMPTY STATE (biar tidak blank) */}
+              {!kategoriList.length && (
+                <div className="bg-white rounded-lg p-6 shadow-sm text-sm text-gray-600">
+                  <div className="font-semibold text-[#36315B] mb-2">
+                    Tidak ada pertanyaan observasi untuk ditampilkan.
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Observation ID: <span className="font-mono">{pasien.observation_id}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* STEP OBSERVASI HEADER */}
               {step === "observasi" && kategoriList.length > 0 && (
                 <div className="flex justify-between items-center mb-8">
                   <div className="flex justify-start items-center gap-8 overflow-x-auto relative">
@@ -283,10 +331,7 @@ export default function FormObservasiPageClient() {
                       const isActive = activeTab === k;
 
                       return (
-                        <div
-                          key={k}
-                          className="relative flex flex-col items-center flex-shrink-0"
-                        >
+                        <div key={k} className="relative flex flex-col items-center flex-shrink-0">
                           <button
                             type="button"
                             onClick={() => setActiveTab(k)}
@@ -320,19 +365,19 @@ export default function FormObservasiPageClient() {
                     })}
                   </div>
 
-                  <div className="text-sl font-bold text-[#36315B] bg-[#E7E4FF] px-3 py-1 rounded-full shadow-sm">
+                  <div className="text-sm font-bold text-[#36315B] bg-[#E7E4FF] px-3 py-1 rounded-full shadow-sm">
                     Total Skor : {totalScore}
                   </div>
                 </div>
               )}
 
-              {/* Step Observasi */}
+              {/* STEP OBSERVASI */}
               {step === "observasi" && kategoriList.length > 0 && (
                 <div className="space-y-6">
-                  {(groupedQuestions[activeTab] || []).map((q) => (
+                  {(groupedQuestions[activeTab] || []).map((q, idx) => (
                     <div key={q.question_id} className="p-4 bg-white rounded-lg shadow-sm">
                       <p className="font-medium">
-                        {q.question_number ?? ""}. {q.question_text}{" "}
+                        {(q.question_number ?? idx + 1) + ". "} {q.question_text}{" "}
                         <span className="text-sm text-[#36315B]">(Score {q.score})</span>
                       </p>
 
@@ -342,9 +387,7 @@ export default function FormObservasiPageClient() {
                           placeholder="Keterangan"
                           className="border rounded-md p-2 flex-1"
                           value={answers[q.question_id]?.keterangan || ""}
-                          onChange={(e) =>
-                            handleChange(q.question_id, "keterangan", e.target.value)
-                          }
+                          onChange={(e) => handleChange(q.question_id, "keterangan", e.target.value)}
                         />
 
                         <div className="flex items-center gap-4">
@@ -406,14 +449,14 @@ export default function FormObservasiPageClient() {
                 </div>
               )}
 
-              {/* Step Kesimpulan */}
+              {/* STEP KESIMPULAN */}
               {step === "kesimpulan" && (
                 <div className="bg-white shadow-lg rounded-lg p-8 space-y-6">
                   <h2 className="text-xl font-semibold">Isi Kesimpulan & Rekomendasi</h2>
 
                   <div className="flex justify-between text-sm">
                     <p>
-                      <b>Pasien:</b> {pasien.nama} | {pasien.tglObservasi}
+                      <b>Pasien:</b> {pasien.nama || "-"} | {pasien.tglObservasi || "-"}
                     </p>
                     <p className="font-bold">Total Skor: {totalScore}</p>
                   </div>
@@ -466,6 +509,7 @@ export default function FormObservasiPageClient() {
                     >
                       Kembali
                     </button>
+
                     <button
                       type="button"
                       onClick={() => setStep("review")}
@@ -477,14 +521,14 @@ export default function FormObservasiPageClient() {
                 </div>
               )}
 
-              {/* Step Review */}
+              {/* STEP REVIEW */}
               {step === "review" && (
                 <div className="bg-white shadow-lg rounded-lg p-8 space-y-4">
                   <h2 className="text-xl font-semibold">Review Data</h2>
 
                   <div className="flex justify-between text-sm">
                     <p>
-                      <b>Peserta:</b> {pasien.nama} | {pasien.tglObservasi}
+                      <b>Peserta:</b> {pasien.nama || "-"} | {pasien.tglObservasi || "-"}
                     </p>
                     <p className="font-bold">Total Skor: {totalScore}</p>
                   </div>
@@ -497,9 +541,7 @@ export default function FormObservasiPageClient() {
                   </p>
                   <p>
                     <b>Rekomendasi Assessment:</b>{" "}
-                    {rekomendasiAssessment.length > 0
-                      ? rekomendasiAssessment.join(", ")
-                      : "-"}
+                    {rekomendasiAssessment.length > 0 ? rekomendasiAssessment.join(", ") : "-"}
                   </p>
 
                   <div className="flex justify-end gap-4">
@@ -510,6 +552,7 @@ export default function FormObservasiPageClient() {
                     >
                       Kembali
                     </button>
+
                     <button
                       type="button"
                       onClick={handleSimpan}

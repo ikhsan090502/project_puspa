@@ -1,3 +1,4 @@
+// src/lib/api/observasiSubmit.ts
 import axiosInstance from "@/lib/axios";
 
 /* ==================== Interface ==================== */
@@ -20,11 +21,7 @@ export interface CompletedObservationDetail {
 
 export type ObservationStatus = "scheduled" | "completed";
 
-export type ObservationDetailType =
-  | "scheduled"
-  | "completed"
-  | "question"
-  | "answer";
+export type ObservationDetailType = "scheduled" | "completed" | "question" | "answer";
 
 /* ==================== Header Token (SAFE) ==================== */
 
@@ -33,6 +30,8 @@ const getAuthHeaders = (): Record<string, string> => {
 
   const token = localStorage.getItem("token");
   const tokenType = localStorage.getItem("tokenType") || "Bearer";
+
+  if (!token) return {};
 
   return {
     Authorization: `${tokenType} ${token}`,
@@ -60,38 +59,33 @@ export const getObservations = async (
   return res.data?.data ?? [];
 };
 
-// 🟢 Ambil detail observasi
+// 🟢 Ambil detail observasi (umum)
 export const getObservationDetail = async (
   observation_id: string,
   type: ObservationDetailType
 ): Promise<Record<string, unknown> | null> => {
   if (!observation_id) return null;
 
-  const res = await axiosInstance.get(
-    `/observations/${observation_id}/detail`,
-    {
-      headers: getAuthHeaders(),
-      params: { type },
-    }
-  );
+  const res = await axiosInstance.get(`/observations/${observation_id}/detail`, {
+    headers: getAuthHeaders(),
+    params: { type },
+  });
 
   return res.data?.data ?? null;
 };
 
-// 🟢 Ambil pertanyaan observasi
+// 🟢 Ambil pertanyaan observasi (INI YANG DIPAKAI FORM)
 export const getObservationQuestions = async (
   observation_id: string
 ): Promise<Record<string, unknown>[]> => {
   if (!observation_id) return [];
 
-  const res = await axiosInstance.get(
-    `/observations/${observation_id}/detail`,
-    {
-      headers: getAuthHeaders(),
-      params: { type: "question" },
-    }
-  );
+  const res = await axiosInstance.get(`/observations/${observation_id}/detail`, {
+    headers: getAuthHeaders(),
+    params: { type: "question" },
+  });
 
+  // NOTE: endpoint Anda sudah mengembalikan array di res.data.data
   return res.data?.data ?? [];
 };
 
@@ -109,26 +103,21 @@ export const submitObservation = async (
   return res.data;
 };
 
-// 🟢 Ambil jawaban observasi
+// 🟢 Ambil jawaban observasi (riwayat)
 export const getObservationAnswers = async (
   observation_id: string
 ): Promise<Record<string, unknown>[]> => {
   if (!observation_id) return [];
 
-  const res = await axiosInstance.get(
-    `/observations/${observation_id}/detail`,
-    {
-      headers: getAuthHeaders(),
-      params: { type: "completed" },
-    }
-  );
+  const res = await axiosInstance.get(`/observations/${observation_id}/detail`, {
+    headers: getAuthHeaders(),
+    params: { type: "completed" },
+  });
 
   return res.data?.data?.answer_details ?? [];
 };
 
-/* ==================== ✅ FIX ERROR IMPORT ==================== */
-
-// 🟢 UPDATE tanggal assessment (INI YANG TADI ERROR)
+// 🟢 UPDATE tanggal observasi
 export const updateAssessmentDate = async (
   observation_id: string,
   scheduled_date: string
