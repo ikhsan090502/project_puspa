@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
+import HeaderOrangtua from "@/components/layout/header-orangtua";
 import { getOkupasiParentAnswer } from "@/lib/api/riwayatAsesmentOrtu";
 
 /* ===================== TYPE ===================== */
@@ -120,9 +120,9 @@ export default function RiwayatOkupasiParentPage() {
   if (loading) {
     return (
       <div className="flex min-h-screen bg-gray-50">
-        <Sidebar />
+        <SidebarOrangtua />
         <div className="flex-1 ml-2">
-          <Header pageTitle="Assessment" />
+          <HeaderOrangtua/>
           <p className="p-8">Memuat data...</p>
         </div>
       </div>
@@ -131,10 +131,10 @@ export default function RiwayatOkupasiParentPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50 text-[#36315B]">
-      <Sidebar />
+      <SidebarOrangtua />
 
       <div className="flex-1 flex flex-col ml-2">
-        <Header pageTitle="Assessment" />
+        <HeaderOrangtua />
 
         <main className="p-8">
           {/* CLOSE */}

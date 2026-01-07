@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
-
+import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
+import HeaderOrangtua from "@/components/layout/header-orangtua";
 // 🔹 API
 import { getFisioParentAnswer } from "@/lib/api/riwayatAsesmentOrtu";
 
@@ -115,10 +114,10 @@ export default function DataFisioterapiPage() {
   /* ======================= UI ======================= */
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <SidebarOrangtua />
 
       <div className="flex-1 flex flex-col ml-1">
-        <Header pageTitle="Assessment" />
+        <HeaderOrangtua />
 
         <main className="flex-1 overflow-y-auto p-6">
           {/* Close */}
