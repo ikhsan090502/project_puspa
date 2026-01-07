@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import FormUbahPatient from "@/components/form/FormUbahPatient";
@@ -42,25 +42,111 @@ type PatientItem = {
 
 type ApiListResponse<T> =
   | T[]
-  | { success?: boolean; data?: T[]; message?: string };
+  | { success?: boolean; data?: T[]; message?: string; result?: T[] }
+  | { data?: T[] }
+  | { patients?: T[] }
+  | { items?: T[] };
 
-async function fetchPatients(): Promise<PatientItem[]> {
-  // ✅ ganti endpoint sesuai backend Anda
-  const res = await api.get<ApiListResponse<PatientItem>>("/admin/patients");
-
-  const body = res.data;
-
-  // handle beberapa kemungkinan bentuk response
+function normalizeList<T>(body: any): T[] {
+  if (!body) return [];
   if (Array.isArray(body)) return body;
-  if (body && Array.isArray(body.data)) return body.data;
-
+  if (Array.isArray(body.data)) return body.data;
+  if (Array.isArray(body.result)) return body.result;
+  if (Array.isArray(body.patients)) return body.patients;
+  if (Array.isArray(body.items)) return body.items;
+  if (body.success && Array.isArray(body.data)) return body.data;
   return [];
 }
 
-async function updatePatient(child_id: string, payload: any) {
-  // ✅ ganti endpoint sesuai backend Anda
-  const res = await api.put(`/admin/patients/${child_id}`, payload);
-  return res.data;
+/**
+ * ✅ Kandidat endpoint (silakan tambahkan kalau Anda punya pola lain)
+ * Karena Anda pakai baseURL: https://puspa.sinus.ac.id/api/v1
+ * maka di sini cukup path setelah /api/v1
+ */
+const PATIENT_LIST_ENDPOINTS = [
+  "/admin/patients",
+  "/admin/patient",
+  "/admin/data-pasien",
+  "/admin/pasien",
+  "/admin/children",
+  "/patients",
+  "/patient",
+  "/data-pasien",
+  "/pasien",
+  "/children",
+];
+
+const PATIENT_UPDATE_ENDPOINTS = [
+  (id: string) => `/admin/patients/${id}`,
+  (id: string) => `/admin/patient/${id}`,
+  (id: string) => `/admin/data-pasien/${id}`,
+  (id: string) => `/admin/pasien/${id}`,
+  (id: string) => `/admin/children/${id}`,
+  (id: string) => `/patients/${id}`,
+  (id: string) => `/patient/${id}`,
+  (id: string) => `/data-pasien/${id}`,
+  (id: string) => `/pasien/${id}`,
+  (id: string) => `/children/${id}`,
+];
+
+async function fetchPatientsAuto(): Promise<{
+  data: PatientItem[];
+  usedEndpoint: string | null;
+}> {
+  let lastErr: any = null;
+
+  for (const ep of PATIENT_LIST_ENDPOINTS) {
+    try {
+      const res = await api.get<ApiListResponse<PatientItem>>(ep);
+      const list = normalizeList<PatientItem>(res.data);
+
+      // kalau endpoint ketemu tapi list kosong, tetap dianggap valid
+      return { data: list, usedEndpoint: ep };
+    } catch (e: any) {
+      lastErr = e;
+      // kalau 404, lanjut coba endpoint lain
+      const status = e?.response?.status;
+      if (status === 404) continue;
+
+      // selain 404 (401/500/dll) -> stop, karena endpoint mungkin benar tapi error auth/server
+      throw e;
+    }
+  }
+
+  // semua 404
+  const err = lastErr || new Error("Semua endpoint 404");
+  (err as any).__all404 = true;
+  throw err;
+}
+
+async function updatePatientAuto(usedListEndpoint: string | null, child_id: string, payload: any) {
+  // kalau kita sudah tau endpoint list yang valid, coba turunkan pola update yang mirip dulu
+  const prioritized = (() => {
+    if (!usedListEndpoint) return PATIENT_UPDATE_ENDPOINTS;
+
+    // contoh: list = /admin/children -> update = /admin/children/:id
+    const guess = (id: string) => `${usedListEndpoint.replace(/\/$/, "")}/${id}`;
+    return [guess, ...PATIENT_UPDATE_ENDPOINTS];
+  })();
+
+  let lastErr: any = null;
+
+  for (const build of prioritized) {
+    const ep = typeof build === "function" ? build(child_id) : build;
+    try {
+      const res = await api.put(ep, payload);
+      return { ok: true, usedEndpoint: ep, res: res.data };
+    } catch (e: any) {
+      lastErr = e;
+      const status = e?.response?.status;
+      if (status === 404) continue;
+      throw e;
+    }
+  }
+
+  const err = lastErr || new Error("Update endpoint tidak ditemukan");
+  (err as any).__all404 = true;
+  throw err;
 }
 
 export default function DataPasienPage() {
@@ -71,15 +157,29 @@ export default function DataPasienPage() {
   const [openEdit, setOpenEdit] = useState(false);
   const [selected, setSelected] = useState<PatientItem | null>(null);
 
+  const [usedEndpoint, setUsedEndpoint] = useState<string | null>(null);
+
+  const endpointTriedText = useMemo(() => PATIENT_LIST_ENDPOINTS.join(", "), []);
+
   const load = async () => {
     try {
       setLoading(true);
       setErrorMsg(null);
-      const data = await fetchPatients();
+
+      const { data, usedEndpoint } = await fetchPatientsAuto();
+      setUsedEndpoint(usedEndpoint);
       setPatients(data || []);
     } catch (e: any) {
       console.error("❌ fetchPatients error:", e);
-      setErrorMsg(e?.response?.data?.message || e?.message || "Gagal memuat data pasien");
+
+      if (e?.__all404) {
+        setErrorMsg(
+          `Semua endpoint pasien tidak ditemukan (404). Endpoint yang dicoba: ${endpointTriedText}`
+        );
+      } else {
+        setErrorMsg(e?.response?.data?.message || e?.message || "Gagal memuat data pasien");
+      }
+
       setPatients([]);
     } finally {
       setLoading(false);
@@ -88,6 +188,7 @@ export default function DataPasienPage() {
 
   useEffect(() => {
     load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -98,19 +199,28 @@ export default function DataPasienPage() {
         <Header />
 
         <main className="p-6 text-[#36315B]">
-          <h1 className="text-2xl font-semibold mb-4">Data Pasien</h1>
+          <div className="flex items-center justify-between gap-3 mb-4">
+            <h1 className="text-2xl font-semibold">Data Pasien</h1>
+
+            <button
+              onClick={load}
+              className="px-4 py-2 rounded-lg border border-[#81B7A9] hover:bg-[#E9F4F1]"
+            >
+              Refresh
+            </button>
+          </div>
+
+          {usedEndpoint && (
+            <p className="text-xs text-gray-500 mb-3">
+              Endpoint aktif: <span className="font-medium">{usedEndpoint}</span>
+            </p>
+          )}
 
           {loading ? (
             <p className="text-gray-500">Memuat data...</p>
           ) : errorMsg ? (
             <div className="bg-white border rounded-lg p-4">
               <p className="text-red-600 font-medium">{errorMsg}</p>
-              <button
-                onClick={load}
-                className="mt-3 px-4 py-2 rounded-lg border border-[#81B7A9] hover:bg-[#E9F4F1]"
-              >
-                Coba lagi
-              </button>
             </div>
           ) : patients.length === 0 ? (
             <div className="bg-white border rounded-lg p-4">
@@ -200,11 +310,15 @@ export default function DataPasienPage() {
         onUpdate={async (payload) => {
           if (!selected?.child_id) return;
 
-          await updatePatient(selected.child_id, payload);
-
-          setOpenEdit(false);
-          setSelected(null);
-          await load();
+          try {
+            await updatePatientAuto(usedEndpoint, selected.child_id, payload);
+            setOpenEdit(false);
+            setSelected(null);
+            await load();
+          } catch (e: any) {
+            console.error("❌ updatePatient error:", e);
+            alert(e?.response?.data?.message || e?.message || "Gagal update data pasien");
+          }
         }}
       />
     </div>
