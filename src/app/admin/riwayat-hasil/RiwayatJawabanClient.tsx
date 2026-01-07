@@ -76,16 +76,34 @@ function asString(v: unknown, fallback = ""): string {
   if (typeof v === "number" || typeof v === "boolean") return String(v);
   return fallback;
 }
+function extractQuestionArray(input: unknown): any[] {
+  if (!input) return [];
+  if (Array.isArray(input)) return input;
+
+  const obj: any = input;
+
+  // ✅ sesuai response Anda: { success, message, data: [...] }
+  if (Array.isArray(obj?.data)) return obj.data;
+
+  // fallback lain kalau suatu saat berubah
+  if (Array.isArray(obj?.questions)) return obj.questions;
+  if (Array.isArray(obj?.data?.questions)) return obj.data.questions;
+
+  return [];
+}
 
 function toQuestionArray(input: unknown): Question[] {
-  if (!Array.isArray(input)) return [];
+  const arr = extractQuestionArray(input);
 
-  return input
+  return arr
     .map((row: any) => {
-      const id = asNumber(row?.id, 0);
-      const question_number = asNumber(row?.question_number, NaN);
-      const question_text = asString(row?.question_text, "").trim();
+      // ✅ backend pakai question_id
+      const id = asNumber(row?.id ?? row?.question_id, 0);
 
+      // ✅ backend kirim "1" string
+      const question_number = asNumber(row?.question_number, NaN);
+
+      const question_text = asString(row?.question_text, "").trim();
       if (!id || !Number.isFinite(question_number) || !question_text) return null;
 
       const q: Question = {
@@ -96,7 +114,6 @@ function toQuestionArray(input: unknown): Question[] {
         age_category: asString(row?.age_category, undefined as any),
       };
 
-      // rapikan undefined supaya tidak jadi "" kalau tidak ada
       if (!q.question_code) delete (q as any).question_code;
       if (!q.age_category) delete (q as any).age_category;
 
@@ -161,7 +178,7 @@ export default function RiwayatJawabanClient() {
           "answer"
         )) as AnswerApiResponse | null;
 
-        const answerDetails = toAnswerDetailsArray(answerRes?.answer_details);
+        const answerDetails = toAnswerDetailsArray(answerRes);
 
         // 4) merge: pertanyaan + jawaban
         const merged: AnswerDetail[] = questionData.map((q) => {

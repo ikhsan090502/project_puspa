@@ -293,7 +293,8 @@ export default function RiwayatJawabanClient() {
     <div className="flex h-screen text-[#36315B] font-playpen">
       <SidebarTerapis />
       <div className="flex flex-col flex-1 bg-gray-50">
-        <HeaderTerapis />
+        <HeaderTerapis pageTitle="Riwayat Jawaban Observasi" />
+
 
         <main className="p-6 overflow-y-auto">
           <div className="flex justify-end mb-4">
