@@ -2,250 +2,195 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Eye, Menu } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
-import {
-  getScheduledObservations,
-  getScheduledObservationDetail,
-} from "@/lib/api/observasiTerapis";
+import { ChevronDown, Settings, Clock3, Eye } from "lucide-react";
+import { getObservations } from "@/lib/api/observasiSubmit";
 
+// ==================== Interface ====================
 interface Anak {
-  observation_id: string | number;
-  age_category?: string;
-  child_name?: string;
-  guardian_name?: string;
-  guardian_phone?: string;
-  admin_name?: string;
-  scheduled_date?: string;
-  scheduled_time?: string;
-  child_birth_date?: string;
-  child_age?: string;
-  child_gender?: string;
-  child_school?: string;
-  child_address?: string;
-  child_complaint?: string;
-  child_service_choice?: string;
-  parent_type?: string;
-  parent_name?: string;
-  parent_phone?: string;
+  observation_id: string;
+  nama: string;
+  orangTua: string;
+  telepon: string;
+  observer: string;
+  kategoriUsia: string;
+  tglObservasi: string; // yyyy-mm-dd
+  waktu: string;
+  child_age: string;
 }
 
 interface Kategori {
   title: string;
-  filter: (data: Anak) => boolean;
+  filter: (d: Anak) => boolean;
 }
 
-function getTahun(usiaStr?: string): number {
-  if (!usiaStr) return 0;
-  const match = usiaStr.match(/(\d+)\s*Tahun/i);
-  if (match) {
-    return parseInt(match[1], 10);
+// ==================== Parsing usia ====================
+const parseChildAgeYear = (ageText: string): number => {
+  if (!ageText) return 0;
+
+  // contoh: "6 Tahun", "6 Tahun 3 Bulan"
+  const matchYear = ageText.match(/(\d+)\s*Tahun/i);
+  if (matchYear) return parseInt(matchYear[1], 10);
+
+  // kalau cuma bulan: "18 Bulan" -> 1 tahun
+  const matchMonth = ageText.match(/(\d+)\s*Bulan/i);
+  if (matchMonth) {
+    const m = parseInt(matchMonth[1], 10);
+    return Math.floor(m / 12);
   }
-  return 0;
-}
 
+  return 0;
+};
+
+// ==================== Kategori ====================
 const kategori: Kategori[] = [
-  { title: "Usia 0-5 Tahun", filter: (d) => getTahun(d.child_age) <= 5 },
-  {
-    title: "Usia 6-12 Tahun",
-    filter: (d) => {
-      const t = getTahun(d.child_age);
-      return t >= 6 && t <= 12;
-    },
-  },
-  {
-    title: "Usia 13-17 Tahun",
-    filter: (d) => {
-      const t = getTahun(d.child_age);
-      return t >= 13 && t <= 17;
-    },
-  },
-  { title: "Usia 17+ Tahun", filter: (d) => getTahun(d.child_age) > 17 },
+  { title: "Usia 0–5 Tahun", filter: (d) => parseChildAgeYear(d.child_age) >= 0 && parseChildAgeYear(d.child_age) <= 5 },
+  { title: "Usia 6–12 Tahun", filter: (d) => parseChildAgeYear(d.child_age) >= 6 && parseChildAgeYear(d.child_age) <= 12 },
+  { title: "Usia 13–17 Tahun", filter: (d) => parseChildAgeYear(d.child_age) >= 13 && parseChildAgeYear(d.child_age) <= 17 },
+  { title: "Usia 17+ Tahun", filter: (d) => parseChildAgeYear(d.child_age) > 17 },
 ];
 
-export default function ObservasiPageClient() {
+export default function RiwayatObservasiPageClient() {
   const router = useRouter();
-  const [selected, setSelected] = useState<Anak | null>(null);
-  const [activeKategori, setActiveKategori] = useState<number>(0);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [detailObservasi, setDetailObservasi] = useState<any | null>(null);
-  const [loadingDetail, setLoadingDetail] = useState(false);
 
+  const [activeKategori, setActiveKategori] = useState(0);
+  const [data, setData] = useState<Anak[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number } | null>(null);
+
+  // Filter
   const [searchName, setSearchName] = useState("");
   const [filterDate, setFilterDate] = useState("");
 
-  // Pagination states
+  // Pagination
   const [page, setPage] = useState(1);
   const itemsPerPage = 10;
 
-  const { data, isLoading, isError, refetch } = useQuery({
-    queryKey: ["observations", filterDate, searchName],
-    queryFn: () => getScheduledObservations(filterDate, searchName),
-  });
+  const fetchObservasi = async () => {
+    try {
+      setLoading(true);
 
-  const children: Anak[] = Array.isArray(data?.data)
-    ? data.data.map((d: any, i: number) => ({
-        observation_id: d.observation_id ?? `temp-${i}`,
-        age_category: d.age_category ?? d.child_age_category ?? "-",
-        child_name: d.child_name ?? "-",
-        guardian_name: d.guardian_name ?? d.parent_name ?? "-",
-        guardian_phone: d.guardian_phone ?? d.parent_phone ?? "-",
-        admin_name: d.administrator ?? d.admin_name ?? "-",
-        scheduled_date: d.scheduled_date ?? "-",
-        scheduled_time: d.scheduled_time ?? d.time ?? "-",
-        child_birth_date: d.child_birth_date,
-        child_age: d.child_age,
-        child_gender: d.child_gender,
-        child_school: d.child_school,
-        child_address: d.child_address,
-        child_complaint: d.child_complaint,
-        child_service_choice: d.child_service_choice,
-        parent_type: d.parent_type,
-        parent_name: d.parent_name,
-        parent_phone: d.parent_phone,
-      }))
-    : [];
+      const result = await getObservations("completed");
 
-  // Filter hanya berdasarkan kategori aktif
-  const filteredByKategori = children.filter((d) =>
-    kategori[activeKategori].filter(d)
-  );
+      const mapped: Anak[] =
+        result?.map((item: any) => {
+          const [dd, mm, yyyy] = item.scheduled_date?.split("/") || ["-", "-", "-"];
+          const tglObservasi = `${yyyy}-${String(mm || "").padStart(2, "0")}-${String(dd || "").padStart(2, "0")}`;
 
-  // Filter pencarian nama anak / wali (case insensitive)
-  const filtered = filteredByKategori.filter((d) => {
-    const q = searchName.trim().toLowerCase();
-    if (!q) return true;
-    return (
-      String(d.child_name || "").toLowerCase().includes(q) ||
-      String(d.guardian_name || "").toLowerCase().includes(q)
-    );
-  });
+          return {
+            observation_id: item.observation_id?.toString() || "-",
+            nama: item.child_name || "-",
+            orangTua: item.guardian_name || "-",
+            telepon: item.guardian_phone || "-",
+            observer: item.observer || "-",
+            kategoriUsia: item.age_category || "-",
+            child_age: item.child_age || "-",
+            tglObservasi,
+            waktu: item.time || "-",
+          };
+        }) || [];
 
-  // Pagination logic
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
+      setData(mapped);
+    } catch (err) {
+      console.error(err);
+      alert("Gagal mengambil riwayat observasi.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  // Reset page ke 1 jika filterDate, searchName atau kategori berubah
   useEffect(() => {
+    fetchObservasi();
+
+    const handleClickOutside = () => setOpenDropdown(null);
+    window.addEventListener("click", handleClickOutside);
+
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, []);
+
+  // ==================== Filtering ====================
+  const filtered = useMemo(() => {
+    // reset page saat filter berubah
     setPage(1);
-  }, [filterDate, searchName, activeKategori]);
+
+    return data
+      .filter((d) => kategori[activeKategori].filter(d))
+      .filter((d) => (searchName ? d.nama.toLowerCase().includes(searchName.toLowerCase()) : true))
+      .filter((d) => (filterDate ? d.tglObservasi === filterDate : true));
+  }, [data, activeKategori, searchName, filterDate]);
+
+  // ==================== Pagination ====================
+  const totalPages = Math.max(1, Math.ceil(filtered.length / itemsPerPage));
 
   const paginatedData = useMemo(() => {
     const start = (page - 1) * itemsPerPage;
     return filtered.slice(start, start + itemsPerPage);
   }, [filtered, page]);
 
-  const handleStartObservasi = (child: Anak) => {
-    const kategoriUsia = child.age_category ?? "lainnya";
-
-    router.push(
-      `/terapis/observasi/form_observasi?observation_id=${child.observation_id}&nama=${encodeURIComponent(
-        String(child.child_name)
-      )}&usia=${encodeURIComponent(String(child.child_age ?? child.age_category ?? ""))}&kategori=${encodeURIComponent(
-        kategoriUsia
-      )}&tglObservasi=${encodeURIComponent(String(child.scheduled_date ?? ""))}`
-    );
+  // ==================== Routes (KUNCI PERBAIKAN) ====================
+  // Kirim DUA param: observation_id dan id (biar halaman tujuan aman baca mana pun)
+  const handleRiwayatJawaban = (observationId: string) => {
+    router.push(`/terapis/riwayat-hasil?observation_id=${encodeURIComponent(observationId)}&id=${encodeURIComponent(observationId)}`);
   };
 
-  const handleViewDetail = async (observation_id: string | number) => {
-    setLoadingDetail(true);
-    try {
-      const res = await getScheduledObservationDetail(String(observation_id));
-      setDetailObservasi(res);
-      setSelected(null);
-    } catch (err) {
-      console.error("❌ Gagal ambil detail observasi:", err);
-      alert("Gagal memuat detail observasi");
-    } finally {
-      setLoadingDetail(false);
-    }
+  const handleLihatHasil = (observationId: string) => {
+    router.push(`/terapis/hasil-observasi?observation_id=${encodeURIComponent(observationId)}&id=${encodeURIComponent(observationId)}`);
   };
-
-  useEffect(() => {
-    refetch();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterDate, searchName]);
 
   return (
     <div className="flex h-screen text-[#36315B] font-playpen">
-      {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-40 z-40 sm:hidden"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      <div
-        className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ${
-          sidebarOpen ? "translate-x-0" : "-translate-x-full"
-        } sm:translate-x-0 sm:static sm:shadow-md`}
-      >
-        <SidebarTerapis
-          activePage="observasi"
-          isMobile={true}
-          onClose={() => setSidebarOpen(false)}
-        />
-      </div>
+      <SidebarTerapis />
 
       <div className="flex flex-col flex-1 bg-gray-50">
-        <HeaderTerapis />
-
-        <div className="sm:hidden p-2">
-          <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 rounded-md text-[#36315B] hover:bg-gray-200"
-          >
-            <Menu size={24} />
-          </button>
-        </div>
+        {/* FIX: pakai pageTitle biar tidak fallback ke Dashboard */}
+        <HeaderTerapis pageTitle="Observasi" />
 
         <main className="p-4 sm:p-6 overflow-y-auto">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3">
-            <h2 className="text-lg sm:text-2xl font-bold">Pilih Anak Untuk Observasi</h2>
-            <button
-              onClick={() => router.push("/terapis/observasi/riwayat")}
-              className="bg-[#81B7A9] hover:bg-[#36315B] text-white font-semibold px-3 py-2 rounded-lg text-sm sm:text-base"
-            >
-              Riwayat
-            </button>
-          </div>
+          <button
+            onClick={() => router.push("/terapis/observasi")}
+            className="mb-4 px-4 py-2 text-sm font-semibold text-[#36315B] border border-[#81B7A9] rounded hover:bg-[#81B7A9] hover:text-white transition"
+          >
+            Kembali
+          </button>
 
-          {/* Filter & Search */}
-          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-4">
+          <h2 className="text-lg sm:text-2xl font-bold text-center mb-6">Riwayat Observasi</h2>
+
+          {/* Filter */}
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-5">
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="border border-[#81B7A9] rounded px-2 py-1 text-sm"
-              placeholder="Filter Tanggal"
+              className="border border-[#81B7A9] rounded px-3 py-2 text-sm"
             />
+
             <input
               type="text"
               value={searchName}
               onChange={(e) => setSearchName(e.target.value)}
-              className="border border-[#81B7A9] rounded px-2 py-1 text-sm max-w-[200px]"
-              placeholder="Cari Nama Anak atau Wali"
+              className="border border-[#81B7A9] rounded px-3 py-2 text-sm max-w-[240px]"
+              placeholder="Cari Nama Anak"
             />
           </div>
 
-          {/* Tabs kategori usia */}
+          {/* Tabs */}
           <div className="relative flex flex-wrap border-b border-gray-300 mb-4">
             {kategori.map((kat, idx) => (
               <button
                 key={idx}
                 onClick={() => setActiveKategori(idx)}
                 className={`relative px-3 sm:px-4 py-2 text-sm sm:text-base font-medium transition-colors ${
-                  activeKategori === idx
-                    ? "text-[#36315B]"
-                    : "text-gray-500 hover:text-[#36315B]"
+                  activeKategori === idx ? "text-[#36315B]" : "text-gray-500 hover:text-[#36315B]"
                 }`}
               >
                 {kat.title}
                 {activeKategori === idx && (
                   <motion.div
-                    layoutId="underline"
+                    layoutId="underline-riwayat"
                     className="absolute left-0 right-0 -bottom-[1px] h-[2px] bg-[#81B7A9]"
                   />
                 )}
@@ -253,214 +198,145 @@ export default function ObservasiPageClient() {
             ))}
           </div>
 
-          {/* Tabel anak */}
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={String(activeKategori) + "|" + filterDate + "|" + searchName + "|" + page}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white shadow-md rounded-lg p-3 sm:p-4 border border-[#E4E4E4] overflow-x-auto"
-            >
-              {isLoading ? (
-                <p className="text-center py-4">Memuat data...</p>
-              ) : isError ? (
-                <p className="text-center py-4 text-red-500">Gagal memuat data</p>
-              ) : filtered.length === 0 ? (
-                <p className="text-center py-4 text-[#36315B]">
-                  Tidak ada data observasi terjadwal
-                </p>
-              ) : (
-                <>
-                  <table className="w-full text-xs sm:text-sm table-auto border-collapse min-w-[700px]">
-                    <thead>
-                      <tr className="border-b border-[#81B7A9] bg-gray-100">
-                        <th className="py-2 px-4 text-center">Nama Anak</th>
-                        <th className="py-2 px-4 text-center">Nama Orang Tua</th>
-                        <th className="py-2 px-4 text-center">Telepon</th>
-                        <th className="py-2 px-4 text-center">Administrator</th>
-                        <th className="py-2 px-4 text-center">Tanggal Observasi</th>
-                        <th className="py-2 px-4 text-center">Waktu</th>
-                        <th className="py-2 px-4 text-center">Aksi</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {paginatedData.map((d, index) => (
-                        <tr
-                          key={d.observation_id ?? `row-${index}`}
-                          className={`border-b border-[#81B7A9] hover:bg-gray-50 ${
-                            selected?.observation_id === d.observation_id
-                              ? "bg-[#C0DCD6]"
-                              : ""
-                          }`}
-                        >
-                          <td className="py-2 px-4 text-center">{d.child_name}</td>
-                          <td className="py-2 px-4 text-center">{d.guardian_name}</td>
-                          <td className="py-2 px-4 text-center">{d.guardian_phone}</td>
-                          <td className="py-2 px-4 text-center">{d.admin_name}</td>
-                          <td className="py-2 px-4 text-center">{d.scheduled_date || "-"}</td>
-                          <td className="py-2 px-4 text-center">{d.scheduled_time || "-"}</td>
-                          <td className="py-2 px-4 text-center">
-                            <div className="flex items-center justify-center gap-2">
-                              <button
-                                className="bg-[#81B7A9] hover:bg-[#36315B] text-white text-xs sm:text-sm px-2 sm:px-3 py-1 rounded"
-                                onClick={() => handleStartObservasi(d)}
+          {/* Table */}
+          {loading ? (
+            <div className="flex flex-col items-center justify-center mt-10 text-gray-500">
+              <div className="w-10 h-10 border-4 border-[#81B7A9] border-t-transparent rounded-full animate-spin mb-3" />
+              <p>Memuat riwayat observasi...</p>
+            </div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={String(activeKategori) + searchName + filterDate + String(page)}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.25 }}
+                className="bg-white shadow-md rounded-lg p-3 sm:p-4 border border-[#E4E4E4] overflow-x-auto"
+              >
+                <table className="w-full text-xs sm:text-sm table-auto border-collapse min-w-[850px]">
+                  <thead>
+                    <tr className="border-b border-[#81B7A9] bg-gray-100">
+                      <th className="py-2 text-center">Nama Anak</th>
+                      <th className="py-2 text-center">Orang Tua</th>
+                      <th className="py-2 text-center">Telepon</th>
+                      <th className="py-2 text-center">Observer</th>
+                      <th className="py-2 text-center">Tanggal</th>
+                      <th className="py-2 text-center">Waktu</th>
+                      <th className="py-2 text-center">Aksi</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {paginatedData.length > 0 ? (
+                      paginatedData.map((d) => (
+                        <tr key={d.observation_id} className="border-b border-[#81B7A9] hover:bg-gray-50">
+                          <td className="py-2 text-center">{d.nama}</td>
+                          <td className="py-2 text-center">{d.orangTua}</td>
+                          <td className="py-2 text-center">{d.telepon}</td>
+                          <td className="py-2 text-center">{d.observer}</td>
+                          <td className="py-2 text-center">{d.tglObservasi}</td>
+                          <td className="py-2 text-center">{d.waktu}</td>
+
+                          <td className="py-2 text-center relative">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+
+                                const rect = e.currentTarget.getBoundingClientRect();
+                                const nextOpen = openDropdown === d.observation_id ? null : d.observation_id;
+
+                                setOpenDropdown(nextOpen);
+
+                                if (nextOpen) {
+                                  setDropdownPosition({
+                                    top: rect.bottom + 6 + window.scrollY,
+                                    left: rect.left - 120 + window.scrollX,
+                                  });
+                                } else {
+                                  setDropdownPosition(null);
+                                }
+                              }}
+                              className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+                            >
+                              <Settings size={14} className="mr-1" />
+                              Aksi
+                              <ChevronDown size={12} className="ml-1" />
+                            </button>
+
+                            {openDropdown === d.observation_id && dropdownPosition && (
+                              <div
+                                className="fixed z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-md border border-[#80C2B0]"
+                                style={{
+                                  top: dropdownPosition.top,
+                                  left: dropdownPosition.left,
+                                }}
+                                onClick={(e) => e.stopPropagation()}
                               >
-                                Mulai
-                              </button>
-                              <button
-                                className="p-1 text-[#81B7A9] hover:text-[#36315B]"
-                                onClick={() => handleViewDetail(d.observation_id!)}
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                            </div>
+                                <div className="py-1 text-[#5F52BF]">
+                                  <button
+                                    onClick={() => handleRiwayatJawaban(d.observation_id)}
+                                    className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
+                                  >
+                                    <Clock3 size={16} className="mr-2" />
+                                    Riwayat Jawaban
+                                  </button>
+
+                                  <button
+                                    onClick={() => handleLihatHasil(d.observation_id)}
+                                    className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
+                                  >
+                                    <Eye size={16} className="mr-2" />
+                                    Lihat Hasil
+                                  </button>
+                                </div>
+                              </div>
+                            )}
                           </td>
                         </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                      ))
+                    ) : (
+                      <tr>
+                        <td colSpan={7} className="text-center py-4 text-gray-500">
+                          Tidak ada data observasi completed.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
 
-                  {/* Pagination */}
-                  <div className="flex justify-center items-center gap-4 mt-4">
+                {/* Pagination */}
+                {filtered.length > 0 && (
+                  <div className="flex justify-center items-center gap-3 mt-4">
                     <button
                       disabled={page === 1}
-                      onClick={() => setPage(page - 1)}
+                      onClick={() => setPage((p) => Math.max(1, p - 1))}
                       className={`px-3 py-1 rounded border ${
-                        page === 1
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-white hover:bg-gray-100"
+                        page === 1 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-100"
                       }`}
                     >
                       Prev
                     </button>
+
                     <span className="text-sm font-medium">
                       Page {page} / {totalPages}
                     </span>
+
                     <button
-                      disabled={page === totalPages || totalPages === 0}
-                      onClick={() => setPage(page + 1)}
+                      disabled={page === totalPages}
+                      onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                       className={`px-3 py-1 rounded border ${
-                        page === totalPages || totalPages === 0
-                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                          : "bg-white hover:bg-gray-100"
+                        page === totalPages ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-100"
                       }`}
                     >
                       Next
                     </button>
                   </div>
-                </>
-              )}
-            </motion.div>
-          </AnimatePresence>
-
-          {/* Modal Detail Observasi */}
-          <AnimatePresence>
-            {(loadingDetail || detailObservasi) && (
-              <motion.div
-                className="fixed inset-0 bg-opacity-40 flex items-center justify-center z-50 px-4"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-              >
-                <motion.div
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0.8 }}
-                  className="bg-white rounded-lg shadow-lg w-[90%] max-w-md p-6 relative"
-                >
-                  <button
-                    className="absolute top-3 right-3 text-gray-500 hover:text-gray-800"
-                    onClick={() => setDetailObservasi(null)}
-                  >
-                    ✕
-                  </button>
-
-                  {loadingDetail ? (
-                    <div className="flex justify-center items-center py-10">
-                      <div className="w-8 h-8 border-4 border-[#81B7A9] border-t-transparent rounded-full animate-spin"></div>
-                    </div>
-                  ) : (
-                    <>
-                      <h3 className="text-lg sm:text-xl font-bold text-[#36315B] mb-4">
-                        Detail Observasi
-                      </h3>
-                      <hr className="mb-4 border-[#81B7A9]" />
-
-                      <div className="text-xs sm:text-sm space-y-3 mb-3">
-                        <div>
-                          <h4 className="font-semibold mb-1">Data Anak</h4>
-                          <ul className="list-disc ml-6 space-y-1">
-                            <li>Nama Lengkap: {detailObservasi?.child_name ?? "-"}</li>
-                            <li>Tanggal Lahir: {detailObservasi?.child_birth_date ?? "-"}</li>
-                            <li>
-                              Usia:{" "}
-                              {detailObservasi?.child_age ??
-                                detailObservasi?.age_category ??
-                                "-"}
-                            </li>
-                            <li>Jenis Kelamin: {detailObservasi?.child_gender ?? "-"}</li>
-                            <li>Sekolah: {detailObservasi?.child_school ?? "-"}</li>
-                            <li>Alamat: {detailObservasi?.child_address ?? "-"}</li>
-                            <li>
-                              Tanggal Observasi: {detailObservasi?.scheduled_date ?? "-"}
-                            </li>
-                            <li>
-                              Waktu Observasi:{" "}
-                              {detailObservasi?.time ?? detailObservasi?.scheduled_time ?? "-"}
-                            </li>
-                          </ul>
-                        </div>
-
-                        <div>
-                          <h4 className="font-semibold mb-1">Informasi Orangtua / Wali</h4>
-                          <ul className="list-disc ml-6 space-y-1">
-                            <li>
-                              Nama Orangtua:{" "}
-                              {detailObservasi?.parent_name ??
-                                detailObservasi?.guardian_name ??
-                                "-"}
-                            </li>
-                            <li>Hubungan: {detailObservasi?.parent_type ?? "-"}</li>
-                            <li>
-                              Nomor WhatsApp / Telepon:{" "}
-                              {detailObservasi?.parent_phone ??
-                                detailObservasi?.guardian_phone ??
-                                "-"}
-                            </li>
-                          </ul>
-                        </div>
-
-                        <div>
-                          <h4 className="font-semibold mb-1">Informasi Admin</h4>
-                          <ul className="list-disc ml-6 space-y-1">
-                            <li>
-                              Nama Admin:{" "}
-                              {detailObservasi?.admin_name ??
-                                detailObservasi?.admin ??
-                                detailObservasi?.administrator ??
-                                "-"}
-                            </li>
-                          </ul>
-                        </div>
-
-                        <div>
-                          <h4 className="font-semibold mb-1">Keluhan</h4>
-                          <p className="ml-4">{detailObservasi?.child_complaint ?? "Tidak ada keluhan"}</p>
-                        </div>
-
-                        <div>
-                          <h4 className="font-semibold mb-1">Jenis Layanan</h4>
-                          <p className="ml-4">{detailObservasi?.child_service_choice ?? "-"}</p>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </motion.div>
+                )}
               </motion.div>
-            )}
-          </AnimatePresence>
+            </AnimatePresence>
+          )}
         </main>
       </div>
     </div>

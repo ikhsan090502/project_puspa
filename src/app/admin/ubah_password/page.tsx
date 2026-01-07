@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
-import { Eye, EyeOff, Lock } from "lucide-react";
+import { Eye, EyeOff } from "lucide-react";
 import api from "@/lib/axios";
 import toast, { Toaster } from "react-hot-toast";
 
@@ -22,7 +22,6 @@ export default function UbahPasswordAdmin() {
       toast.error("Semua field harus diisi.");
       return;
     }
-
     if (newPassword !== confirmPassword) {
       toast.error("Konfirmasi password tidak cocok.");
       return;
@@ -30,6 +29,8 @@ export default function UbahPasswordAdmin() {
 
     try {
       setLoading(true);
+
+      // ✅ pastikan endpoint sesuai BE
       await api.put("/profile/update-password", {
         current_password: currentPassword,
         password: newPassword,
@@ -41,6 +42,7 @@ export default function UbahPasswordAdmin() {
       setNewPassword("");
       setConfirmPassword("");
     } catch (err: any) {
+      console.error("❌ update password error:", err);
       toast.error(err?.response?.data?.message || "Gagal mengubah password");
     } finally {
       setLoading(false);
@@ -48,92 +50,96 @@ export default function UbahPasswordAdmin() {
   };
 
   return (
-    <div className="flex flex-col md:flex-row min-h-screen bg-[#f8f9fc]">
+    <div className="flex min-h-screen bg-[#f8f9fc]">
+      <Toaster position="top-right" />
       <Sidebar />
-      <div className="flex-1 flex flex-col items-center">
+
+      <div className="flex-1 flex flex-col">
         <Header />
-        <Toaster position="top-right" />
-        <div className="bg-white rounded-xl p-6 shadow-md mt-6 w-full max-w-md">
-          <h2 className="text-xl font-semibold text-[#2D2A55] text-center">
-            Ubah Password
-          </h2>
 
-          <div className="mt-4 space-y-4">
-            {/* Password Saat Ini */}
-            <div>
-              <label className="text-sm font-semibold">Password Saat Ini</label>
-              <div className="relative mt-1">
-                <input
-                  type={showCurrent ? "text" : "password"}
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  className="border w-full px-3 py-2 rounded"
-                  placeholder="Masukkan password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowCurrent(!showCurrent)}
-                  className="absolute right-3 top-2.5 text-gray-500"
-                >
-                  {showCurrent ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+        <main className="flex-1 flex items-start justify-center p-6">
+          <div className="bg-white rounded-xl p-6 shadow-md w-full max-w-md">
+            <h2 className="text-xl font-semibold text-[#2D2A55] text-center">
+              Ubah Password
+            </h2>
+
+            <div className="mt-6 space-y-4">
+              {/* Current */}
+              <div>
+                <label className="text-sm font-semibold">Password Saat Ini</label>
+                <div className="relative mt-1">
+                  <input
+                    type={showCurrent ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    className="border w-full px-3 py-2 rounded"
+                    placeholder="Masukkan password saat ini"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrent((v) => !v)}
+                    className="absolute right-3 top-2.5 text-gray-500"
+                    aria-label="Toggle password"
+                  >
+                    {showCurrent ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Password Baru */}
-            <div>
-              <label className="text-sm font-semibold">Password Baru</label>
-              <div className="relative mt-1">
-                <input
-                  type={showNew ? "text" : "password"}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="border w-full px-3 py-2 rounded"
-                  placeholder="Masukkan password baru"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowNew(!showNew)}
-                  className="absolute right-3 top-2.5 text-gray-500"
-                >
-                  {showNew ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+              {/* New */}
+              <div>
+                <label className="text-sm font-semibold">Password Baru</label>
+                <div className="relative mt-1">
+                  <input
+                    type={showNew ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="border w-full px-3 py-2 rounded"
+                    placeholder="Masukkan password baru"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNew((v) => !v)}
+                    className="absolute right-3 top-2.5 text-gray-500"
+                    aria-label="Toggle password"
+                  >
+                    {showNew ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Konfirmasi Password */}
-            <div>
-              <label className="text-sm font-semibold">Konfirmasi Password</label>
-              <div className="relative mt-1">
-                <input
-                  type={showConfirm ? "text" : "password"}
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="border w-full px-3 py-2 rounded"
-                  placeholder="Konfirmasi password"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirm(!showConfirm)}
-                  className="absolute right-3 top-2.5 text-gray-500"
-                >
-                  {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
+              {/* Confirm */}
+              <div>
+                <label className="text-sm font-semibold">Konfirmasi Password</label>
+                <div className="relative mt-1">
+                  <input
+                    type={showConfirm ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="border w-full px-3 py-2 rounded"
+                    placeholder="Konfirmasi password baru"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirm((v) => !v)}
+                    className="absolute right-3 top-2.5 text-gray-500"
+                    aria-label="Toggle password"
+                  >
+                    {showConfirm ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            {/* Button */}
-            <div className="flex flex-col sm:flex-row justify-between mt-4 gap-3">
               <button
                 onClick={handleSave}
                 disabled={loading}
-                className="px-4 py-2 rounded bg-[#8BC3B8] text-white disabled:opacity-50 w-full sm:w-auto"
+                className="mt-2 w-full px-4 py-2 rounded bg-[#8BC3B8] text-white disabled:opacity-50"
               >
                 {loading ? "Menyimpan..." : "Simpan"}
               </button>
             </div>
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
