@@ -122,10 +122,13 @@ function toQuestionArray(input: unknown): Question[] {
 
   return arr
     .map((row: any) => {
-      const id = asNumber(row?.id, null);
-      const question_number = asNumber(row?.question_number, null);
-      const question_text = asString(row?.question_text, "").trim();
+      // ✅ backend pakai question_id, bukan id
+      const id = asNumber(row?.id ?? row?.question_id, null);
 
+      // ✅ backend kirim string "1", "2", dst
+      const question_number = asNumber(row?.question_number, null);
+
+      const question_text = asString(row?.question_text, "").trim();
       if (!id || !question_number || !question_text) return null;
 
       const question_code = asString(row?.question_code, "").trim();
@@ -138,6 +141,7 @@ function toQuestionArray(input: unknown): Question[] {
         ...(question_code ? { question_code } : {}),
         ...(age_category ? { age_category } : {}),
       };
+
       return q;
     })
     .filter(Boolean) as Question[];
