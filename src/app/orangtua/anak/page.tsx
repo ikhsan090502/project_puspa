@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import RiwayatJawabanClient from './RiwayatJawabanClient';
+import RiwayatJawabanClient from './AnakClient';
 
 export default function RiwayatJawabanPage() {
   return (
