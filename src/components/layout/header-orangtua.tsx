@@ -21,7 +21,7 @@ const HeaderOrangtua: React.FC = () => {
     "/orangtua/assessment/kategori/wicara": "Data Terapi Wicara",
     "/orangtua/assessment/kategori/wicaraRiwayat": "Riwayat Data Terapi Wicara",
     "/orangtua/assessment/kategori/paedagog": "Data Paedagog",
-    "/orangtua/assessment/kategori/Riwayatpaedagog": "Riwayat Data Paedagog",
+    "/orangtua/assessment/kategori/paedagogRiwayat": "Riwayat Data Paedagog",
     "/orangtua/assessment/riwayat-jawaban": "Riwayat Jawaban",
     "/orangtua/help": "Bantuan",
     "/orangtua/profil": "Profil",
