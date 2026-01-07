@@ -18,7 +18,7 @@ type Question = {
 type AnswerDetail = {
   question_number: number;
   question_text: string;
-  answer: number | null; // null kalau tidak ada jawaban
+  answer: number | null;
   score_earned: number | null;
   note: string | null;
   question_code: string;
@@ -31,11 +31,7 @@ type RawAnswerItem = {
   note?: unknown;
 };
 
-type ObservationDetailApi = {
-  total_score?: unknown;
-  answer_details?: unknown;
-  data?: unknown;
-};
+type AnyObj = Record<string, any>;
 
 // ==================== Kategori map ====================
 const kategoriFullMap: Record<string, string> = {
@@ -68,11 +64,9 @@ function asNumber(v: unknown, fallback: number | null = null): number | null {
   }
   return fallback;
 }
-
 function asNumber0(v: unknown, fallback = 0): number {
   return Number(asNumber(v, fallback) ?? fallback);
 }
-
 function asString(v: unknown, fallback = ""): string {
   if (typeof v === "string") return v;
   if (typeof v === "number" || typeof v === "boolean") return String(v);
@@ -80,34 +74,51 @@ function asString(v: unknown, fallback = ""): string {
 }
 
 /**
- * Normalizer pertanyaan:
+ * Ambil array dari response pertanyaan, super fleksibel:
  * - array langsung
  * - { data: [...] }
- * - { questions: [...] }
- * - { data: { questions: [...] } }
  * - { data: { data: [...] } }
+ * - { data: { questions: [...] } }
+ * - { questions: [...] }
+ * - { result: [...] }
+ * - { payload: [...] }
+ * - { data: { result: [...] } }
+ * - { data: { payload: [...] } }
  * - { data: { groups: [{ questions: [...] }] } }
+ * - { data: { items: [...] } }
+ * - { items: [...] }
  */
-function extractQuestionArray(input: unknown): any[] {
+function extractQuestions(input: unknown): any[] {
   if (!input) return [];
   if (Array.isArray(input)) return input;
 
-  const obj: any = input;
+  const o = input as AnyObj;
 
-  if (Array.isArray(obj?.data)) return obj.data;
-  if (Array.isArray(obj?.questions)) return obj.questions;
+  const candidates: unknown[] = [
+    o.data,
+    o.questions,
+    o.result,
+    o.payload,
+    o.items,
 
-  if (Array.isArray(obj?.data?.questions)) return obj.data.questions;
-  if (Array.isArray(obj?.data?.data)) return obj.data.data;
+    o.data?.data,
+    o.data?.questions,
+    o.data?.result,
+    o.data?.payload,
+    o.data?.items,
 
-  const groupQs = obj?.data?.groups?.[0]?.questions;
-  if (Array.isArray(groupQs)) return groupQs;
+    o.data?.groups?.[0]?.questions,
+  ];
+
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c;
+  }
 
   return [];
 }
 
 function toQuestionArray(input: unknown): Question[] {
-  const arr = extractQuestionArray(input);
+  const arr = extractQuestions(input);
 
   return arr
     .map((row: any) => {
@@ -120,33 +131,41 @@ function toQuestionArray(input: unknown): Question[] {
       const question_code = asString(row?.question_code, "").trim();
       const age_category = asString(row?.age_category, "").trim();
 
-      return {
+      const q: Question = {
         id,
         question_number,
         question_text,
         ...(question_code ? { question_code } : {}),
         ...(age_category ? { age_category } : {}),
-      } as Question;
+      };
+      return q;
     })
     .filter(Boolean) as Question[];
 }
 
 /**
- * Normalizer answer_details:
- * - array langsung
+ * Ambil answer_details dengan fleksibel:
  * - { answer_details: [...] }
  * - { data: [...] }
  * - { data: { answer_details: [...] } }
+ * - { data: { data: [...] } }
  */
-function extractAnswerDetailsArray(input: unknown): RawAnswerItem[] {
+function extractAnswerDetails(input: unknown): RawAnswerItem[] {
   if (!input) return [];
   if (Array.isArray(input)) return input as RawAnswerItem[];
 
-  const obj: any = input;
+  const o = input as AnyObj;
 
-  if (Array.isArray(obj?.answer_details)) return obj.answer_details as RawAnswerItem[];
-  if (Array.isArray(obj?.data)) return obj.data as RawAnswerItem[];
-  if (Array.isArray(obj?.data?.answer_details)) return obj.data.answer_details as RawAnswerItem[];
+  const candidates: unknown[] = [
+    o.answer_details,
+    o.data,
+    o.data?.answer_details,
+    o.data?.data,
+  ];
+
+  for (const c of candidates) {
+    if (Array.isArray(c)) return c as RawAnswerItem[];
+  }
 
   return [];
 }
@@ -182,32 +201,39 @@ export default function RiwayatJawabanClient() {
         setLoading(true);
         setErrorMsg(null);
 
-        // 1) total skor (completed)
-        const detailCompleted = (await getObservationDetail(
-          observation_id,
-          "completed"
-        )) as ObservationDetailApi | null;
+        // A) total score
+        const detailCompleted = await getObservationDetail(observation_id, "completed");
+        console.log("[completed detail]", detailCompleted);
 
         if (cancelled) return;
+        setTotalScore(asNumber0((detailCompleted as any)?.total_score, 0));
 
-        setTotalScore(asNumber0(detailCompleted?.total_score, 0));
-
-        // 2) pertanyaan
+        // B) questions
         const questionRaw = await getObservationQuestions(observation_id);
+        console.log("[questions raw]", questionRaw);
+
         const questionData = toQuestionArray(questionRaw);
+        console.log("[questions normalized]", questionData);
 
         if (cancelled) return;
 
-        // 3) jawaban (type=answer)
-        const answerRes = (await getObservationDetail(
-          observation_id,
-          "answer"
-        )) as ObservationDetailApi | null;
+        if (questionData.length === 0) {
+          setAnswers([]);
+          setActiveTab("");
+          setErrorMsg(
+            "Pertanyaan tidak ditemukan dari API. Cek console: [questions raw]. Kemungkinan format response bukan array."
+          );
+          return;
+        }
 
-        // ✅ FIX PENTING: kirim answerRes utuh, bukan answerRes.answer_details
-        const answerDetails = extractAnswerDetailsArray(answerRes);
+        // C) answers
+        const answerRes = await getObservationDetail(observation_id, "answer");
+        console.log("[answer detail raw]", answerRes);
 
-        // 4) merge
+        const answerDetails = extractAnswerDetails(answerRes);
+        console.log("[answer_details normalized]", answerDetails);
+
+        // merge
         const merged: AnswerDetail[] = questionData.map((q) => {
           const found = answerDetails.find(
             (a) => Number(asNumber(a?.question_number, -1) ?? -1) === q.question_number
@@ -222,9 +248,7 @@ export default function RiwayatJawabanClient() {
             score_earned: score,
             answer: ans,
             note:
-              found?.note === null || found?.note === undefined
-                ? null
-                : asString(found?.note, ""),
+              found?.note === null || found?.note === undefined ? null : asString(found?.note, ""),
             question_code: asString(q.question_code, "UNK-0") || "UNK-0",
           };
         });
@@ -233,16 +257,11 @@ export default function RiwayatJawabanClient() {
 
         setAnswers(merged);
 
-        // default tab
-        if (merged.length > 0) {
-          const firstPrefix = (merged[0].question_code || "UNK-0").split("-")[0];
-          setActiveTab(kategoriFullMap[firstPrefix] || firstPrefix);
-        } else {
-          setActiveTab("");
-        }
+        const firstPrefix = (merged[0]?.question_code || "UNK-0").split("-")[0];
+        setActiveTab(kategoriFullMap[firstPrefix] || firstPrefix);
       } catch (err) {
         console.error("Gagal ambil data observasi:", err);
-        setErrorMsg("Gagal memuat data. Cek console / API response.");
+        if (!cancelled) setErrorMsg("Gagal memuat data. Cek console untuk detail error.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -265,9 +284,6 @@ export default function RiwayatJawabanClient() {
   }, [answers]);
 
   const kategoriList = Object.keys(groupedQuestions);
-
-  const isKategoriComplete = (k: string) =>
-    groupedQuestions[k]?.every((q) => q.answer !== null && q.answer !== undefined);
 
   return (
     <div className="flex h-screen text-[#36315B] font-playpen">
@@ -298,7 +314,7 @@ export default function RiwayatJawabanClient() {
             </div>
           ) : answers.length === 0 ? (
             <p className="text-center mt-20 text-gray-500">
-              Tidak ada jawaban untuk observasi ini.
+              Tidak ada data untuk observasi ini.
             </p>
           ) : (
             <>
@@ -306,7 +322,7 @@ export default function RiwayatJawabanClient() {
                 <div className="flex justify-start items-center gap-12 overflow-x-auto">
                   {kategoriList.map((k, i) => {
                     const isActive = activeTab === k;
-                    const sudahDiisi = isKategoriComplete(k);
+                    const sudahDiisi = groupedQuestions[k]?.some((x) => x.answer !== null);
 
                     return (
                       <div key={k} className="relative flex flex-col items-center flex-shrink-0">
@@ -358,7 +374,6 @@ export default function RiwayatJawabanClient() {
                     <div className="flex gap-4 mt-2 items-center">
                       <input
                         type="text"
-                        placeholder="Keterangan"
                         className="border rounded-md p-2 flex-1 bg-gray-100"
                         value={q.note || ""}
                         readOnly
@@ -392,28 +407,6 @@ export default function RiwayatJawabanClient() {
                     </div>
                   </div>
                 ))}
-              </div>
-
-              <div className="flex justify-end items-center mt-8 gap-4">
-                {kategoriList.indexOf(activeTab) > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab(kategoriList[kategoriList.indexOf(activeTab) - 1])}
-                    className="bg-white text-[#81B7A9] px-4 py-2 rounded-md border-2 border-[#81B7A9] hover:bg-[#81B7A9] hover:text-white transition"
-                  >
-                    Sebelumnya
-                  </button>
-                )}
-
-                {kategoriList.indexOf(activeTab) < kategoriList.length - 1 && (
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab(kategoriList[kategoriList.indexOf(activeTab) + 1])}
-                    className="bg-[#81B7A9] text-white px-4 py-2 rounded-md"
-                  >
-                    Lanjutkan
-                  </button>
-                )}
               </div>
             </>
           )}
