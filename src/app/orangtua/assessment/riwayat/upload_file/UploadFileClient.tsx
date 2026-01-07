@@ -3,8 +3,8 @@
 import React, { useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useSearchParams, useRouter } from "next/navigation";
-import Sidebar from "@/components/layout/sidebar";
-import Header from "@/components/layout/header";
+import SidebarOrangtua from "@/components/layout/sidebar-orangtua";
+import HeaderOrangtua from "@/components/layout/header-orangtua";
 import { uploadAssessmentReport } from "@/lib/api/asesmentReport";
 
 export default function UploadFileClient() {
@@ -53,9 +53,9 @@ export default function UploadFileClient() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Sidebar />
+      <SidebarOrangtua />
       <div className="flex-1 flex flex-col">
-        <Header />
+        <HeaderOrangtua />
 
         <main className="flex-1 flex justify-center items-center p-6">
           <AnimatePresence>
