@@ -4,10 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import SidebarTerapis from "@/components/layout/sidebar_terapis";
 import HeaderTerapis from "@/components/layout/header_terapis";
-import {
-  getObservationDetail,
-  getObservationQuestions,
-} from "@/lib/api/observasiSubmit";
+import { getObservationDetail, getObservationQuestions } from "@/lib/api/observasiSubmit";
 
 // ==================== Types ====================
 type Question = {
@@ -21,7 +18,7 @@ type Question = {
 type AnswerDetail = {
   question_number: number;
   question_text: string;
-  answer: number | null; // ✅ null kalau tidak ada jawaban
+  answer: number | null; // null kalau tidak ada jawaban
   score_earned: number | null;
   note: string | null;
   question_code: string;
@@ -37,9 +34,10 @@ type RawAnswerItem = {
 type ObservationDetailApi = {
   total_score?: unknown;
   answer_details?: unknown;
+  data?: unknown;
 };
 
-// Mapping kategori lengkap
+// ==================== Kategori map ====================
 const kategoriFullMap: Record<string, string> = {
   BPE: "Perilaku & Emosi",
   BFM: "Fungsi Motorik",
@@ -82,11 +80,11 @@ function asString(v: unknown, fallback = ""): string {
 }
 
 /**
- * ✅ Normalizer supaya apapun bentuk response pertanyaan, kita ambil array-nya
+ * Normalizer pertanyaan:
  * - array langsung
  * - { data: [...] }
- * - { data: { questions: [...] } }
  * - { questions: [...] }
+ * - { data: { questions: [...] } }
  * - { data: { data: [...] } }
  * - { data: { groups: [{ questions: [...] }] } }
  */
@@ -122,21 +120,19 @@ function toQuestionArray(input: unknown): Question[] {
       const question_code = asString(row?.question_code, "").trim();
       const age_category = asString(row?.age_category, "").trim();
 
-      const q: Question = {
+      return {
         id,
         question_number,
         question_text,
         ...(question_code ? { question_code } : {}),
         ...(age_category ? { age_category } : {}),
-      };
-
-      return q;
+      } as Question;
     })
     .filter(Boolean) as Question[];
 }
 
 /**
- * ✅ Normalizer answer_details:
+ * Normalizer answer_details:
  * - array langsung
  * - { answer_details: [...] }
  * - { data: [...] }
@@ -150,8 +146,7 @@ function extractAnswerDetailsArray(input: unknown): RawAnswerItem[] {
 
   if (Array.isArray(obj?.answer_details)) return obj.answer_details as RawAnswerItem[];
   if (Array.isArray(obj?.data)) return obj.data as RawAnswerItem[];
-  if (Array.isArray(obj?.data?.answer_details))
-    return obj.data.answer_details as RawAnswerItem[];
+  if (Array.isArray(obj?.data?.answer_details)) return obj.data.answer_details as RawAnswerItem[];
 
   return [];
 }
@@ -161,14 +156,12 @@ export default function RiwayatJawabanClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // ✅ terima beberapa nama param biar tidak gampang kosong
   const observation_id =
     searchParams.get("observation_id") ||
     searchParams.get("id") ||
     searchParams.get("observationId") ||
     "";
 
-  const [questions, setQuestions] = useState<Question[]>([]);
   const [answers, setAnswers] = useState<AnswerDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<string>("");
@@ -204,7 +197,6 @@ export default function RiwayatJawabanClient() {
         const questionData = toQuestionArray(questionRaw);
 
         if (cancelled) return;
-        setQuestions(questionData);
 
         // 3) jawaban (type=answer)
         const answerRes = (await getObservationDetail(
@@ -212,15 +204,16 @@ export default function RiwayatJawabanClient() {
           "answer"
         )) as ObservationDetailApi | null;
 
-        const answerDetails = extractAnswerDetailsArray(answerRes?.answer_details);
+        // ✅ FIX PENTING: kirim answerRes utuh, bukan answerRes.answer_details
+        const answerDetails = extractAnswerDetailsArray(answerRes);
 
-        // 4) merge → kalau tidak ada jawaban, set null (bukan 0)
+        // 4) merge
         const merged: AnswerDetail[] = questionData.map((q) => {
           const found = answerDetails.find(
             (a) => Number(asNumber(a?.question_number, -1) ?? -1) === q.question_number
           );
 
-          const ans = asNumber(found?.answer, null); // null kalau kosong
+          const ans = asNumber(found?.answer, null);
           const score = asNumber(found?.score_earned, null);
 
           return {
@@ -261,7 +254,6 @@ export default function RiwayatJawabanClient() {
     };
   }, [observation_id]);
 
-  // ==================== Grouping pertanyaan per kategori ====================
   const groupedQuestions = useMemo(() => {
     return answers.reduce((acc: Record<string, AnswerDetail[]>, q) => {
       const prefix = (q.question_code || "UNK-0").split("-")[0];
@@ -310,7 +302,6 @@ export default function RiwayatJawabanClient() {
             </p>
           ) : (
             <>
-              {/* Stepper + Total Score */}
               <div className="flex justify-between items-center mb-8">
                 <div className="flex justify-start items-center gap-12 overflow-x-auto">
                   {kategoriList.map((k, i) => {
@@ -318,10 +309,7 @@ export default function RiwayatJawabanClient() {
                     const sudahDiisi = isKategoriComplete(k);
 
                     return (
-                      <div
-                        key={k}
-                        className="relative flex flex-col items-center flex-shrink-0"
-                      >
+                      <div key={k} className="relative flex flex-col items-center flex-shrink-0">
                         <div
                           onClick={() => setActiveTab(k)}
                           className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${
@@ -359,15 +347,12 @@ export default function RiwayatJawabanClient() {
                 </div>
               </div>
 
-              {/* Pertanyaan */}
               <div className="space-y-6">
                 {(groupedQuestions[activeTab] || []).map((q) => (
                   <div key={q.question_number}>
                     <p className="font-medium">
                       {q.question_number}. {q.question_text}{" "}
-                      <span className="text-sm text-[#36315B]">
-                        (Score {q.score_earned ?? 0})
-                      </span>
+                      <span className="text-sm text-[#36315B]">(Score {q.score_earned ?? 0})</span>
                     </p>
 
                     <div className="flex gap-4 mt-2 items-center">
@@ -401,9 +386,7 @@ export default function RiwayatJawabanClient() {
                         </label>
 
                         {q.answer === null && (
-                          <span className="text-xs text-gray-500 ml-2">
-                            (belum dijawab)
-                          </span>
+                          <span className="text-xs text-gray-500 ml-2">(belum dijawab)</span>
                         )}
                       </div>
                     </div>
@@ -411,14 +394,11 @@ export default function RiwayatJawabanClient() {
                 ))}
               </div>
 
-              {/* Navigasi */}
               <div className="flex justify-end items-center mt-8 gap-4">
                 {kategoriList.indexOf(activeTab) > 0 && (
                   <button
                     type="button"
-                    onClick={() =>
-                      setActiveTab(kategoriList[kategoriList.indexOf(activeTab) - 1])
-                    }
+                    onClick={() => setActiveTab(kategoriList[kategoriList.indexOf(activeTab) - 1])}
                     className="bg-white text-[#81B7A9] px-4 py-2 rounded-md border-2 border-[#81B7A9] hover:bg-[#81B7A9] hover:text-white transition"
                   >
                     Sebelumnya
@@ -428,9 +408,7 @@ export default function RiwayatJawabanClient() {
                 {kategoriList.indexOf(activeTab) < kategoriList.length - 1 && (
                   <button
                     type="button"
-                    onClick={() =>
-                      setActiveTab(kategoriList[kategoriList.indexOf(activeTab) + 1])
-                    }
+                    onClick={() => setActiveTab(kategoriList[kategoriList.indexOf(activeTab) + 1])}
                     className="bg-[#81B7A9] text-white px-4 py-2 rounded-md"
                   >
                     Lanjutkan
