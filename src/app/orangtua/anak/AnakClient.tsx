@@ -302,10 +302,10 @@ export default function ChildList() {
                     <div className="flex-1">
                       <h2 className="font-semibold">{child.child_name}</h2>
                       <p className="text-sm text-gray-500">
-                        {child.child_birth_info || "-"}
+                        {child.child_birth_info || ""}
                       </p>
                       <p className="text-sm text-gray-500 capitalize">
-                        {child.child_gender || "-"}
+                        {child.child_gender || ""}
                       </p>
                     </div>
 
