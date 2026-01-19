@@ -40,14 +40,18 @@ export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
 
     return { user_id, username, email, token, tokenType, role };
   } catch (err: any) {
+    const backendMessage = err.response?.data?.message || err.message;
+
     if (err.response?.status === 401) {
-      throw { general: "Username atau password salah." };
+      // Jika backend memberikan pesan spesifik (misal: "Email belum diverifikasi"), tampilkan itu.
+      // Jika tidak, baru tampilkan "Username atau password salah".
+      throw { general: backendMessage || "Username atau password salah." };
     }
 
     if (err.errors) {
       throw err.errors;
     }
 
-    throw { general: err.response?.data?.message || err.message || "Terjadi kesalahan login." };
+    throw { general: backendMessage || "Terjadi kesalahan login." };
   }
 };
