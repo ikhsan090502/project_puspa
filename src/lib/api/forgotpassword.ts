@@ -1,4 +1,4 @@
-
+import axiosInstance from "@/lib/axios";
 import axios, { AxiosError } from "axios";
 
 export interface ForgotPasswordPayload {
@@ -15,10 +15,9 @@ export async function forgotPassword(
   { email }: ForgotPasswordPayload
 ): Promise<ForgotPasswordResponse> {
   try {
-    const response = await axios.post(
-      "https://puspa.sinus.ac.id/api/v1/auth/forgot-password",
-      { email },
-      { headers: { "Content-Type": "application/json" } }
+    const response = await axiosInstance.post(
+      "/auth/forgot-password",
+      { email }
     );
 
     return {

@@ -1,3 +1,4 @@
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
 
 export interface ResetPasswordPayload {
@@ -19,10 +20,9 @@ export async function resetPassword({
   password_confirmation,
 }: ResetPasswordPayload): Promise<ResetPasswordResponse> {
   try {
-    const res = await axios.post(
-      `https://puspa.sinus.ac.id/api/v1/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`,
-      { password, password_confirmation },
-      { headers: { "Content-Type": "application/json" } }
+    const res = await axiosInstance.post(
+      `/auth/reset-password?token=${token}&email=${encodeURIComponent(email)}`,
+      { password, password_confirmation }
     );
 
     return {

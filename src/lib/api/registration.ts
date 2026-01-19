@@ -1,5 +1,5 @@
+import axiosInstance from "@/lib/axios";
 import axios from "axios";
-
 
 export interface RegistrationPayload {
   child_name: string;
@@ -9,7 +9,7 @@ export interface RegistrationPayload {
   child_school: string;
   child_address: string;
   child_complaint: string;
-  child_service_choice: string; 
+  child_service_choice: string;
   email: string;
   guardian_name: string;
   guardian_phone: string;
@@ -18,15 +18,9 @@ export interface RegistrationPayload {
 
 export async function registrationChild(payload: RegistrationPayload) {
   try {
-    const response = await axios.post(
-      "https://puspa.sinus.ac.id/api/v1/registration", 
-      payload,
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-        withCredentials: false, 
-      }
+    const response = await axiosInstance.post(
+      "/registration",
+      payload
     );
 
     return response.data;

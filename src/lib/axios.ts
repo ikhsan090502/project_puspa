@@ -12,7 +12,14 @@ const axiosInstance = axios.create({
 // Interceptor untuk inject token dari localStorage
 axiosInstance.interceptors.request.use(
   (config) => {
-    if (typeof window !== "undefined") {
+    // 🔹 Jangan kirim Authorization jika ke endpoint auth / register
+    const isAuthPath =
+      config.url?.includes("/auth/login") ||
+      config.url?.includes("/auth/register") ||
+      config.url?.includes("/auth/forgot-password") ||
+      config.url?.includes("/auth/reset-password");
+
+    if (typeof window !== "undefined" && !isAuthPath) {
       const token = localStorage.getItem("token");
       const tokenType = localStorage.getItem("tokenType") || "Bearer";
 

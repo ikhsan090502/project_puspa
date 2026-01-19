@@ -1,5 +1,4 @@
-import axios from "axios";
-import { AxiosError } from "axios";
+import axiosInstance from "@/lib/axios";
 
 export async function registerUser({
   email,
@@ -11,8 +10,8 @@ export async function registerUser({
   password: string;
 }) {
   try {
-    const res = await axios.post(
-      "https://puspa.sinus.ac.id/api/v1/auth/register",
+    const res = await axiosInstance.post(
+      "/auth/register",
       { email, username, password }
     );
 
@@ -41,10 +40,10 @@ export async function registerUser({
 
         throw new Error(
           emailError ||
-            usernameError ||
-            passwordError ||
-            data.message ||
-            "Data tidak valid. Mohon periksa kembali."
+          usernameError ||
+          passwordError ||
+          data.message ||
+          "Data tidak valid. Mohon periksa kembali."
         );
       }
 
