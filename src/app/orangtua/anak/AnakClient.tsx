@@ -300,12 +300,12 @@ export default function ChildList() {
                     </div>
 
                     <div className="flex-1">
-                      <h2 className="font-semibold">{child.child_name}</h2>
-                      <p className="text-sm text-gray-500">
-                        {child.child_birth_info || ""}
-                      </p>
-                      <p className="text-sm text-gray-500 capitalize">
+                      <h2 className="font-semibold text-base">{child.child_name}</h2>
+                      <p className="text-xs text-gray-500">
                         {child.child_gender || ""}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {child.child_age || ""}
                       </p>
                     </div>
 

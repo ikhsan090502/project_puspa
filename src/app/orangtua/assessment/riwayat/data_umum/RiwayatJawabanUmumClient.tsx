@@ -148,7 +148,7 @@ export default function RiwayatJawabanUmumClient() {
       <SidebarOrangtua />
 
       <div className="flex-1 flex flex-col ml-2">
-        <HeaderOrangtua  />
+        <HeaderOrangtua />
 
         <main className="p-8 flex-1 overflow-y-auto">
           <div className="flex justify-end mb-4">
@@ -167,18 +167,16 @@ export default function RiwayatJawabanUmumClient() {
                 <div key={i} className="flex items-center">
                   <div className="flex flex-col items-center space-y-2">
                     <div
-                      className={`w-9 h-9 flex items-center justify-center rounded-full border-2 text-sm font-semibold ${
-                        i === activeStep
+                      className={`w-9 h-9 flex items-center justify-center rounded-full border-2 text-sm font-semibold ${i === activeStep
                           ? "bg-[#6BB1A0] border-[#6BB1A0] text-white"
                           : "bg-gray-100 border-gray-300 text-gray-500"
-                      }`}
+                        }`}
                     >
                       {i + 1}
                     </div>
                     <span
-                      className={`text-sm ${
-                        i === activeStep ? "font-semibold" : "text-gray-500"
-                      }`}
+                      className={`text-sm ${i === activeStep ? "font-semibold" : "text-gray-500"
+                        }`}
                     >
                       {label}
                     </span>
@@ -202,7 +200,7 @@ export default function RiwayatJawabanUmumClient() {
               <select
                 value={activeAspekIndex}
                 onChange={(e) => setActiveAspekIndex(Number(e.target.value))}
-                className="border rounded-lg px-4 py-2 text-sm"
+                className="appearance-none border border-none rounded-lg bg-[#36315B] text-white text-sm pr-10 px-4 py-2 cursor-pointer"
               >
                 {parentGeneralRanges.map((a, i) => (
                   <option key={a.key} value={i}>

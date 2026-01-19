@@ -165,10 +165,9 @@ export default function RiwayatJawabanPaedagogClient() {
                   key={aspek}
                   onClick={() => setActiveAspek(aspek)}
                   className={`rounded-full border px-5 py-2 text-sm font-semibold transition
-                    ${
-                      isActive
-                        ? "border-[#81B7A9] bg-[#EAF4F1] text-[#2E7D6B]"
-                        : "border-gray-300 bg-white hover:bg-gray-100"
+                    ${isActive
+                      ? "border-[#81B7A9] bg-[#EAF4F1] text-[#2E7D6B]"
+                      : "border-gray-300 bg-white hover:bg-gray-100"
                     }`}
                 >
                   {aspek}
@@ -210,7 +209,7 @@ export default function RiwayatJawabanPaedagogClient() {
                         <select
                           disabled
                           value={String(q.answer.value)}
-                          className="w-80 appearance-none rounded-md border bg-gray-200 py-4 px-2"
+                          className="w-80 appearance-none rounded-md border border-none bg-[#36315B] text-white py-4 px-2 cursor-not-allowed opacity-80"
                         >
                           <option value="0">0 - Buruk</option>
                           <option value="1">1 - Kurang Baik</option>
@@ -220,7 +219,7 @@ export default function RiwayatJawabanPaedagogClient() {
 
                         <ChevronDown
                           size={18}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-white"
                         />
                       </div>
                     </div>

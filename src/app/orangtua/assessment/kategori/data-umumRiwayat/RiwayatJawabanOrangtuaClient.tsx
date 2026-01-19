@@ -232,9 +232,9 @@ export default function RiwayatJawabanOrangtuaClient() {
           </div>
           <div><p className="font-semibold">Nama Ayah</p><p>{familyInfo.father_name || "-"}</p></div>
           <div>
-  <p className="font-semibold">Tanggal Lahir</p>
-  <p>{familyInfo.father_birth_date || "-"}</p>
-</div>
+            <p className="font-semibold">Tanggal Lahir</p>
+            <p>{familyInfo.father_birth_date || "-"}</p>
+          </div>
 
           <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.father_phone || "-"}</p></div>
           <div><p className="font-semibold">NIK</p><p>{familyInfo.father_identity_number || "-"}</p></div>
@@ -246,9 +246,9 @@ export default function RiwayatJawabanOrangtuaClient() {
           </div>
           <div><p className="font-semibold">Nama Ibu</p><p>{familyInfo.mother_name || "-"}</p></div>
           <div>
-  <p className="font-semibold">Tanggal Lahir</p>
-  <p>{familyInfo.mother_birth_date || "-"}</p>
-</div>
+            <p className="font-semibold">Tanggal Lahir</p>
+            <p>{familyInfo.mother_birth_date || "-"}</p>
+          </div>
 
           <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.mother_phone || "-"}</p></div>
           <div><p className="font-semibold">NIK</p><p>{familyInfo.mother_identity_number || "-"}</p></div>
@@ -259,10 +259,10 @@ export default function RiwayatJawabanOrangtuaClient() {
             Data Wali
           </div>
           <div><p className="font-semibold">Nama Wali</p><p>{familyInfo.guardian_name || "-"}</p></div>
-         <div>
-  <p className="font-semibold">Tanggal Lahir</p>
-  <p>{familyInfo.guardian_birth_date || "-"}</p>
-</div>
+          <div>
+            <p className="font-semibold">Tanggal Lahir</p>
+            <p>{familyInfo.guardian_birth_date || "-"}</p>
+          </div>
 
           <div><p className="font-semibold">No. Telepon</p><p>{familyInfo.guardian_phone || "-"}</p></div>
           <div><p className="font-semibold">NIK</p><p>{familyInfo.guardian_identity_number || "-"}</p></div>
@@ -278,7 +278,7 @@ export default function RiwayatJawabanOrangtuaClient() {
           <select
             value={activeCategory}
             onChange={(e) => setActiveCategory(e.target.value)}
-            className="appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm"
+            className="appearance-none border border-none rounded-lg bg-[#36315B] text-white text-sm px-4 py-2 pr-10 cursor-pointer"
           >
             {parentGeneralRanges.map((g) => (
               <option key={g.group_key} value={g.group_key}>
@@ -286,7 +286,7 @@ export default function RiwayatJawabanOrangtuaClient() {
               </option>
             ))}
           </select>
-          <ChevronDown className="absolute right-2.5 top-2.5 w-4 h-4" />
+          <ChevronDown className="absolute right-2.5 top-2.5 w-4 h-4 text-white pointer-events-none" />
         </div>
       </div>
 

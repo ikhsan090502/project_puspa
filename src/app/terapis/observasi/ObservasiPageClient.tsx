@@ -74,7 +74,7 @@ export default function RiwayatObservasiPageClient() {
     try {
       setLoading(true);
 
-      const result = await getObservations("completed");
+      const result = await getObservations("scheduled"); // Changed from "completed" to show upcoming
 
       const mapped: Anak[] =
         result?.map((item: any) => {
@@ -97,7 +97,7 @@ export default function RiwayatObservasiPageClient() {
       setData(mapped);
     } catch (err) {
       console.error(err);
-      alert("Gagal mengambil riwayat observasi.");
+      alert("Gagal mengambil daftar observasi.");
     } finally {
       setLoading(false);
     }
@@ -117,8 +117,17 @@ export default function RiwayatObservasiPageClient() {
     // reset page saat filter berubah
     setPage(1);
 
+    const matchActiveKategori = (d: Anak) => {
+      if (activeKategori === 0) return true; // Semua
+      const kat = kategori[activeKategori];
+      if (kat.title === "Dini") return d.kategoriUsia === "dini";
+      if (kat.title === "Prasekolah") return d.kategoriUsia === "prasekolah";
+      if (kat.title === "Sekolah") return d.kategoriUsia === "sekolah";
+      return true;
+    };
+
     return data
-      .filter((d) => kategori[activeKategori].filter(d))
+      .filter(matchActiveKategori)
       .filter((d) => (searchName ? d.nama.toLowerCase().includes(searchName.toLowerCase()) : true))
       .filter((d) => (filterDate ? d.tglObservasi === filterDate : true));
   }, [data, activeKategori, searchName, filterDate]);
@@ -131,14 +140,15 @@ export default function RiwayatObservasiPageClient() {
     return filtered.slice(start, start + itemsPerPage);
   }, [filtered, page]);
 
-  // ==================== Routes (KUNCI PERBAIKAN) ====================
-  // Kirim DUA param: observation_id dan id (biar halaman tujuan aman baca mana pun)
-  const handleRiwayatJawaban = (observationId: string) => {
-    router.push(`/terapis/riwayat-hasil?observation_id=${encodeURIComponent(observationId)}&id=${encodeURIComponent(observationId)}`);
+  // ==================== Actions ====================
+  const handleStartObservasi = (anak: Anak) => {
+    router.push(
+      `/terapis/observasi/form_observasi?observation_id=${anak.observation_id}&nama=${encodeURIComponent(anak.nama)}&usia=${encodeURIComponent(anak.child_age)}&tglObservasi=${encodeURIComponent(anak.tglObservasi)}`
+    );
   };
 
-  const handleLihatHasil = (observationId: string) => {
-    router.push(`/terapis/hasil-observasi?observation_id=${encodeURIComponent(observationId)}&id=${encodeURIComponent(observationId)}`);
+  const handleRiwayat = () => {
+    router.push("/terapis/observasi/riwayat");
   };
 
   return (
@@ -146,18 +156,18 @@ export default function RiwayatObservasiPageClient() {
       <SidebarTerapis />
 
       <div className="flex flex-col flex-1 bg-gray-50">
-        {/* FIX: pakai pageTitle biar tidak fallback ke Dashboard */}
         <HeaderTerapis pageTitle="Observasi" />
 
         <main className="p-4 sm:p-6 overflow-y-auto">
-          <button
-            onClick={() => router.push("/terapis/observasi")}
-            className="mb-4 px-4 py-2 text-sm font-semibold text-[#36315B] border border-[#81B7A9] rounded hover:bg-[#81B7A9] hover:text-white transition"
-          >
-            Kembali
-          </button>
-
-          <h2 className="text-lg sm:text-2xl font-bold text-center mb-6">Riwayat Observasi</h2>
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-lg sm:text-2xl font-bold">Pilih Anak Untuk Observasi</h2>
+            <button
+              onClick={handleRiwayat}
+              className="px-4 py-2 bg-[#81B7A9] text-white rounded hover:bg-[#36315B] transition font-semibold"
+            >
+              Riwayat
+            </button>
+          </div>
 
           {/* Filter */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-5">
@@ -183,9 +193,8 @@ export default function RiwayatObservasiPageClient() {
               <button
                 key={idx}
                 onClick={() => setActiveKategori(idx)}
-                className={`relative px-3 sm:px-4 py-2 text-sm sm:text-base font-medium transition-colors ${
-                  activeKategori === idx ? "text-[#36315B]" : "text-gray-500 hover:text-[#36315B]"
-                }`}
+                className={`relative px-3 sm:px-4 py-2 text-sm sm:text-base font-medium transition-colors ${activeKategori === idx ? "text-[#36315B]" : "text-gray-500 hover:text-[#36315B]"
+                  }`}
               >
                 {kat.title}
                 {activeKategori === idx && (
@@ -230,76 +239,28 @@ export default function RiwayatObservasiPageClient() {
                   <tbody>
                     {paginatedData.length > 0 ? (
                       paginatedData.map((d) => (
-                        <tr key={d.observation_id} className="border-b border-[#81B7A9] hover:bg-gray-50">
-                          <td className="py-2 text-center">{d.nama}</td>
-                          <td className="py-2 text-center">{d.orangTua}</td>
-                          <td className="py-2 text-center">{d.telepon}</td>
-                          <td className="py-2 text-center">{d.observer}</td>
-                          <td className="py-2 text-center">{d.tglObservasi}</td>
-                          <td className="py-2 text-center">{d.waktu}</td>
+                        <tr key={d.observation_id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                          <td className="py-3 px-4 text-center font-medium">{d.nama}</td>
+                          <td className="py-3 px-4 text-center">{d.orangTua}</td>
+                          <td className="py-3 px-4 text-center">{d.telepon}</td>
+                          <td className="py-3 px-4 text-center">{d.observer}</td>
+                          <td className="py-3 px-4 text-center">{d.tglObservasi}</td>
+                          <td className="py-3 px-4 text-center">{d.waktu}</td>
 
-                          <td className="py-2 text-center relative">
+                          <td className="py-3 px-4 text-center">
                             <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-
-                                const rect = e.currentTarget.getBoundingClientRect();
-                                const nextOpen = openDropdown === d.observation_id ? null : d.observation_id;
-
-                                setOpenDropdown(nextOpen);
-
-                                if (nextOpen) {
-                                  setDropdownPosition({
-                                    top: rect.bottom + 6 + window.scrollY,
-                                    left: rect.left - 120 + window.scrollX,
-                                  });
-                                } else {
-                                  setDropdownPosition(null);
-                                }
-                              }}
-                              className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+                              onClick={() => handleStartObservasi(d)}
+                              className="px-4 py-1.5 bg-[#81B7A9] text-white rounded hover:bg-[#36315B] transition text-xs font-semibold"
                             >
-                              <Settings size={14} className="mr-1" />
-                              Aksi
-                              <ChevronDown size={12} className="ml-1" />
+                              Mulai
                             </button>
-
-                            {openDropdown === d.observation_id && dropdownPosition && (
-                              <div
-                                className="fixed z-50 mt-2 w-48 origin-top-right rounded-md bg-white shadow-md border border-[#80C2B0]"
-                                style={{
-                                  top: dropdownPosition.top,
-                                  left: dropdownPosition.left,
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <div className="py-1 text-[#5F52BF]">
-                                  <button
-                                    onClick={() => handleRiwayatJawaban(d.observation_id)}
-                                    className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
-                                  >
-                                    <Clock3 size={16} className="mr-2" />
-                                    Riwayat Jawaban
-                                  </button>
-
-                                  <button
-                                    onClick={() => handleLihatHasil(d.observation_id)}
-                                    className="flex items-center w-full px-4 py-2 text-sm hover:bg-[#E9F4F1]"
-                                  >
-                                    <Eye size={16} className="mr-2" />
-                                    Lihat Hasil
-                                  </button>
-                                </div>
-                              </div>
-                            )}
                           </td>
                         </tr>
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={7} className="text-center py-4 text-gray-500">
-                          Tidak ada data observasi completed.
+                        <td colSpan={7} className="text-center py-10 text-gray-400">
+                          Tidak ada jadwal observasi untuk kategori ini.
                         </td>
                       </tr>
                     )}
@@ -312,9 +273,8 @@ export default function RiwayatObservasiPageClient() {
                     <button
                       disabled={page === 1}
                       onClick={() => setPage((p) => Math.max(1, p - 1))}
-                      className={`px-3 py-1 rounded border ${
-                        page === 1 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-100"
-                      }`}
+                      className={`px-3 py-1 rounded border ${page === 1 ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-100"
+                        }`}
                     >
                       Prev
                     </button>
@@ -326,9 +286,8 @@ export default function RiwayatObservasiPageClient() {
                     <button
                       disabled={page === totalPages}
                       onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                      className={`px-3 py-1 rounded border ${
-                        page === totalPages ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-100"
-                      }`}
+                      className={`px-3 py-1 rounded border ${page === totalPages ? "bg-gray-200 text-gray-400 cursor-not-allowed" : "bg-white hover:bg-gray-100"
+                        }`}
                     >
                       Next
                     </button>

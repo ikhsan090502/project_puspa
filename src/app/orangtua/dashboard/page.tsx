@@ -101,24 +101,24 @@ export default function DashboardOrtuPage() {
         });
 
         /* ===== CHART ===== */
-      const CH = (await getOrtuDashboardChart())?.data ?? [];
+        const CH = (await getOrtuDashboardChart())?.data ?? [];
 
-const mappedChart: ChartItem[] = CH
-  .map((x: any): ChartItem => {
-    const [bulan] = String(x.month ?? "").split(" ");
-    const m = MONTH_ORDER[bulan];
+        const mappedChart: ChartItem[] = CH
+          .map((x: any): ChartItem => {
+            const [bulan] = String(x.month ?? "").split(" ");
+            const m = MONTH_ORDER[bulan];
 
-    return {
-      monthIndex: m?.index ?? 0,
-      name: m?.label ?? "-",
-      total_children: Number(x.total_children ?? 0),
-      total_observations: Number(x.total_observations ?? 0),
-      total_assessments: Number(x.total_assessments ?? 0),
-    };
-  })
-  .sort((a: ChartItem, b: ChartItem) => a.monthIndex - b.monthIndex);
+            return {
+              monthIndex: m?.index ?? 0,
+              name: m?.label ?? "-",
+              total_children: Number(x.total_children ?? 0),
+              total_observations: Number(x.total_observations ?? 0),
+              total_assessments: Number(x.total_assessments ?? 0),
+            };
+          })
+          .sort((a: ChartItem, b: ChartItem) => a.monthIndex - b.monthIndex);
 
-setChartData(mappedChart);
+        setChartData(mappedChart);
 
 
         /* ===== SCHEDULE ===== */
@@ -194,11 +194,11 @@ setChartData(mappedChart);
 
       {/* CONTENT */}
       <div className="ml-0 md:ml-64 h-screen flex flex-col">
-        <header className="fixed top-0 left-0 md:left-64 right-0 h-16 z-30 bg-white shadow">
+        <header className="fixed top-0 left-0 md:left-64 right-0 h-14 z-30 bg-white shadow">
           <HeaderOrangtua />
         </header>
 
-        <main className="mt-16 h-[calc(100vh-4rem)] overflow-y-auto p-6 space-y-8">
+        <main className="mt-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-6 space-y-8">
           {/* ================= METRIC ================= */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <MetricCard title="Total Anak/Pasien" data={stats.total_children} icon="👶" />
@@ -207,43 +207,43 @@ setChartData(mappedChart);
           </div>
 
           {/* ================= CHART ================= */}
-           <div className="bg-white rounded-xl p-5 shadow">
-  <h3 className="font-semibold mb-3">Grafik Aktivitas</h3>
+          <div className="bg-white rounded-xl p-5 shadow">
+            <h3 className="font-semibold mb-3">Grafik Aktivitas</h3>
 
-  <div className="h-[260px]">
-    <ResponsiveContainer width="100%" height="100%">
-      <AreaChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" opacity={0.08} />
+            <div className="h-[260px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.08} />
 
-        <XAxis dataKey="name" />
+                  <XAxis dataKey="name" />
 
-        <YAxis
-          domain={[0, 100]}
-          ticks={[0, 20, 40, 60, 80, 100]}
-          allowDecimals={false}
-        />
+                  <YAxis
+                    domain={[0, 100]}
+                    ticks={[0, 20, 40, 60, 80, 100]}
+                    allowDecimals={false}
+                  />
 
-        <ReTooltip />
+                  <ReTooltip />
 
-        <Area
-          dataKey="total_children"
-          stroke="#7c73f6"
-          fillOpacity={0.15}
-        />
-        <Area
-          dataKey="total_observations"
-          stroke="#34d399"
-          fillOpacity={0.15}
-        />
-        <Area
-          dataKey="total_assessments"
-          stroke="#fb923c"
-          fillOpacity={0.15}
-        />
-      </AreaChart>
-    </ResponsiveContainer>
-  </div>
-</div>
+                  <Area
+                    dataKey="total_children"
+                    stroke="#7c73f6"
+                    fillOpacity={0.15}
+                  />
+                  <Area
+                    dataKey="total_observations"
+                    stroke="#34d399"
+                    fillOpacity={0.15}
+                  />
+                  <Area
+                    dataKey="total_assessments"
+                    stroke="#fb923c"
+                    fillOpacity={0.15}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
 
           {/* ================= TABLE ================= */}
@@ -278,78 +278,78 @@ setChartData(mappedChart);
             </div>
 
             <table className="w-full text-sm">
-             <thead className="border-b text-gray-500 text-center">
-  {activeTab === "Semua" && (
-    <tr>
-      <th className="py-3">Nama Pasien</th>
-      <th>Jenis Layanan</th>
-      <th>Status</th>
-      <th>Tanggal</th>
-      <th>Waktu</th>
-    </tr>
-  )}
-  {activeTab === "Observasi" && (
-    <tr>
-      <th className="py-3">Nama Pasien</th>
-      <th>Observer</th>
-      <th>Status</th>
-      <th>Tanggal Observasi</th>
-      <th>Waktu</th>
-    </tr>
-  )}
-  {activeTab === "Assessment" && (
-    <tr>
-      <th className="py-3">Nama Pasien</th>
-      <th>Jenis Assessment</th>
-      <th>Asesor</th>
-      <th>Tanggal Assessment</th>
-      <th>Waktu</th>
-    </tr>
-  )}
-</thead>
+              <thead className="border-b text-gray-500 text-center">
+                {activeTab === "Semua" && (
+                  <tr>
+                    <th className="py-3">Nama Pasien</th>
+                    <th>Jenis Layanan</th>
+                    <th>Status</th>
+                    <th>Tanggal</th>
+                    <th>Waktu</th>
+                  </tr>
+                )}
+                {activeTab === "Observasi" && (
+                  <tr>
+                    <th className="py-3">Nama Pasien</th>
+                    <th>Observer</th>
+                    <th>Status</th>
+                    <th>Tanggal Observasi</th>
+                    <th>Waktu</th>
+                  </tr>
+                )}
+                {activeTab === "Assessment" && (
+                  <tr>
+                    <th className="py-3">Nama Pasien</th>
+                    <th>Jenis Assessment</th>
+                    <th>Asesor</th>
+                    <th>Tanggal Assessment</th>
+                    <th>Waktu</th>
+                  </tr>
+                )}
+              </thead>
 
 
               <tbody className="text-center">
-  {filteredSchedule.length === 0 ? (
-    <tr>
-      <td colSpan={5} className="py-6 text-center text-gray-400">
-        Tidak ada jadwal
-      </td>
-    </tr>
-  ) : (
-    filteredSchedule.map((r) => (
-      <tr key={r.id} className="border-b">
-        {activeTab === "Semua" && (
-          <>
-            <td className="py-3">{r.nama_pasien}</td>
-            <td>{r.service_type || "-"}</td>
-            <td>{r.status}</td>
-            <td>{formatDateID(r.tanggal)}</td>
-            <td>{r.waktu}</td>
-          </>
-        )}
-        {activeTab === "Observasi" && (
-          <>
-            <td className="py-3">{r.nama_pasien}</td>
-            <td>{r.observer}</td>
-            <td>{r.status}</td>
-            <td>{formatDateID(r.tanggal)}</td>
-            <td>{r.waktu}</td>
-          </>
-        )}
-        {activeTab === "Assessment" && (
-          <>
-            <td className="py-3">{r.nama_pasien}</td>
-            <td>{r.service_type || "-"}</td>
-            <td>{r.assessor}</td>
-            <td>{formatDateID(r.tanggal)}</td>
-            <td>{r.waktu}</td>
-          </>
-        )}
-      </tr>
-    ))
-  )}
-</tbody>
+                {filteredSchedule.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="py-6 text-center text-gray-400">
+                      Tidak ada jadwal
+                    </td>
+                  </tr>
+                ) : (
+                  filteredSchedule.map((r) => (
+                    <tr key={r.id} className="border-b">
+                      {activeTab === "Semua" && (
+                        <>
+                          <td className="py-3">{r.nama_pasien}</td>
+                          <td>{r.service_type || "-"}</td>
+                          <td>{r.status}</td>
+                          <td>{formatDateID(r.tanggal)}</td>
+                          <td>{r.waktu}</td>
+                        </>
+                      )}
+                      {activeTab === "Observasi" && (
+                        <>
+                          <td className="py-3">{r.nama_pasien}</td>
+                          <td>{r.observer}</td>
+                          <td>{r.status}</td>
+                          <td>{formatDateID(r.tanggal)}</td>
+                          <td>{r.waktu}</td>
+                        </>
+                      )}
+                      {activeTab === "Assessment" && (
+                        <>
+                          <td className="py-3">{r.nama_pasien}</td>
+                          <td>{r.service_type || "-"}</td>
+                          <td>{r.assessor}</td>
+                          <td>{formatDateID(r.tanggal)}</td>
+                          <td>{r.waktu}</td>
+                        </>
+                      )}
+                    </tr>
+                  ))
+                )}
+              </tbody>
 
             </table>
           </div>
@@ -376,11 +376,10 @@ function MetricCard({
         <div className="text-2xl font-bold">{data.count}</div>
         {data.label && (
           <div
-            className={`text-xs mt-1 ${
-              data.direction === "down"
+            className={`text-xs mt-1 ${data.direction === "down"
                 ? "text-red-500"
                 : "text-green-600"
-            }`}
+              }`}
           >
             {data.label}
           </div>

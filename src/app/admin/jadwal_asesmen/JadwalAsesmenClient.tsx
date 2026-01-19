@@ -253,11 +253,10 @@ export default function JadwalAsesmenClient() {
                   key={t}
                   type="button"
                   onClick={() => setTab(t)}
-                  className={`relative pb-2 text-sm font-medium ${
-                    tab === t
-                      ? "text-[#36315B] border-b-2 border-[#81B7A9] font-semibold"
-                      : "text-gray-500 hover:text-gray-700"
-                  }`}
+                  className={`relative pb-2 text-sm font-medium ${tab === t
+                    ? "text-[#36315B] border-b-2 border-[#81B7A9] font-semibold"
+                    : "text-gray-500 hover:text-gray-700"
+                    }`}
                 >
                   {t === "terjadwal" ? "Terjadwal" : "Selesai"}
                 </button>
@@ -356,7 +355,7 @@ export default function JadwalAsesmenClient() {
                                   : { assessment_id: j.assessment_id, role: "ortu" }
                               );
                             }}
-                            className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+                            className="px-3 py-1 border border-[#36315B] text-[#36315B] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                           >
                             Ortu <ChevronDown size={12} className="ml-1" />
                           </button>
@@ -372,7 +371,7 @@ export default function JadwalAsesmenClient() {
                                   : { assessment_id: j.assessment_id, role: "asessor" }
                               );
                             }}
-                            className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+                            className="px-3 py-1 border border-[#36315B] text-[#36315B] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                           >
                             Asessor <ChevronDown size={12} className="ml-1" />
                           </button>
@@ -467,7 +466,7 @@ export default function JadwalAsesmenClient() {
                                 : { assessment_id: j.assessment_id, role: "ortu" }
                             );
                           }}
-                          className="px-3 py-1 border border-[#80C2B0] text-[#5F52BF] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
+                          className="px-3 py-1 border border-[#36315B] text-[#36315B] rounded hover:bg-[#E9F4F1] text-xs inline-flex items-center"
                         >
                           <Settings size={14} className="mr-1" />
                           Aksi

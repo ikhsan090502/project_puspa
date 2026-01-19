@@ -335,13 +335,12 @@ export default function FormObservasiPageClient() {
                           <button
                             type="button"
                             onClick={() => setActiveTab(k)}
-                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${
-                              isActive
-                                ? "bg-[#5F52BF] text-white"
-                                : sudahDiisi
+                            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${isActive
                                 ? "bg-[#81B7A9] text-white"
-                                : "bg-gray-300 text-black"
-                            }`}
+                                : sudahDiisi
+                                  ? "bg-[#36315B] text-white"
+                                  : "bg-gray-200 text-gray-500"
+                              }`}
                           >
                             {i + 1}
                           </button>

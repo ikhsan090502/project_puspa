@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Sidebar from "@/components/layout/sidebar";
 import Header from "@/components/layout/header";
 import FormUbahPatient from "@/components/form/FormUbahPatient";
+import { Pencil, Trash2 } from "lucide-react";
 import api from "@/lib/axios";
 
 type PatientItem = {
@@ -227,38 +228,56 @@ export default function DataPasienPage() {
               <p className="text-gray-500">Belum ada data pasien.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {patients.map((p) => (
-                <div key={p.child_id} className="bg-white border rounded-xl p-4 shadow-sm">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="font-semibold">{p.child_name}</p>
-                      <p className="text-sm text-gray-500">{p.child_birth_info || "-"}</p>
-                      <p className="text-sm text-gray-500 capitalize">{p.child_gender || "-"}</p>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelected(p);
-                        setOpenEdit(true);
-                      }}
-                      className="px-3 py-1 text-sm rounded-lg border border-[#81B7A9] text-[#36315B] hover:bg-[#E9F4F1]"
-                    >
-                      Ubah
-                    </button>
-                  </div>
-
-                  <div className="mt-3 text-sm text-gray-700">
-                    <p>
-                      <span className="font-medium">Sekolah:</span> {p.child_school || "-"}
-                    </p>
-                    <p>
-                      <span className="font-medium">Alamat:</span> {p.child_address || "-"}
-                    </p>
-                  </div>
-                </div>
-              ))}
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200 text-[#36315B]">
+                      <th className="px-4 py-3 text-left font-semibold">No</th>
+                      <th className="px-4 py-3 text-left font-semibold">Nama Anak</th>
+                      <th className="px-4 py-3 text-left font-semibold">Tanggal Lahir</th>
+                      <th className="px-4 py-3 text-left font-semibold">Usia</th>
+                      <th className="px-4 py-3 text-left font-semibold">Jenis Kelamin</th>
+                      <th className="px-4 py-3 text-left font-semibold">Asal Sekolah</th>
+                      <th className="px-4 py-3 text-center font-semibold">Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {patients.map((p, index) => (
+                      <tr key={p.child_id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 text-gray-700">{index + 1}</td>
+                        <td className="px-4 py-3 font-medium text-[#36315B]">{p.child_name}</td>
+                        <td className="px-4 py-3 text-gray-600">{p.child_birth_date || "-"}</td>
+                        <td className="px-4 py-3 text-gray-600">{p.child_age || "-"}</td>
+                        <td className="px-4 py-3 text-gray-600 capitalize">{p.child_gender || "-"}</td>
+                        <td className="px-4 py-3 text-gray-600">{p.child_school || "-"}</td>
+                        <td className="px-4 py-3 text-center">
+                          <div className="flex justify-center items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setSelected(p);
+                                setOpenEdit(true);
+                              }}
+                              className="p-2 text-[#81B7A9] hover:bg-[#E9F4F1] rounded-lg transition-colors"
+                              title="Ubah"
+                            >
+                              <Pencil size={18} />
+                            </button>
+                            <button
+                              type="button"
+                              className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                              title="Hapus"
+                            >
+                              <Trash2 size={18} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )}
         </main>
@@ -273,38 +292,38 @@ export default function DataPasienPage() {
         initialData={
           selected
             ? {
-                child_name: selected.child_name || "",
-                child_birth_info: selected.child_birth_info || "",
-                child_birth_date: selected.child_birth_date || "",
-                child_age: selected.child_age || "",
-                child_gender: selected.child_gender ?? "",
-                child_school: selected.child_school || "",
-                child_address: selected.child_address || "",
+              child_name: selected.child_name || "",
+              child_birth_info: selected.child_birth_info || "",
+              child_birth_date: selected.child_birth_date || "",
+              child_age: selected.child_age || "",
+              child_gender: selected.child_gender ?? "",
+              child_school: selected.child_school || "",
+              child_address: selected.child_address || "",
 
-                father_identity_number: selected.father_identity_number || "",
-                father_name: selected.father_name || "",
-                father_phone: selected.father_phone || "",
-                father_birth_date: selected.father_birth_date || "",
-                father_occupation: selected.father_occupation || "",
-                father_relationship: selected.father_relationship || "",
+              father_identity_number: selected.father_identity_number || "",
+              father_name: selected.father_name || "",
+              father_phone: selected.father_phone || "",
+              father_birth_date: selected.father_birth_date || "",
+              father_occupation: selected.father_occupation || "",
+              father_relationship: selected.father_relationship || "",
 
-                mother_identity_number: selected.mother_identity_number || "",
-                mother_name: selected.mother_name || "",
-                mother_phone: selected.mother_phone || "",
-                mother_birth_date: selected.mother_birth_date || "",
-                mother_occupation: selected.mother_occupation || "",
-                mother_relationship: selected.mother_relationship || "",
+              mother_identity_number: selected.mother_identity_number || "",
+              mother_name: selected.mother_name || "",
+              mother_phone: selected.mother_phone || "",
+              mother_birth_date: selected.mother_birth_date || "",
+              mother_occupation: selected.mother_occupation || "",
+              mother_relationship: selected.mother_relationship || "",
 
-                guardian_identity_number: selected.guardian_identity_number || "",
-                guardian_name: selected.guardian_name || "",
-                guardian_phone: selected.guardian_phone || "",
-                guardian_birth_date: selected.guardian_birth_date || "",
-                guardian_occupation: selected.guardian_occupation || "",
-                guardian_relationship: selected.guardian_relationship || "",
+              guardian_identity_number: selected.guardian_identity_number || "",
+              guardian_name: selected.guardian_name || "",
+              guardian_phone: selected.guardian_phone || "",
+              guardian_birth_date: selected.guardian_birth_date || "",
+              guardian_occupation: selected.guardian_occupation || "",
+              guardian_relationship: selected.guardian_relationship || "",
 
-                child_complaint: selected.child_complaint || "",
-                child_service_choice: selected.child_service_choice || "",
-              }
+              child_complaint: selected.child_complaint || "",
+              child_service_choice: selected.child_service_choice || "",
+            }
             : undefined
         }
         onUpdate={async (payload) => {

@@ -168,9 +168,9 @@ export default function OkupasiAssessmentClient() {
       if (status === 403) {
         alert(
           "❌ Anda tidak memiliki izin untuk mengirim assessment ini.\n\n" +
-            "Pastikan:\n" +
-            "- Login sebagai Asesor sesuai jenis terapi\n" +
-            "- Assessment ini adalah milik Anda"
+          "Pastikan:\n" +
+          "- Login sebagai Asesor sesuai jenis terapi\n" +
+          "- Assessment ini adalah milik Anda"
         );
         return;
       }
@@ -227,36 +227,36 @@ export default function OkupasiAssessmentClient() {
                 const ui = answers[q.id] ?? {};
 
                 if (q.answer_type === "checkbox") {
-                 return (
-  <div key={q.id}>
-    <label className="font-semibold block mb-2">
-      {q.question_text}
-    </label>
+                  return (
+                    <div key={q.id}>
+                      <label className="font-semibold block mb-2">
+                        {q.question_text}
+                      </label>
 
-    {["paedagog", "okupasi", "wicara", "fisio"].map((opt) => {
-      return (
-        <label
-          key={opt}
-          className="flex gap-2 items-center mb-1 cursor-pointer"
-        >
-          <input
-            type="checkbox"
-            className="h-4 w-4 accent-[#409E86]"
-            checked={ui.checked?.includes(opt) ?? false}
-            onChange={(e) =>
-              handleCheckboxToggle(
-                q.id,
-                opt,
-                e.target.checked
-              )
-            }
-          />
-          <span className="capitalize">{opt}</span>
-        </label>
-      );
-    })}
-  </div>
-);
+                      {["paedagog", "okupasi", "wicara", "fisio"].map((opt) => {
+                        return (
+                          <label
+                            key={opt}
+                            className="flex gap-2 items-center mb-1 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 accent-[#409E86]"
+                              checked={ui.checked?.includes(opt) ?? false}
+                              onChange={(e) =>
+                                handleCheckboxToggle(
+                                  q.id,
+                                  opt,
+                                  e.target.checked
+                                )
+                              }
+                            />
+                            <span className="capitalize">{opt}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  );
 
                 }
 
@@ -303,7 +303,7 @@ export default function OkupasiAssessmentClient() {
                         <td className="border p-2">{question}</td>
                         <td className="border p-2">
                           <select
-                            className="border rounded w-full"
+                            className="appearance-none border border-none rounded-lg bg-[#36315B] text-white text-sm p-2 w-full cursor-pointer"
                             value={ui.score ?? ""}
                             onChange={(e) =>
                               handleScoreChange(q.id, e.target.value)
@@ -334,41 +334,41 @@ export default function OkupasiAssessmentClient() {
             </table>
           )}
 
-        {/* =======================
+          {/* =======================
     NAVIGATION
 ======================= */}
-<div className="flex justify-between mt-6">
-  <button
-    className="bg-gray-300 px-4 py-2 rounded"
-    disabled={currentGroupIndex === 0}
-    onClick={() =>
-      setCurrentGroupIndex((i) => Math.max(i - 1, 0))
-    }
-  >
-    Sebelumnya
-  </button>
+          <div className="flex justify-between mt-6">
+            <button
+              className="bg-gray-300 px-4 py-2 rounded"
+              disabled={currentGroupIndex === 0}
+              onClick={() =>
+                setCurrentGroupIndex((i) => Math.max(i - 1, 0))
+              }
+            >
+              Sebelumnya
+            </button>
 
-  {currentGroupIndex < groups.length - 1 ? (
-    <button
-      className="bg-[#81B7A9] text-white px-4 py-2 rounded"
-      onClick={() =>
-        setCurrentGroupIndex((i) => i + 1)
-      }
-    >
-      Lanjutkan
-    </button>
-  ) : (
-    <button
-      className="bg-[#81B7A9] text-white px-4 py-2 rounded"
-      disabled={submitting}
-      onClick={handleSubmit}
-    >
-      {submitting ? "Mengirim..." : "Submit"}
-    </button>
-  )}
-</div>
+            {currentGroupIndex < groups.length - 1 ? (
+              <button
+                className="bg-[#81B7A9] text-white px-4 py-2 rounded"
+                onClick={() =>
+                  setCurrentGroupIndex((i) => i + 1)
+                }
+              >
+                Lanjutkan
+              </button>
+            ) : (
+              <button
+                className="bg-[#81B7A9] text-white px-4 py-2 rounded"
+                disabled={submitting}
+                onClick={handleSubmit}
+              >
+                {submitting ? "Mengirim..." : "Submit"}
+              </button>
+            )}
+          </div>
         </div>
-            </div>
+      </div>
     </div>
   );
 }

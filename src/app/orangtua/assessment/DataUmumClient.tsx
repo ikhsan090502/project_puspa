@@ -92,7 +92,7 @@ export default function DataUmumClient() {
       </button>
 
       {/* ================= CONTENT ================= */}
-<div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col">
         <HeaderOrangtua />
 
         <main className="flex-1 overflow-y-auto p-8 relative">
@@ -124,9 +124,14 @@ export default function DataUmumClient() {
                   {item.child_name}
                 </h3>
 
-                <div className="flex items-center text-sm text-gray-600 mb-2">
-                  <User className="w-4 h-4 mr-2 text-[#277373]" />
-                  {item.child_age} • {item.child_gender}
+                <div className="flex flex-col text-sm text-gray-600 mb-2 gap-1">
+                  <div className="flex items-center">
+                    <User className="w-4 h-4 mr-2 text-[#277373]" />
+                    {item.child_gender}
+                  </div>
+                  <div className="flex items-center ml-6">
+                    {item.child_age}
+                  </div>
                 </div>
 
                 <div className="flex items-center text-sm text-gray-600">

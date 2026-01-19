@@ -13,7 +13,7 @@ const HeaderOrangtua: React.FC = () => {
     "/orangtua/assessment": "Assessment",
     "/orangtua/assessment/kategori": "Formulir Assessment Orangtua",
     "/orangtua/assessment/kategori/data-umum": "Data Umum",
-     "/orangtua/assessment/kategori/data-umumRiwayat": " Riwayat Data Umum",
+    "/orangtua/assessment/kategori/data-umumRiwayat": " Riwayat Data Umum",
     "/orangtua/assessment/kategori/fisioterapi": "Data Fisioterapi",
     "/orangtua/assessment/kategori/fisioterapiRiwayat": "Riwayat Data Fisioterapi",
     "/orangtua/assessment/kategori/okupasi": "Data Terapi Okupasi",
@@ -21,7 +21,7 @@ const HeaderOrangtua: React.FC = () => {
     "/orangtua/assessment/kategori/wicara": "Data Terapi Wicara",
     "/orangtua/assessment/kategori/wicaraRiwayat": "Riwayat Data Terapi Wicara",
     "/orangtua/assessment/kategori/paedagog": "Data Paedagog",
-    "/orangtua/assessment/kategori/paedagogRiwayat": "Riwayat Data Paedagog",
+    "/orangtua/assessment/kategori/Riwayatpaedagog": "Riwayat Data Paedagog",
     "/orangtua/assessment/riwayat-jawaban": "Riwayat Jawaban",
     "/orangtua/help": "Bantuan",
     "/orangtua/profil": "Profil",
@@ -32,9 +32,9 @@ const HeaderOrangtua: React.FC = () => {
   const title = pageTitles[pathname] || "Dashboard";
 
   return (
-    <header className="w-full flex justify-between items-center px-6 py-4 bg-white shadow text-[#36315B]">
+    <header className="w-full flex justify-between items-center bg-white text-[#36315B]">
       {/* Judul Halaman */}
-      <h2 className="text-xl font-semibold">{title}</h2>
+      <h2 className="text-lg md:text-xl font-semibold">{title}</h2>
 
     </header>
   );

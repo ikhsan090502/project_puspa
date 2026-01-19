@@ -333,13 +333,12 @@ export default function RiwayatJawabanClient() {
                       <div key={k} className="relative flex flex-col items-center flex-shrink-0">
                         <div
                           onClick={() => setActiveTab(k)}
-                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${
-                            isActive
-                              ? "bg-[#5F52BF] text-white"
-                              : sudahDiisi
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-bold cursor-pointer transition ${isActive
                               ? "bg-[#81B7A9] text-white"
-                              : "bg-gray-300 text-black"
-                          }`}
+                              : sudahDiisi
+                                ? "bg-[#36315B] text-white"
+                                : "bg-gray-200 text-gray-500"
+                            }`}
                         >
                           {i + 1}
                         </div>
@@ -412,6 +411,30 @@ export default function RiwayatJawabanClient() {
                     </div>
                   </div>
                 ))}
+              </div>
+              <div className="flex justify-end items-center mt-10 gap-4 mb-10">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const idx = kategoriList.indexOf(activeTab);
+                    if (idx > 0) setActiveTab(kategoriList[idx - 1]);
+                  }}
+                  disabled={kategoriList.indexOf(activeTab) === 0}
+                  className="bg-white text-[#81B7A9] px-6 py-2 rounded-md border-2 border-[#81B7A9] hover:bg-[#81B7A9] hover:text-white transition disabled:opacity-50"
+                >
+                  Sebelumnya
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const idx = kategoriList.indexOf(activeTab);
+                    if (idx < kategoriList.length - 1) setActiveTab(kategoriList[idx + 1]);
+                  }}
+                  disabled={kategoriList.indexOf(activeTab) === kategoriList.length - 1}
+                  className="bg-[#81B7A9] text-white px-6 py-2 rounded-md hover:bg-[#36315B] transition disabled:opacity-50"
+                >
+                  Lanjutkan
+                </button>
               </div>
             </>
           )}

@@ -185,10 +185,9 @@ export default function RiwayatJawabanPaedagogClient() {
                   key={aspek}
                   onClick={() => setActiveAspek(aspek)}
                   className={`rounded-full border px-5 py-2 text-sm font-semibold transition
-                    ${
-                      isActive
-                        ? "border-[#81B7A9] bg-[#EAF4F1] text-[#2E7D6B]"
-                        : "border-gray-300 bg-white hover:bg-gray-100"
+                    ${isActive
+                      ? "border-[#81B7A9] bg-[#EAF4F1] text-[#2E7D6B]"
+                      : "border-gray-300 bg-white hover:bg-gray-100"
                     }`}
                 >
                   {aspek}
@@ -230,7 +229,7 @@ export default function RiwayatJawabanPaedagogClient() {
                         <select
                           disabled
                           value={String(q.answer.value)}
-                          className="w-80 appearance-none rounded-md border bg-gray-200 py-4 px-2"
+                          className="w-80 appearance-none border border-none rounded-lg bg-[#36315B] text-white py-4 px-2 cursor-not-allowed opacity-80"
                         >
                           <option value="0">0 - Buruk</option>
                           <option value="1">1 - Kurang Baik</option>
@@ -256,10 +255,9 @@ export default function RiwayatJawabanPaedagogClient() {
               onClick={goPrev}
               disabled={!hasPrev}
               className={`rounded-lg px-6 py-3 font-semibold transition
-                ${
-                  hasPrev
-                    ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                    : "cursor-not-allowed bg-gray-100 text-gray-400"
+                ${hasPrev
+                  ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  : "cursor-not-allowed bg-gray-100 text-gray-400"
                 }`}
             >
               ← Sebelumnya
@@ -273,10 +271,9 @@ export default function RiwayatJawabanPaedagogClient() {
               onClick={goNext}
               disabled={!hasNext}
               className={`rounded-lg px-6 py-3 font-semibold transition
-                ${
-                  hasNext
-                    ? "bg-[#81B7A9] text-white hover:bg-[#81B7A9]"
-                    : "cursor-not-allowed bg-gray-100 text-gray-400"
+                ${hasNext
+                  ? "bg-[#81B7A9] text-white hover:bg-[#81B7A9]"
+                  : "cursor-not-allowed bg-gray-100 text-gray-400"
                 }`}
             >
               Selanjutnya →

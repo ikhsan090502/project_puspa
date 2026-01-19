@@ -265,7 +265,7 @@ export default function FormAssessmentOrangtuaClient() {
       await updateParentIdentity(payload);
 
       alert("Identitas berhasil disimpan.");
-      
+
     } catch (err: any) {
       console.error("Gagal update identitas:", err);
       alert(err?.message || "Gagal menyimpan identitas");
@@ -324,7 +324,7 @@ export default function FormAssessmentOrangtuaClient() {
       );
 
       alert("Jawaban assessment berhasil dikirim.");
-      router.push( `/orangtua/assessment/kategori?assessment_id=${assessmentIdFromQuery}`);
+      router.push(`/orangtua/assessment/kategori?assessment_id=${assessmentIdFromQuery}`);
     } catch (err: any) {
       console.error("Gagal submit assessment:", err);
       alert(err?.message || "Gagal mengirim jawaban assessment");
@@ -339,51 +339,51 @@ export default function FormAssessmentOrangtuaClient() {
   ========================== */
   return (
     <div className="flex min-h-screen bg-gray-50">
-  {/* ================= SIDEBAR ================= */}
-  <aside
-    className={`
+      {/* ================= SIDEBAR ================= */}
+      <aside
+        className={`
       fixed top-0 left-0 h-full z-20
       w-64 bg-white shadow-md
       transform transition-transform duration-300
       ${sidebarOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"}
     `}
-  >
-    <SidebarOrangtua />
-  </aside>
+      >
+        <SidebarOrangtua />
+      </aside>
 
-  {/* overlay mobile */}
-  {sidebarOpen && (
-    <div
-      className="fixed inset-0 bg-black/30 z-10 md:hidden"
-      onClick={() => setSidebarOpen(false)}
-    />
-  )}
+      {/* overlay mobile */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black/30 z-10 md:hidden"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
 
-  {/* hamburger (mobile only) */}
-  <button
-    onClick={() => setSidebarOpen(!sidebarOpen)}
-    className="fixed top-4 left-4 z-30 md:hidden bg-white p-2 rounded-md shadow"
-  >
-    {sidebarOpen ? <X /> : <Menu />}
-  </button>
+      {/* hamburger (mobile only) */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="fixed top-4 left-4 z-30 md:hidden bg-white p-2 rounded-md shadow"
+      >
+        {sidebarOpen ? <X /> : <Menu />}
+      </button>
 
-  {/* ================= CONTENT ================= */}
-  <div className="flex-1 flex flex-col ml-0 md:ml-64">
-    {/* FIXED HEADER */}
-    <header className="fixed top-0 left-0 md:left-64 right-0 z-10 bg-white shadow h-16 flex items-center px-6">
-      <HeaderOrangtua />
-    </header>
+      {/* ================= CONTENT ================= */}
+      <div className="flex-1 flex flex-col ml-0 md:ml-64">
+        {/* FIXED HEADER */}
+        <header className="fixed top-0 left-0 md:left-64 right-0 z-10 bg-white shadow h-12 flex items-center px-6">
+          <HeaderOrangtua />
+        </header>
 
-    {/* SCROLLABLE MAIN */}
-    <main className="flex-1 pt-16 p-8 overflow-y-auto">
+        {/* SCROLLABLE MAIN */}
+        <main className="flex-1 pt-12 p-8 overflow-y-auto">
           {/* CLOSE BUTTON */}
           <div className="flex justify-end mb-4">
             <button
               onClick={() =>
-  router.push(
-    `/orangtua/assessment/kategori?assessment_id=${assessmentIdFromQuery}`
-  )
-}
+                router.push(
+                  `/orangtua/assessment/kategori?assessment_id=${assessmentIdFromQuery}`
+                )
+              }
 
               className="text-[#36315B] hover:text-red-500 font-bold text-2xl"
             >
@@ -403,8 +403,8 @@ export default function FormAssessmentOrangtuaClient() {
                   <div className="flex flex-col items-center text-center space-y-2">
                     <div
                       className={`w-9 h-9 rounded-full border-2 flex items-center justify-center ${i === activeStep
-                          ? "bg-[#6BB1A0] border-[#6BB1A0] text-white"
-                          : "bg-gray-100 border-gray-300 text-gray-500"
+                        ? "bg-[#6BB1A0] border-[#6BB1A0] text-white"
+                        : "bg-gray-100 border-gray-300 text-gray-500"
                         }`}
                     >
                       {i + 1}
@@ -431,7 +431,7 @@ export default function FormAssessmentOrangtuaClient() {
                 <select
                   value={activeCategory}
                   onChange={(e) => setActiveCategory(e.target.value)}
-                  className="appearance-none border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm text-[#36315B]"
+                  className="appearance-none border border-none rounded-lg px-3 py-2 pr-10 text-sm text-white bg-[#36315B] cursor-pointer"
                 >
                   {groups.map((g) => (
                     <option key={g.group_key} value={g.group_key}>
@@ -463,11 +463,11 @@ export default function FormAssessmentOrangtuaClient() {
 
                     <div className="flex flex-col">
                       <label className="font-medium mb-1">Tanggal Lahir</label>
-                    <input
-  className="w-full border border-gray-300 p-2 rounded-md bg-gray-50"
-  value={childBirthInfo}
-  onChange={(e) => setChildBirthInfo(e.target.value)}
-/>
+                      <input
+                        className="w-full border border-gray-300 p-2 rounded-md bg-gray-50"
+                        value={childBirthInfo}
+                        onChange={(e) => setChildBirthInfo(e.target.value)}
+                      />
 
 
                     </div>
@@ -493,11 +493,11 @@ export default function FormAssessmentOrangtuaClient() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm mb-8">
                     <InputField label="Nama Ayah" value={parentIdentity.father_name || ""} onChange={(v) => setParentField("father_name", v)} />
                     <InputField
-  label="Tanggal Lahir"
-  type="date"
-  value={parentIdentity.father_birth_date || ""}
-  onChange={(v) => setParentField("father_birth_date", v)}
-/>
+                      label="Tanggal Lahir"
+                      type="date"
+                      value={parentIdentity.father_birth_date || ""}
+                      onChange={(v) => setParentField("father_birth_date", v)}
+                    />
 
                     <InputField label="Pekerjaan" value={parentIdentity.father_occupation || ""} onChange={(v) => setParentField("father_occupation", v)} />
                     <InputField label="Nomor Telpon" value={parentIdentity.father_phone || ""} onChange={(v) => setParentField("father_phone", v)} />
@@ -510,11 +510,11 @@ export default function FormAssessmentOrangtuaClient() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm mb-8">
                     <InputField label="Nama Ibu" value={parentIdentity.mother_name || ""} onChange={(v) => setParentField("mother_name", v)} />
                     <InputField
-  label="Tanggal Lahir"
-  type="date"
-  value={parentIdentity.mother_birth_date || ""}
-  onChange={(v) => setParentField("mother_birth_date", v)}
-/>
+                      label="Tanggal Lahir"
+                      type="date"
+                      value={parentIdentity.mother_birth_date || ""}
+                      onChange={(v) => setParentField("mother_birth_date", v)}
+                    />
 
                     <InputField label="Pekerjaan" value={parentIdentity.mother_occupation || ""} onChange={(v) => setParentField("mother_occupation", v)} />
                     <InputField label="Nomor Telpon" value={parentIdentity.mother_phone || ""} onChange={(v) => setParentField("mother_phone", v)} />
@@ -527,11 +527,11 @@ export default function FormAssessmentOrangtuaClient() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 text-sm mb-8">
                     <InputField label="Nama Wali" value={parentIdentity.guardian_name || ""} onChange={(v) => setParentField("guardian_name", v)} />
                     <InputField
-  label="Tanggal Lahir"
-  type="date"
-  value={parentIdentity.guardian_birth_date || ""}
-  onChange={(v) => setParentField("guardian_birth_date", v)}
-/>
+                      label="Tanggal Lahir"
+                      type="date"
+                      value={parentIdentity.guardian_birth_date || ""}
+                      onChange={(v) => setParentField("guardian_birth_date", v)}
+                    />
 
                     <InputField label="Pekerjaan" value={parentIdentity.guardian_occupation || ""} onChange={(v) => setParentField("guardian_occupation", v)} />
                     <InputField label="Nomor Telpon" value={parentIdentity.guardian_phone || ""} onChange={(v) => setParentField("guardian_phone", v)} />
@@ -602,22 +602,22 @@ export default function FormAssessmentOrangtuaClient() {
                         )}
 
                         {/* NUMBER */}
-                       {/* NUMBER */}
-{q.answer_type === "number" && (
-  <input
-    type="text"
-    inputMode="numeric"
-    pattern="[0-9]*"
-    className="border rounded-md p-2 w-full sm:w-32"
-    value={answers[q.id] ?? ""}
-    onChange={(e) => {
-      const v = e.target.value;
-      if (/^\d*$/.test(v)) {
-        setAnswer(q.id, v);
-      }
-    }}
-  />
-)}
+                        {/* NUMBER */}
+                        {q.answer_type === "number" && (
+                          <input
+                            type="text"
+                            inputMode="numeric"
+                            pattern="[0-9]*"
+                            className="border rounded-md p-2 w-full sm:w-32"
+                            value={answers[q.id] ?? ""}
+                            onChange={(e) => {
+                              const v = e.target.value;
+                              if (/^\d*$/.test(v)) {
+                                setAnswer(q.id, v);
+                              }
+                            }}
+                          />
+                        )}
 
 
                         {/* TEXTAREA */}
@@ -655,7 +655,7 @@ export default function FormAssessmentOrangtuaClient() {
                                   value={opt}
                                   checked={answers[q.id] === opt}
                                   onChange={(e) => setAnswer(q.id, e.target.value)}
-                                   className="accent-[#409E86] "
+                                  className="accent-[#409E86] "
                                 />
                                 {opt}
                               </label>
@@ -672,7 +672,7 @@ export default function FormAssessmentOrangtuaClient() {
                                   type="checkbox"
                                   checked={Array.isArray(answers[q.id]) && answers[q.id].includes(opt)}
                                   onChange={() => toggleCheckboxValue(q.id, opt)}
-                                   className="accent-[#409E86] "
+                                  className="accent-[#409E86] "
                                 />
                                 {opt}
                               </label>
@@ -691,7 +691,7 @@ export default function FormAssessmentOrangtuaClient() {
                                   value={opt}
                                   checked={answers[q.id]?.value === opt}
                                   onChange={() => setAnswer(q.id, { value: opt, note: "" })}
-                                   className="accent-[#409E86] "
+                                  className="accent-[#409E86] "
                                 />
                                 {opt}
                               </label>

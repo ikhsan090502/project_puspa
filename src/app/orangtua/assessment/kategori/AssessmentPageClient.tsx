@@ -168,7 +168,7 @@ export default function AssessmentPageClient() {
         {sidebarOpen ? <X /> : <Menu />}
       </button>
 
-<div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col">
         <HeaderOrangtua />
 
         <main className="flex-1 overflow-y-auto p-8 space-y-6">
@@ -211,7 +211,7 @@ export default function AssessmentPageClient() {
 
                     <div className="relative">
                       <select
-                        className="appearance-none border border-gray-300 rounded-lg bg-[#C0DCD6] text-sm px-4 py-2 pr-8 cursor-pointer min-h-[44px]"
+                        className="appearance-none border border-none rounded-lg bg-[#36315B] text-white text-sm px-4 py-2 pr-10 cursor-pointer min-h-[44px]"
                         onChange={(e) =>
                           handleAction(e.target.value, item)
                         }

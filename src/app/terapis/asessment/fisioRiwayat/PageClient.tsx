@@ -85,105 +85,105 @@ export default function PageClient() {
 
   /* ================== PALPASI OTOT (FIX FINAL) ================== */
   const renderPalpasiOtot = (ans: any) => {
-  if (!ans || typeof ans !== "object") return "-";
+    if (!ans || typeof ans !== "object") return "-";
 
-  const rows = [
-    { key: "hypertonus", label: "Hypertonus (spastic / rigid)" },
-    { key: "hypotonus", label: "Hypotonus" },
-    { key: "fluktuatif", label: "Fluktuatif" },
-    { key: "normal", label: "Normal" },
-  ];
+    const rows = [
+      { key: "hypertonus", label: "Hypertonus (spastic / rigid)" },
+      { key: "hypotonus", label: "Hypotonus" },
+      { key: "fluktuatif", label: "Fluktuatif" },
+      { key: "normal", label: "Normal" },
+    ];
 
-  const renderDS = (rowKey: string, prefix: "aga" | "agb") => {
-    const dKey = `${rowKey}_${prefix}_d`;
-    const sKey = `${rowKey}_${prefix}_s`;
+    const renderDS = (rowKey: string, prefix: "aga" | "agb") => {
+      const dKey = `${rowKey}_${prefix}_d`;
+      const sKey = `${rowKey}_${prefix}_s`;
+
+      return (
+        <div className="flex flex-col items-center justify-center gap-1">
+          <div className="flex items-center gap-1">
+            <span className="font-medium">D :</span>
+            <span>{ans[dKey] ?? ""}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <span className="font-medium">S :</span>
+            <span>{ans[sKey] ?? ""}</span>
+          </div>
+        </div>
+      );
+    };
 
     return (
-      <div className="flex flex-col items-center justify-center gap-1">
-        <div className="flex items-center gap-1">
-          <span className="font-medium">D :</span>
-          <span>{ans[dKey] ?? ""}</span>
+      <div className="space-y-2">
+        {/* HEADER */}
+        <div className="grid grid-cols-[2.5fr_1.5fr_1.5fr_2fr] font-semibold border-b pb-2">
+          <div>Abnormalitas Tonus Otot</div>
+          <div className="text-center">AGA</div>
+          <div className="text-center">AGB</div>
+          <div className="text-center">Perut</div>
         </div>
-        <div className="flex items-center gap-1">
-          <span className="font-medium">S :</span>
-          <span>{ans[sKey] ?? ""}</span>
-        </div>
+
+        {/* ISI */}
+        {rows.map((row) => (
+          <div
+            key={row.key}
+            className="grid grid-cols-[2.5fr_1.5fr_1.5fr_2fr] gap-4 py-2 border-b"
+          >
+            {/* Label */}
+            <div className="flex items-center">
+              {row.label}
+            </div>
+
+            {/* AGA */}
+            <div className="flex justify-center">
+              {renderDS(row.key, "aga")}
+            </div>
+
+            {/* AGB */}
+            <div className="flex justify-center">
+              {renderDS(row.key, "agb")}
+            </div>
+
+            {/* Perut */}
+            <div className="flex items-center justify-center">
+              {ans[`${row.key}_perut`] ?? ""}
+            </div>
+          </div>
+        ))}
       </div>
     );
   };
 
-  return (
-    <div className="space-y-2">
-      {/* HEADER */}
-      <div className="grid grid-cols-[2.5fr_1.5fr_1.5fr_2fr] font-semibold border-b pb-2">
-        <div>Abnormalitas Tonus Otot</div>
-        <div className="text-center">AGA</div>
-        <div className="text-center">AGB</div>
-        <div className="text-center">Perut</div>
-      </div>
-
-      {/* ISI */}
-      {rows.map((row) => (
-        <div
-          key={row.key}
-          className="grid grid-cols-[2.5fr_1.5fr_1.5fr_2fr] gap-4 py-2 border-b"
-        >
-          {/* Label */}
-          <div className="flex items-center">
-            {row.label}
-          </div>
-
-          {/* AGA */}
-          <div className="flex justify-center">
-            {renderDS(row.key, "aga")}
-          </div>
-
-          {/* AGB */}
-          <div className="flex justify-center">
-            {renderDS(row.key, "agb")}
-          </div>
-
-          {/* Perut */}
-          <div className="flex items-center justify-center">
-            {ans[`${row.key}_perut`] ?? ""}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-};
-
   /* ================== RENDER ANSWER DEFAULT ================== */
-const renderAnswer = (q: any) => {
-  const ans = q.answer;
-  if (!ans) return "-";
+  const renderAnswer = (q: any) => {
+    const ans = q.answer;
+    if (!ans) return "-";
 
-  return (
-    <div className="space-y-2">
-      {/* VALUE (radio / pilihan / teks utama) */}
-      {ans.value !== undefined && ans.value !== null && (
-        Array.isArray(ans.value) ? (
-          <ul className="list-disc ml-5">
-            {ans.value.map((v: string, i: number) => (
-              <li key={i}>{v}</li>
-            ))}
-          </ul>
-        ) : (
-          <div className="font-medium text-gray-800">
-            {ans.value}
+    return (
+      <div className="space-y-2">
+        {/* VALUE (radio / pilihan / teks utama) */}
+        {ans.value !== undefined && ans.value !== null && (
+          Array.isArray(ans.value) ? (
+            <ul className="list-disc ml-5">
+              {ans.value.map((v: string, i: number) => (
+                <li key={i}>{v}</li>
+              ))}
+            </ul>
+          ) : (
+            <div className="font-medium text-gray-800">
+              {ans.value}
+            </div>
+          )
+        )}
+
+        {/* NOTE (jika diisi) */}
+        {ans.note && ans.note.trim() !== "" && (
+          <div className="text-sm text-gray-600 bg-white border rounded p-2">
+            <span className="font-semibold">Catatan:</span> {ans.note}
           </div>
-        )
-      )}
-
-      {/* NOTE (jika diisi) */}
-      {ans.note && ans.note.trim() !== "" && (
-        <div className="text-sm text-gray-600 bg-white border rounded p-2">
-          <span className="font-semibold">Catatan:</span> {ans.note}
-        </div>
-      )}
-    </div>
-  );
-};
+        )}
+      </div>
+    );
+  };
 
   /* ================== GROSS MOTOR ================== */
   const renderGrossMotor = (questions: any[]) => (
@@ -231,58 +231,59 @@ const renderAnswer = (q: any) => {
               ✕
             </button>
           </div>
-          <div className="bg-white p-6 rounded-xl shadow"> 
+          <div className="bg-white p-6 rounded-xl shadow">
             <h2 className="text-xl font-semibold mb-4"> Riwayat Jawaban Pemeriksaan </h2>
-          <div className="flex gap-6 border-b mb-6">
-            {tabs.map((t) => (
-              <button
-                key={t.key}
-                onClick={() => setActiveTab(t.key)}
-                className={`pb-2 ${
-                  activeTab === t.key
-                    ? "border-b-4 border-[#3A9C85] text-[#3A9C85]"
-                    : "text-gray-500"
-                }`}
-              >
-                {t.label}
-              </button>
-            ))}
-          </div>
-
-          {activeTab === "pemeriksaan_khusus" && (
-            <select
-              className="border p-2 rounded mb-6 w-full"
-              value={selectedKhusus}
-              onChange={(e) => setSelectedKhusus(e.target.value)}
-            >
-              {pemeriksaanKhususList.map((i) => (
-                <option key={i.key} value={i.key}>
-                  {i.label}
-                </option>
+            <div className="flex gap-6 border-b mb-6">
+              {tabs.map((t) => (
+                <button
+                  key={t.key}
+                  onClick={() => setActiveTab(t.key)}
+                  className={`pb-2 ${activeTab === t.key
+                      ? "border-b-4 border-[#3A9C85] text-[#3A9C85]"
+                      : "text-gray-500"
+                    }`}
+                >
+                  {t.label}
+                </button>
               ))}
-            </select>
-          )}
+            </div>
 
-          {activeTab === "pemeriksaan_khusus" &&
-          selectedKhusus === "gross_motor_pola_gerak" ? (
-            renderGrossMotor(filteredQuestions())
-          ) : (
-            filteredQuestions().map((q) => (
-              <div key={q.question_id} className="mb-6">
-                <div className="font-medium mb-2">
-                  {q.question_text}
-                </div>
-                <div className="bg-gray-50 border p-3 rounded">
-                  {q.question_id >= 411 && q.question_id <= 414
-                    ? renderPalpasiOtot(q.answer)
-                    : renderAnswer(q)}
-                </div>
+            {activeTab === "pemeriksaan_khusus" && (
+              <div className="relative mb-6">
+                <select
+                  className="appearance-none border border-none rounded-lg bg-[#36315B] text-white text-sm px-4 py-2 pr-10 cursor-pointer w-full"
+                  value={selectedKhusus}
+                  onChange={(e) => setSelectedKhusus(e.target.value)}
+                >
+                  {pemeriksaanKhususList.map((i) => (
+                    <option key={i.key} value={i.key}>
+                      {i.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-            ))
-          )}
+            )}
+
+            {activeTab === "pemeriksaan_khusus" &&
+              selectedKhusus === "gross_motor_pola_gerak" ? (
+              renderGrossMotor(filteredQuestions())
+            ) : (
+              filteredQuestions().map((q) => (
+                <div key={q.question_id} className="mb-6">
+                  <div className="font-medium mb-2">
+                    {q.question_text}
+                  </div>
+                  <div className="bg-gray-50 border p-3 rounded">
+                    {q.question_id >= 411 && q.question_id <= 414
+                      ? renderPalpasiOtot(q.answer)
+                      : renderAnswer(q)}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
-    </div>
     </div>
   );
 }
