@@ -1,4 +1,4 @@
-import axios from "axios";
+import axiosInstance from "@/lib/axios";
 
 export interface LoginPayload {
   identifier: string;
@@ -19,21 +19,6 @@ export interface LoginErrorResponse {
   password?: string[];
   general?: string;
 }
-
-const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "https://puspa.sinus.ac.id/api/v1",
-});
-
-axiosInstance.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("token");
-    const tokenType = localStorage.getItem("tokenType") || "Bearer";
-    if (token) {
-      config.headers.Authorization = `${tokenType} ${token}`;
-    }
-  }
-  return config;
-});
 
 export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
   try {
